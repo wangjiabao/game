@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package api.app.v1;
+
+import "google/api/annotations.proto";
+
+option go_package = "game/api/app/v1;v1";
+option java_multiple_files = true;
+option java_package = "api.app.v1";
+
+service App {
+	rpc CreateUser (CreateUserRequest) returns (CreateUserReply){
+		option (google.api.http) = {
+			post: "/api/user"
+			body: "send_body"
+		};
+	};
+}
+
+message CreateUserRequest {
+	message SendBody{
+		string address = 1;
+	}
+
+	SendBody send_body = 1;
+}
+message CreateUserReply {}
