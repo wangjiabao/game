@@ -19,14 +19,18 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	App_CreateUser_FullMethodName = "/api.app.v1.App/CreateUser"
+	App_TestSign_FullMethodName     = "/api.app.v1.App/TestSign"
+	App_EthAuthorize_FullMethodName = "/api.app.v1.App/EthAuthorize"
+	App_UserInfo_FullMethodName     = "/api.app.v1.App/UserInfo"
 )
 
 // AppClient is the client API for App service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AppClient interface {
-	CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*CreateUserReply, error)
+	TestSign(ctx context.Context, in *TestSignRequest, opts ...grpc.CallOption) (*TestSignReply, error)
+	EthAuthorize(ctx context.Context, in *EthAuthorizeRequest, opts ...grpc.CallOption) (*EthAuthorizeReply, error)
+	UserInfo(ctx context.Context, in *UserInfoRequest, opts ...grpc.CallOption) (*UserInfoReply, error)
 }
 
 type appClient struct {
@@ -37,9 +41,27 @@ func NewAppClient(cc grpc.ClientConnInterface) AppClient {
 	return &appClient{cc}
 }
 
-func (c *appClient) CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*CreateUserReply, error) {
-	out := new(CreateUserReply)
-	err := c.cc.Invoke(ctx, App_CreateUser_FullMethodName, in, out, opts...)
+func (c *appClient) TestSign(ctx context.Context, in *TestSignRequest, opts ...grpc.CallOption) (*TestSignReply, error) {
+	out := new(TestSignReply)
+	err := c.cc.Invoke(ctx, App_TestSign_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *appClient) EthAuthorize(ctx context.Context, in *EthAuthorizeRequest, opts ...grpc.CallOption) (*EthAuthorizeReply, error) {
+	out := new(EthAuthorizeReply)
+	err := c.cc.Invoke(ctx, App_EthAuthorize_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *appClient) UserInfo(ctx context.Context, in *UserInfoRequest, opts ...grpc.CallOption) (*UserInfoReply, error) {
+	out := new(UserInfoReply)
+	err := c.cc.Invoke(ctx, App_UserInfo_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +72,9 @@ func (c *appClient) CreateUser(ctx context.Context, in *CreateUserRequest, opts 
 // All implementations must embed UnimplementedAppServer
 // for forward compatibility
 type AppServer interface {
-	CreateUser(context.Context, *CreateUserRequest) (*CreateUserReply, error)
+	TestSign(context.Context, *TestSignRequest) (*TestSignReply, error)
+	EthAuthorize(context.Context, *EthAuthorizeRequest) (*EthAuthorizeReply, error)
+	UserInfo(context.Context, *UserInfoRequest) (*UserInfoReply, error)
 	mustEmbedUnimplementedAppServer()
 }
 
@@ -58,8 +82,14 @@ type AppServer interface {
 type UnimplementedAppServer struct {
 }
 
-func (UnimplementedAppServer) CreateUser(context.Context, *CreateUserRequest) (*CreateUserReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateUser not implemented")
+func (UnimplementedAppServer) TestSign(context.Context, *TestSignRequest) (*TestSignReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method TestSign not implemented")
+}
+func (UnimplementedAppServer) EthAuthorize(context.Context, *EthAuthorizeRequest) (*EthAuthorizeReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EthAuthorize not implemented")
+}
+func (UnimplementedAppServer) UserInfo(context.Context, *UserInfoRequest) (*UserInfoReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserInfo not implemented")
 }
 func (UnimplementedAppServer) mustEmbedUnimplementedAppServer() {}
 
@@ -74,20 +104,56 @@ func RegisterAppServer(s grpc.ServiceRegistrar, srv AppServer) {
 	s.RegisterService(&App_ServiceDesc, srv)
 }
 
-func _App_CreateUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateUserRequest)
+func _App_TestSign_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TestSignRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AppServer).CreateUser(ctx, in)
+		return srv.(AppServer).TestSign(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: App_CreateUser_FullMethodName,
+		FullMethod: App_TestSign_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AppServer).CreateUser(ctx, req.(*CreateUserRequest))
+		return srv.(AppServer).TestSign(ctx, req.(*TestSignRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _App_EthAuthorize_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EthAuthorizeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AppServer).EthAuthorize(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: App_EthAuthorize_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppServer).EthAuthorize(ctx, req.(*EthAuthorizeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _App_UserInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserInfoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AppServer).UserInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: App_UserInfo_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppServer).UserInfo(ctx, req.(*UserInfoRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -100,8 +166,16 @@ var App_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*AppServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "CreateUser",
-			Handler:    _App_CreateUser_Handler,
+			MethodName: "TestSign",
+			Handler:    _App_TestSign_Handler,
+		},
+		{
+			MethodName: "EthAuthorize",
+			Handler:    _App_EthAuthorize_Handler,
+		},
+		{
+			MethodName: "UserInfo",
+			Handler:    _App_UserInfo_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

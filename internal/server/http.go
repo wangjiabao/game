@@ -25,6 +25,7 @@ func NewHTTPServer(c *conf.Server, app *service.AppService, logger log.Logger) *
 				}, jwt.WithSigningMethod(jwt2.SigningMethodHS256)),
 			).Match(NewWhiteListMatcher()).Build(),
 		),
+
 		http.Filter(handlers.CORS(
 			handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"}),
 			handlers.AllowedMethods([]string{"GET", "POST", "PUT", "HEAD", "OPTIONS"}),
@@ -48,7 +49,8 @@ func NewHTTPServer(c *conf.Server, app *service.AppService, logger log.Logger) *
 // NewWhiteListMatcher 设置白名单，不需要 token 验证的接口
 func NewWhiteListMatcher() selector.MatchFunc {
 	whiteList := make(map[string]struct{})
-	// whiteList["/api.App/EthAuthorize"] = struct{}{}
+	whiteList["/api.app.v1.App/EthAuthorize"] = struct{}{}
+	whiteList["/api.app.v1.App/TestSign"] = struct{}{}
 	return func(ctx context.Context, operation string) bool {
 		if _, ok := whiteList[operation]; ok {
 			return false

@@ -9,19 +9,55 @@ option java_multiple_files = true;
 option java_package = "api.app.v1";
 
 service App {
-	rpc CreateUser (CreateUserRequest) returns (CreateUserReply){
+	rpc TestSign (TestSignRequest) returns (TestSignReply) {
 		option (google.api.http) = {
-			post: "/api/user"
+			get: "/api/app_server/test_sign"
+		};
+	};
+
+	rpc EthAuthorize (EthAuthorizeRequest) returns (EthAuthorizeReply) {
+		option (google.api.http) = {
+			post: "/api/app_server/eth_authorize"
 			body: "send_body"
+		};
+	};
+
+	rpc UserInfo (UserInfoRequest) returns (UserInfoReply) {
+		option (google.api.http) = {
+			get: "/api/app_server/user_info"
 		};
 	};
 }
 
-message CreateUserRequest {
+message TestSignRequest {
+	string secret = 1;
+	string signContent = 2;
+}
+
+message TestSignReply {
+	string sign = 1;
+}
+
+message EthAuthorizeRequest {
 	message SendBody{
 		string address = 1;
+		string code = 2;
+		string sign = 4;
 	}
 
 	SendBody send_body = 1;
 }
-message CreateUserReply {}
+
+message EthAuthorizeReply {
+	string token = 1;
+	string status = 2;
+}
+
+message UserInfoRequest {
+
+}
+
+message UserInfoReply {
+	string status = 1;
+	string myAddress = 2;
+}

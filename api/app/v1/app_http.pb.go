@@ -19,41 +19,87 @@ var _ = binding.EncodeURL
 
 const _ = http.SupportPackageIsVersion1
 
-const OperationAppCreateUser = "/api.app.v1.App/CreateUser"
+const OperationAppEthAuthorize = "/api.app.v1.App/EthAuthorize"
+const OperationAppTestSign = "/api.app.v1.App/TestSign"
+const OperationAppUserInfo = "/api.app.v1.App/UserInfo"
 
 type AppHTTPServer interface {
-	CreateUser(context.Context, *CreateUserRequest) (*CreateUserReply, error)
+	EthAuthorize(context.Context, *EthAuthorizeRequest) (*EthAuthorizeReply, error)
+	TestSign(context.Context, *TestSignRequest) (*TestSignReply, error)
+	UserInfo(context.Context, *UserInfoRequest) (*UserInfoReply, error)
 }
 
 func RegisterAppHTTPServer(s *http.Server, srv AppHTTPServer) {
 	r := s.Route("/")
-	r.POST("/api/user", _App_CreateUser0_HTTP_Handler(srv))
+	r.GET("/api/app_server/test_sign", _App_TestSign0_HTTP_Handler(srv))
+	r.POST("/api/app_server/eth_authorize", _App_EthAuthorize0_HTTP_Handler(srv))
+	r.GET("/api/app_server/user_info", _App_UserInfo0_HTTP_Handler(srv))
 }
 
-func _App_CreateUser0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
+func _App_TestSign0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
-		var in CreateUserRequest
+		var in TestSignRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAppTestSign)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.TestSign(ctx, req.(*TestSignRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*TestSignReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _App_EthAuthorize0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in EthAuthorizeRequest
 		if err := ctx.Bind(&in.SendBody); err != nil {
 			return err
 		}
 		if err := ctx.BindQuery(&in); err != nil {
 			return err
 		}
-		http.SetOperation(ctx, OperationAppCreateUser)
+		http.SetOperation(ctx, OperationAppEthAuthorize)
 		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
-			return srv.CreateUser(ctx, req.(*CreateUserRequest))
+			return srv.EthAuthorize(ctx, req.(*EthAuthorizeRequest))
 		})
 		out, err := h(ctx, &in)
 		if err != nil {
 			return err
 		}
-		reply := out.(*CreateUserReply)
+		reply := out.(*EthAuthorizeReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _App_UserInfo0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in UserInfoRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAppUserInfo)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.UserInfo(ctx, req.(*UserInfoRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*UserInfoReply)
 		return ctx.Result(200, reply)
 	}
 }
 
 type AppHTTPClient interface {
-	CreateUser(ctx context.Context, req *CreateUserRequest, opts ...http.CallOption) (rsp *CreateUserReply, err error)
+	EthAuthorize(ctx context.Context, req *EthAuthorizeRequest, opts ...http.CallOption) (rsp *EthAuthorizeReply, err error)
+	TestSign(ctx context.Context, req *TestSignRequest, opts ...http.CallOption) (rsp *TestSignReply, err error)
+	UserInfo(ctx context.Context, req *UserInfoRequest, opts ...http.CallOption) (rsp *UserInfoReply, err error)
 }
 
 type AppHTTPClientImpl struct {
@@ -64,13 +110,39 @@ func NewAppHTTPClient(client *http.Client) AppHTTPClient {
 	return &AppHTTPClientImpl{client}
 }
 
-func (c *AppHTTPClientImpl) CreateUser(ctx context.Context, in *CreateUserRequest, opts ...http.CallOption) (*CreateUserReply, error) {
-	var out CreateUserReply
-	pattern := "/api/user"
+func (c *AppHTTPClientImpl) EthAuthorize(ctx context.Context, in *EthAuthorizeRequest, opts ...http.CallOption) (*EthAuthorizeReply, error) {
+	var out EthAuthorizeReply
+	pattern := "/api/app_server/eth_authorize"
 	path := binding.EncodeURL(pattern, in, false)
-	opts = append(opts, http.Operation(OperationAppCreateUser))
+	opts = append(opts, http.Operation(OperationAppEthAuthorize))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "POST", path, in.SendBody, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, err
+}
+
+func (c *AppHTTPClientImpl) TestSign(ctx context.Context, in *TestSignRequest, opts ...http.CallOption) (*TestSignReply, error) {
+	var out TestSignReply
+	pattern := "/api/app_server/test_sign"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationAppTestSign))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, err
+}
+
+func (c *AppHTTPClientImpl) UserInfo(ctx context.Context, in *UserInfoRequest, opts ...http.CallOption) (*UserInfoReply, error) {
+	var out UserInfoReply
+	pattern := "/api/app_server/user_info"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationAppUserInfo))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

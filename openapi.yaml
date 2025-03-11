@@ -6,16 +6,16 @@ info:
     title: App API
     version: 0.0.1
 paths:
-    /api/user:
+    /api/app_server/eth_authorize:
         post:
             tags:
                 - App
-            operationId: App_CreateUser
+            operationId: App_EthAuthorize
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/CreateUserRequest_SendBody'
+                            $ref: '#/components/schemas/EthAuthorizeRequest_SendBody'
                 required: true
             responses:
                 "200":
@@ -23,7 +23,52 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/CreateUserReply'
+                                $ref: '#/components/schemas/EthAuthorizeReply'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /api/app_server/test_sign:
+        get:
+            tags:
+                - App
+            operationId: App_TestSign
+            parameters:
+                - name: secret
+                  in: query
+                  schema:
+                    type: string
+                - name: signContent
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/TestSignReply'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /api/app_server/user_info:
+        get:
+            tags:
+                - App
+            operationId: App_UserInfo
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UserInfoReply'
                 default:
                     description: Default error response
                     content:
@@ -32,13 +77,21 @@ paths:
                                 $ref: '#/components/schemas/Status'
 components:
     schemas:
-        CreateUserReply:
+        EthAuthorizeReply:
             type: object
-            properties: {}
-        CreateUserRequest_SendBody:
+            properties:
+                token:
+                    type: string
+                status:
+                    type: string
+        EthAuthorizeRequest_SendBody:
             type: object
             properties:
                 address:
+                    type: string
+                code:
+                    type: string
+                sign:
                     type: string
         GoogleProtobufAny:
             type: object
@@ -64,5 +117,17 @@ components:
                         $ref: '#/components/schemas/GoogleProtobufAny'
                     description: A list of messages that carry the error details.  There is a common set of message types for APIs to use.
             description: 'The `Status` type defines a logical error model that is suitable for different programming environments, including REST APIs and RPC APIs. It is used by [gRPC](https://github.com/grpc). Each `Status` message contains three pieces of data: error code, error message, and error details. You can find out more about this error model and how to work with it in the [API Design Guide](https://cloud.google.com/apis/design/errors).'
+        TestSignReply:
+            type: object
+            properties:
+                sign:
+                    type: string
+        UserInfoReply:
+            type: object
+            properties:
+                status:
+                    type: string
+                myAddress:
+                    type: string
 tags:
     - name: App
