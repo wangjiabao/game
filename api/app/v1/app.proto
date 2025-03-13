@@ -22,9 +22,52 @@ service App {
 		};
 	};
 
+	// 用户信息
 	rpc UserInfo (UserInfoRequest) returns (UserInfoReply) {
 		option (google.api.http) = {
 			get: "/api/app_server/user_info"
+		};
+	};
+
+	// 直推列表
+	rpc UserRecommend (UserRecommendRequest) returns (UserRecommendReply) {
+		option (google.api.http) = {
+			get: "/api/app_server/user_recommend"
+		};
+	};
+
+	// L1L2L3内容
+	rpc UserRecommendL (UserRecommendLRequest) returns (UserRecommendLReply) {
+		option (google.api.http) = {
+			get: "/api/app_server/user_recommend_l"
+		};
+	};
+
+	// 土地背包列表
+	rpc UserLand (UserLandRequest) returns (UserLandReply) {
+		option (google.api.http) = {
+			get: "/api/app_server/user_land"
+		};
+	};
+
+	// 粮仓列表
+	rpc UserStakeRewardList (UserStakeRewardListRequest) returns (UserStakeRewardListReply) {
+		option (google.api.http) = {
+			get: "/api/app_server/user_stake_reward_list"
+		};
+	};
+
+	// 盲盒列表
+	rpc UserBoxList (UserBoxListRequest) returns (UserBoxListReply) {
+		option (google.api.http) = {
+			get: "/api/app_server/user_box_list"
+		};
+	};
+
+	// 仓库
+	rpc UserBackList (UserBackListRequest) returns (UserBackListReply) {
+		option (google.api.http) = {
+			get: "/api/app_server/user_back_list"
 		};
 	};
 }
@@ -58,6 +101,143 @@ message UserInfoRequest {
 }
 
 message UserInfoReply {
-	string status = 1;
-	string myAddress = 2;
+	string status = 1; // 状态为字符串"ok"时接口正常，其他情况忽略，弹出显示该字段文案即可
+
+	string myAddress = 2; // 当前用户的 游戏id，钱包地址
+	uint64 level = 3; // 级别，系统里所有我的级别展示
+	double giw = 4; // git余额，系统里所有git的余额展示
+	double git = 5; // giw余额，系统里所有gi2w的余额展示
+
+	uint64 recommendTotal = 6; // 邻居数
+	double recommendTotalBiw = 7; // 业绩
+	double recommendTotalReward = 8; // 邀请收益
+
+	double recommendTotalBiwOne = 9; // L1业绩
+	double recommendTotalRewardOne = 10; // 邀请收益
+
+	double recommendTotalBiwTwo = 11; // L2业绩
+	double recommendTotalRewardTwo = 12; // 邀请收益
+
+	double recommendTotalBiwThree = 13; // L3业绩
+	double recommendTotalRewardThree = 14; // 邀请收益
+
+	double myStakeGit = 15; // 粮仓 我的粮仓
+	double todayRewardSkateGit = 16; // 粮仓 今日收益
+	double rewardStakeRate = 17; // 粮仓 粮仓系数
+
+	uint64 box = 18; // 盲盒 发行量
+	uint64 boxSell = 19; // 盲盒 已卖出
+	string start = 20; // 盲盒 售卖时间开始
+	string end = 21; // 盲盒 售卖时间结束
+	double boxSellAmount = 22; // 盲盒 购买所需biw数量
+
+	double exchangeRate = 23; // 兑换 兑换价格
+	double exchangeFeeRate = 24; // 兑换 兑换手续费用系数
+
+	double stakeGetTotal = 25; // 果实放大器的 质押总数
+	double myStakeGetTotal = 26; // 果实放大器的 我的质押
+	double stakeGetOverFeeRate = 27; // 果实放大器的 赎回手续费用系数
+
+	double sellFeeRate = 28; // 售卖手续费用系数
+}
+
+message UserRecommendRequest {
+	uint64 page = 1; // 页数
+}
+
+message UserRecommendReply {
+	string status = 1; // 状态为字符串"ok"时接口正常，其他情况忽略，弹出显示该字段文案即可
+
+	uint64 count = 2; // 总个数，每页20个
+	repeated List list = 3;
+	message List {
+		string address = 1; // 地址
+		double level = 2; // 等级
+		string created_at = 3; // 时间
+	}
+}
+
+message UserRecommendLRequest {
+	uint64 page = 1; // 页数
+	uint64 num = 2; // 1表示L1,2表示L2,3表示L3
+}
+
+message UserRecommendLReply {
+	string status = 1; // 状态为字符串"ok"时接口正常，其他情况忽略，弹出显示该字段文案即可
+
+	uint64 count = 2; // 总个数，每页20个
+	repeated List list = 3;
+	message List {
+		string address = 1; // 地址
+		double amount = 2; // 奖励GIT
+		string created_at = 3; // 奖励时间
+	}
+}
+
+message UserLandRequest {
+	uint64 page = 1; // 页数
+}
+
+message UserLandReply {
+	string status = 1; // 状态为字符串"ok"时接口正常，其他情况忽略，弹出显示该字段文案即可
+
+	uint64 count = 2; // 总个数，每页20个
+	repeated List list = 3;
+	message List {
+		uint64 id = 1; // id 操作时需要使用的参数，显示时#000001，一共6个整数位
+		uint64 level = 2; // 等级 对应的内容：对应文档土地颜色那列从上到下，对应图片资源
+		uint64 health = 3; // 肥沃度
+		uint64 status = 4; // 状态：默认1, 出租中3，出售中4，拍卖中5，左上角显示对应的英文文案，在资源里找对应的图
+		double outRate = 5; // 增产率
+		double perHealth = 6; // 种植消耗
+	}
+}
+
+message UserStakeRewardListRequest {
+	uint64 page = 1; // 页数
+}
+
+message UserStakeRewardListReply {
+	string status = 1; // 状态为字符串"ok"时接口正常，其他情况忽略，弹出显示该字段文案即可
+
+	uint64 count = 2; // 总个数，每页20个
+	repeated List list = 3;
+	message List {
+		double amount = 2; // 收益
+		string created_at = 3; // 日期
+	}
+}
+
+message UserBoxListRequest {
+	uint64 page = 1; // 页数
+}
+
+message UserBoxListReply {
+	string status = 1; // 状态为字符串"ok"时接口正常，其他情况忽略，弹出显示该字段文案即可
+
+	uint64 count = 2; // 总个数，每页20个
+	repeated List list = 3;
+	message List {
+		string content = 2; // 内容 开盲盒获得文案后边的内容
+		string created_at = 3; // 日期
+	}
+}
+
+message UserBackListRequest {
+	uint64 page = 1; // 页数
+}
+
+message UserBackListReply {
+	string status = 1; // 状态为字符串"ok"时接口正常，其他情况忽略，弹出显示该字段文案即可
+
+	uint64 count = 2; // 总个数，每页1000个
+	repeated List list = 3;
+	message List {
+		uint64 id = 1; // id 操作时需要使用的参数，显示时#000001，一共6个整数位
+		uint64 type = 5; // 1种子，2道具
+		uint64 num = 2; // 对应的内容：对应文档种子和道具那列从上到下，1-14，15铲子，16盲盒
+		uint64 use_num = 3; // 剩余使用次数
+		uint64 status = 4; // 状态：默认1，2，出售中4，左上角显示对应的英文文案，在资源里找对应的图
+		double out_max = 6; // 如果是种子，需要展示的产出数量
+	}
 }

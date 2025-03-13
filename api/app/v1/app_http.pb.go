@@ -21,12 +21,31 @@ const _ = http.SupportPackageIsVersion1
 
 const OperationAppEthAuthorize = "/api.app.v1.App/EthAuthorize"
 const OperationAppTestSign = "/api.app.v1.App/TestSign"
+const OperationAppUserBackList = "/api.app.v1.App/UserBackList"
+const OperationAppUserBoxList = "/api.app.v1.App/UserBoxList"
 const OperationAppUserInfo = "/api.app.v1.App/UserInfo"
+const OperationAppUserLand = "/api.app.v1.App/UserLand"
+const OperationAppUserRecommend = "/api.app.v1.App/UserRecommend"
+const OperationAppUserRecommendL = "/api.app.v1.App/UserRecommendL"
+const OperationAppUserStakeRewardList = "/api.app.v1.App/UserStakeRewardList"
 
 type AppHTTPServer interface {
 	EthAuthorize(context.Context, *EthAuthorizeRequest) (*EthAuthorizeReply, error)
 	TestSign(context.Context, *TestSignRequest) (*TestSignReply, error)
+	// UserBackList 仓库
+	UserBackList(context.Context, *UserBackListRequest) (*UserBackListReply, error)
+	// UserBoxList 盲盒列表
+	UserBoxList(context.Context, *UserBoxListRequest) (*UserBoxListReply, error)
+	// UserInfo 用户信息
 	UserInfo(context.Context, *UserInfoRequest) (*UserInfoReply, error)
+	// UserLand 土地背包列表
+	UserLand(context.Context, *UserLandRequest) (*UserLandReply, error)
+	// UserRecommend 直推列表
+	UserRecommend(context.Context, *UserRecommendRequest) (*UserRecommendReply, error)
+	// UserRecommendL L1L2L3内容
+	UserRecommendL(context.Context, *UserRecommendLRequest) (*UserRecommendLReply, error)
+	// UserStakeRewardList 粮仓列表
+	UserStakeRewardList(context.Context, *UserStakeRewardListRequest) (*UserStakeRewardListReply, error)
 }
 
 func RegisterAppHTTPServer(s *http.Server, srv AppHTTPServer) {
@@ -34,6 +53,12 @@ func RegisterAppHTTPServer(s *http.Server, srv AppHTTPServer) {
 	r.GET("/api/app_server/test_sign", _App_TestSign0_HTTP_Handler(srv))
 	r.POST("/api/app_server/eth_authorize", _App_EthAuthorize0_HTTP_Handler(srv))
 	r.GET("/api/app_server/user_info", _App_UserInfo0_HTTP_Handler(srv))
+	r.GET("/api/app_server/user_recommend", _App_UserRecommend0_HTTP_Handler(srv))
+	r.GET("/api/app_server/user_recommend_l", _App_UserRecommendL0_HTTP_Handler(srv))
+	r.GET("/api/app_server/user_land", _App_UserLand0_HTTP_Handler(srv))
+	r.GET("/api/app_server/user_stake_reward_list", _App_UserStakeRewardList0_HTTP_Handler(srv))
+	r.GET("/api/app_server/user_box_list", _App_UserBoxList0_HTTP_Handler(srv))
+	r.GET("/api/app_server/user_back_list", _App_UserBackList0_HTTP_Handler(srv))
 }
 
 func _App_TestSign0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
@@ -96,10 +121,130 @@ func _App_UserInfo0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error
 	}
 }
 
+func _App_UserRecommend0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in UserRecommendRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAppUserRecommend)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.UserRecommend(ctx, req.(*UserRecommendRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*UserRecommendReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _App_UserRecommendL0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in UserRecommendLRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAppUserRecommendL)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.UserRecommendL(ctx, req.(*UserRecommendLRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*UserRecommendLReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _App_UserLand0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in UserLandRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAppUserLand)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.UserLand(ctx, req.(*UserLandRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*UserLandReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _App_UserStakeRewardList0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in UserStakeRewardListRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAppUserStakeRewardList)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.UserStakeRewardList(ctx, req.(*UserStakeRewardListRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*UserStakeRewardListReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _App_UserBoxList0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in UserBoxListRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAppUserBoxList)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.UserBoxList(ctx, req.(*UserBoxListRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*UserBoxListReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _App_UserBackList0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in UserBackListRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAppUserBackList)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.UserBackList(ctx, req.(*UserBackListRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*UserBackListReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 type AppHTTPClient interface {
 	EthAuthorize(ctx context.Context, req *EthAuthorizeRequest, opts ...http.CallOption) (rsp *EthAuthorizeReply, err error)
 	TestSign(ctx context.Context, req *TestSignRequest, opts ...http.CallOption) (rsp *TestSignReply, err error)
+	UserBackList(ctx context.Context, req *UserBackListRequest, opts ...http.CallOption) (rsp *UserBackListReply, err error)
+	UserBoxList(ctx context.Context, req *UserBoxListRequest, opts ...http.CallOption) (rsp *UserBoxListReply, err error)
 	UserInfo(ctx context.Context, req *UserInfoRequest, opts ...http.CallOption) (rsp *UserInfoReply, err error)
+	UserLand(ctx context.Context, req *UserLandRequest, opts ...http.CallOption) (rsp *UserLandReply, err error)
+	UserRecommend(ctx context.Context, req *UserRecommendRequest, opts ...http.CallOption) (rsp *UserRecommendReply, err error)
+	UserRecommendL(ctx context.Context, req *UserRecommendLRequest, opts ...http.CallOption) (rsp *UserRecommendLReply, err error)
+	UserStakeRewardList(ctx context.Context, req *UserStakeRewardListRequest, opts ...http.CallOption) (rsp *UserStakeRewardListReply, err error)
 }
 
 type AppHTTPClientImpl struct {
@@ -136,11 +281,89 @@ func (c *AppHTTPClientImpl) TestSign(ctx context.Context, in *TestSignRequest, o
 	return &out, err
 }
 
+func (c *AppHTTPClientImpl) UserBackList(ctx context.Context, in *UserBackListRequest, opts ...http.CallOption) (*UserBackListReply, error) {
+	var out UserBackListReply
+	pattern := "/api/app_server/user_back_list"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationAppUserBackList))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, err
+}
+
+func (c *AppHTTPClientImpl) UserBoxList(ctx context.Context, in *UserBoxListRequest, opts ...http.CallOption) (*UserBoxListReply, error) {
+	var out UserBoxListReply
+	pattern := "/api/app_server/user_box_list"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationAppUserBoxList))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, err
+}
+
 func (c *AppHTTPClientImpl) UserInfo(ctx context.Context, in *UserInfoRequest, opts ...http.CallOption) (*UserInfoReply, error) {
 	var out UserInfoReply
 	pattern := "/api/app_server/user_info"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationAppUserInfo))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, err
+}
+
+func (c *AppHTTPClientImpl) UserLand(ctx context.Context, in *UserLandRequest, opts ...http.CallOption) (*UserLandReply, error) {
+	var out UserLandReply
+	pattern := "/api/app_server/user_land"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationAppUserLand))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, err
+}
+
+func (c *AppHTTPClientImpl) UserRecommend(ctx context.Context, in *UserRecommendRequest, opts ...http.CallOption) (*UserRecommendReply, error) {
+	var out UserRecommendReply
+	pattern := "/api/app_server/user_recommend"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationAppUserRecommend))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, err
+}
+
+func (c *AppHTTPClientImpl) UserRecommendL(ctx context.Context, in *UserRecommendLRequest, opts ...http.CallOption) (*UserRecommendLReply, error) {
+	var out UserRecommendLReply
+	pattern := "/api/app_server/user_recommend_l"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationAppUserRecommendL))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, err
+}
+
+func (c *AppHTTPClientImpl) UserStakeRewardList(ctx context.Context, in *UserStakeRewardListRequest, opts ...http.CallOption) (*UserStakeRewardListReply, error) {
+	var out UserStakeRewardListReply
+	pattern := "/api/app_server/user_stake_reward_list"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationAppUserStakeRewardList))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {

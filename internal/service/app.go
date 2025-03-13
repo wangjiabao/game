@@ -162,8 +162,21 @@ func (a *AppService) EthAuthorize(ctx context.Context, req *pb.EthAuthorizeReque
 		}, nil
 	}
 
+	// 根据地址查询用户，不存在时则创建
+	var (
+		user *biz.User
+		msg  string
+	)
+	user, err, msg = a.ac.GetExistUserByAddressOrCreate(ctx, userAddress, req)
+	if err != nil {
+		return &pb.EthAuthorizeReply{
+			Token:  "",
+			Status: msg,
+		}, nil
+	}
+
 	claims := auth.CustomClaims{
-		Address: userAddress,
+		Address: user.Address,
 		StandardClaims: jwt2.StandardClaims{
 			NotBefore: time.Now().Unix(),              // 签名的生效时间
 			ExpiresAt: time.Now().Unix() + 60*60*24*2, // 7天过期
@@ -177,7 +190,7 @@ func (a *AppService) EthAuthorize(ctx context.Context, req *pb.EthAuthorizeReque
 	token, err = auth.CreateToken(claims, a.ca.JwtKey)
 	if err != nil {
 		return &pb.EthAuthorizeReply{
-			Token:  token,
+			Token:  "",
 			Status: "生成token失败",
 		}, nil
 	}
@@ -219,7 +232,209 @@ func (a *AppService) UserInfo(ctx context.Context, req *pb.UserInfoRequest) (*pb
 		return &pb.UserInfoReply{Status: "无效token"}, nil
 	}
 
-	// todo
+	return a.ac.UserInfo(ctx, address)
+}
 
-	return &pb.UserInfoReply{Status: "ok", MyAddress: address}, nil
+// UserRecommend userRecommend.
+func (a *AppService) UserRecommend(ctx context.Context, req *pb.UserRecommendRequest) (*pb.UserRecommendReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		address string
+	)
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["Address"] == nil {
+			return &pb.UserRecommendReply{Status: "无效token"}, nil
+		}
+
+		address = c["Address"].(string)
+
+		// 验证
+		var (
+			res bool
+			err error
+		)
+		res, err = addressCheck(address)
+		if nil != err {
+			return &pb.UserRecommendReply{Status: "无效token"}, nil
+		}
+
+		if !res {
+			return &pb.UserRecommendReply{Status: "无效token"}, nil
+		}
+	} else {
+		return &pb.UserRecommendReply{Status: "无效token"}, nil
+	}
+
+	return a.ac.UserRecommend(ctx, address, req)
+}
+
+// UserRecommendL userRecommendL.
+func (a *AppService) UserRecommendL(ctx context.Context, req *pb.UserRecommendLRequest) (*pb.UserRecommendLReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		address string
+	)
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["Address"] == nil {
+			return &pb.UserRecommendLReply{Status: "无效token"}, nil
+		}
+
+		address = c["Address"].(string)
+
+		// 验证
+		var (
+			res bool
+			err error
+		)
+		res, err = addressCheck(address)
+		if nil != err {
+			return &pb.UserRecommendLReply{Status: "无效token"}, nil
+		}
+
+		if !res {
+			return &pb.UserRecommendLReply{Status: "无效token"}, nil
+		}
+	} else {
+		return &pb.UserRecommendLReply{Status: "无效token"}, nil
+	}
+
+	return a.ac.UserRecommendL(ctx, address, req)
+}
+
+// UserLand userLand.
+func (a *AppService) UserLand(ctx context.Context, req *pb.UserLandRequest) (*pb.UserLandReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		address string
+	)
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["Address"] == nil {
+			return &pb.UserLandReply{Status: "无效token"}, nil
+		}
+
+		address = c["Address"].(string)
+
+		// 验证
+		var (
+			res bool
+			err error
+		)
+		res, err = addressCheck(address)
+		if nil != err {
+			return &pb.UserLandReply{Status: "无效token"}, nil
+		}
+
+		if !res {
+			return &pb.UserLandReply{Status: "无效token"}, nil
+		}
+	} else {
+		return &pb.UserLandReply{Status: "无效token"}, nil
+	}
+
+	return a.ac.UserLand(ctx, address, req)
+}
+
+// UserStakeRewardList userStakeRewardList.
+func (a *AppService) UserStakeRewardList(ctx context.Context, req *pb.UserStakeRewardListRequest) (*pb.UserStakeRewardListReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		address string
+	)
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["Address"] == nil {
+			return &pb.UserStakeRewardListReply{Status: "无效token"}, nil
+		}
+
+		address = c["Address"].(string)
+
+		// 验证
+		var (
+			res bool
+			err error
+		)
+		res, err = addressCheck(address)
+		if nil != err {
+			return &pb.UserStakeRewardListReply{Status: "无效token"}, nil
+		}
+
+		if !res {
+			return &pb.UserStakeRewardListReply{Status: "无效token"}, nil
+		}
+	} else {
+		return &pb.UserStakeRewardListReply{Status: "无效token"}, nil
+	}
+
+	return a.ac.UserStakeRewardList(ctx, address, req)
+}
+
+// UserBoxList userBoxList.
+func (a *AppService) UserBoxList(ctx context.Context, req *pb.UserBoxListRequest) (*pb.UserBoxListReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		address string
+	)
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["Address"] == nil {
+			return &pb.UserBoxListReply{Status: "无效token"}, nil
+		}
+
+		address = c["Address"].(string)
+
+		// 验证
+		var (
+			res bool
+			err error
+		)
+		res, err = addressCheck(address)
+		if nil != err {
+			return &pb.UserBoxListReply{Status: "无效token"}, nil
+		}
+
+		if !res {
+			return &pb.UserBoxListReply{Status: "无效token"}, nil
+		}
+	} else {
+		return &pb.UserBoxListReply{Status: "无效token"}, nil
+	}
+
+	return a.ac.UserBoxList(ctx, address, req)
+}
+
+// UserBackList userBackList.
+func (a *AppService) UserBackList(ctx context.Context, req *pb.UserBackListRequest) (*pb.UserBackListReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		address string
+	)
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["Address"] == nil {
+			return &pb.UserBackListReply{Status: "无效token"}, nil
+		}
+
+		address = c["Address"].(string)
+
+		// 验证
+		var (
+			res bool
+			err error
+		)
+		res, err = addressCheck(address)
+		if nil != err {
+			return &pb.UserBackListReply{Status: "无效token"}, nil
+		}
+
+		if !res {
+			return &pb.UserBackListReply{Status: "无效token"}, nil
+		}
+	} else {
+		return &pb.UserBackListReply{Status: "无效token"}, nil
+	}
+
+	return a.ac.UserBackList(ctx, address, req)
 }

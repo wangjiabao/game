@@ -19,9 +19,15 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	App_TestSign_FullMethodName     = "/api.app.v1.App/TestSign"
-	App_EthAuthorize_FullMethodName = "/api.app.v1.App/EthAuthorize"
-	App_UserInfo_FullMethodName     = "/api.app.v1.App/UserInfo"
+	App_TestSign_FullMethodName            = "/api.app.v1.App/TestSign"
+	App_EthAuthorize_FullMethodName        = "/api.app.v1.App/EthAuthorize"
+	App_UserInfo_FullMethodName            = "/api.app.v1.App/UserInfo"
+	App_UserRecommend_FullMethodName       = "/api.app.v1.App/UserRecommend"
+	App_UserRecommendL_FullMethodName      = "/api.app.v1.App/UserRecommendL"
+	App_UserLand_FullMethodName            = "/api.app.v1.App/UserLand"
+	App_UserStakeRewardList_FullMethodName = "/api.app.v1.App/UserStakeRewardList"
+	App_UserBoxList_FullMethodName         = "/api.app.v1.App/UserBoxList"
+	App_UserBackList_FullMethodName        = "/api.app.v1.App/UserBackList"
 )
 
 // AppClient is the client API for App service.
@@ -30,7 +36,20 @@ const (
 type AppClient interface {
 	TestSign(ctx context.Context, in *TestSignRequest, opts ...grpc.CallOption) (*TestSignReply, error)
 	EthAuthorize(ctx context.Context, in *EthAuthorizeRequest, opts ...grpc.CallOption) (*EthAuthorizeReply, error)
+	// 用户信息
 	UserInfo(ctx context.Context, in *UserInfoRequest, opts ...grpc.CallOption) (*UserInfoReply, error)
+	// 直推列表
+	UserRecommend(ctx context.Context, in *UserRecommendRequest, opts ...grpc.CallOption) (*UserRecommendReply, error)
+	// L1L2L3内容
+	UserRecommendL(ctx context.Context, in *UserRecommendLRequest, opts ...grpc.CallOption) (*UserRecommendLReply, error)
+	// 土地背包列表
+	UserLand(ctx context.Context, in *UserLandRequest, opts ...grpc.CallOption) (*UserLandReply, error)
+	// 粮仓列表
+	UserStakeRewardList(ctx context.Context, in *UserStakeRewardListRequest, opts ...grpc.CallOption) (*UserStakeRewardListReply, error)
+	// 盲盒列表
+	UserBoxList(ctx context.Context, in *UserBoxListRequest, opts ...grpc.CallOption) (*UserBoxListReply, error)
+	// 仓库
+	UserBackList(ctx context.Context, in *UserBackListRequest, opts ...grpc.CallOption) (*UserBackListReply, error)
 }
 
 type appClient struct {
@@ -68,13 +87,80 @@ func (c *appClient) UserInfo(ctx context.Context, in *UserInfoRequest, opts ...g
 	return out, nil
 }
 
+func (c *appClient) UserRecommend(ctx context.Context, in *UserRecommendRequest, opts ...grpc.CallOption) (*UserRecommendReply, error) {
+	out := new(UserRecommendReply)
+	err := c.cc.Invoke(ctx, App_UserRecommend_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *appClient) UserRecommendL(ctx context.Context, in *UserRecommendLRequest, opts ...grpc.CallOption) (*UserRecommendLReply, error) {
+	out := new(UserRecommendLReply)
+	err := c.cc.Invoke(ctx, App_UserRecommendL_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *appClient) UserLand(ctx context.Context, in *UserLandRequest, opts ...grpc.CallOption) (*UserLandReply, error) {
+	out := new(UserLandReply)
+	err := c.cc.Invoke(ctx, App_UserLand_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *appClient) UserStakeRewardList(ctx context.Context, in *UserStakeRewardListRequest, opts ...grpc.CallOption) (*UserStakeRewardListReply, error) {
+	out := new(UserStakeRewardListReply)
+	err := c.cc.Invoke(ctx, App_UserStakeRewardList_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *appClient) UserBoxList(ctx context.Context, in *UserBoxListRequest, opts ...grpc.CallOption) (*UserBoxListReply, error) {
+	out := new(UserBoxListReply)
+	err := c.cc.Invoke(ctx, App_UserBoxList_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *appClient) UserBackList(ctx context.Context, in *UserBackListRequest, opts ...grpc.CallOption) (*UserBackListReply, error) {
+	out := new(UserBackListReply)
+	err := c.cc.Invoke(ctx, App_UserBackList_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AppServer is the server API for App service.
 // All implementations must embed UnimplementedAppServer
 // for forward compatibility
 type AppServer interface {
 	TestSign(context.Context, *TestSignRequest) (*TestSignReply, error)
 	EthAuthorize(context.Context, *EthAuthorizeRequest) (*EthAuthorizeReply, error)
+	// 用户信息
 	UserInfo(context.Context, *UserInfoRequest) (*UserInfoReply, error)
+	// 直推列表
+	UserRecommend(context.Context, *UserRecommendRequest) (*UserRecommendReply, error)
+	// L1L2L3内容
+	UserRecommendL(context.Context, *UserRecommendLRequest) (*UserRecommendLReply, error)
+	// 土地背包列表
+	UserLand(context.Context, *UserLandRequest) (*UserLandReply, error)
+	// 粮仓列表
+	UserStakeRewardList(context.Context, *UserStakeRewardListRequest) (*UserStakeRewardListReply, error)
+	// 盲盒列表
+	UserBoxList(context.Context, *UserBoxListRequest) (*UserBoxListReply, error)
+	// 仓库
+	UserBackList(context.Context, *UserBackListRequest) (*UserBackListReply, error)
 	mustEmbedUnimplementedAppServer()
 }
 
@@ -90,6 +176,24 @@ func (UnimplementedAppServer) EthAuthorize(context.Context, *EthAuthorizeRequest
 }
 func (UnimplementedAppServer) UserInfo(context.Context, *UserInfoRequest) (*UserInfoReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UserInfo not implemented")
+}
+func (UnimplementedAppServer) UserRecommend(context.Context, *UserRecommendRequest) (*UserRecommendReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserRecommend not implemented")
+}
+func (UnimplementedAppServer) UserRecommendL(context.Context, *UserRecommendLRequest) (*UserRecommendLReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserRecommendL not implemented")
+}
+func (UnimplementedAppServer) UserLand(context.Context, *UserLandRequest) (*UserLandReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserLand not implemented")
+}
+func (UnimplementedAppServer) UserStakeRewardList(context.Context, *UserStakeRewardListRequest) (*UserStakeRewardListReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserStakeRewardList not implemented")
+}
+func (UnimplementedAppServer) UserBoxList(context.Context, *UserBoxListRequest) (*UserBoxListReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserBoxList not implemented")
+}
+func (UnimplementedAppServer) UserBackList(context.Context, *UserBackListRequest) (*UserBackListReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserBackList not implemented")
 }
 func (UnimplementedAppServer) mustEmbedUnimplementedAppServer() {}
 
@@ -158,6 +262,114 @@ func _App_UserInfo_Handler(srv interface{}, ctx context.Context, dec func(interf
 	return interceptor(ctx, in, info, handler)
 }
 
+func _App_UserRecommend_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserRecommendRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AppServer).UserRecommend(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: App_UserRecommend_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppServer).UserRecommend(ctx, req.(*UserRecommendRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _App_UserRecommendL_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserRecommendLRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AppServer).UserRecommendL(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: App_UserRecommendL_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppServer).UserRecommendL(ctx, req.(*UserRecommendLRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _App_UserLand_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserLandRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AppServer).UserLand(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: App_UserLand_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppServer).UserLand(ctx, req.(*UserLandRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _App_UserStakeRewardList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserStakeRewardListRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AppServer).UserStakeRewardList(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: App_UserStakeRewardList_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppServer).UserStakeRewardList(ctx, req.(*UserStakeRewardListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _App_UserBoxList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserBoxListRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AppServer).UserBoxList(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: App_UserBoxList_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppServer).UserBoxList(ctx, req.(*UserBoxListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _App_UserBackList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserBackListRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AppServer).UserBackList(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: App_UserBackList_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppServer).UserBackList(ctx, req.(*UserBackListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // App_ServiceDesc is the grpc.ServiceDesc for App service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -176,6 +388,30 @@ var App_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UserInfo",
 			Handler:    _App_UserInfo_Handler,
+		},
+		{
+			MethodName: "UserRecommend",
+			Handler:    _App_UserRecommend_Handler,
+		},
+		{
+			MethodName: "UserRecommendL",
+			Handler:    _App_UserRecommendL_Handler,
+		},
+		{
+			MethodName: "UserLand",
+			Handler:    _App_UserLand_Handler,
+		},
+		{
+			MethodName: "UserStakeRewardList",
+			Handler:    _App_UserStakeRewardList_Handler,
+		},
+		{
+			MethodName: "UserBoxList",
+			Handler:    _App_UserBoxList_Handler,
+		},
+		{
+			MethodName: "UserBackList",
+			Handler:    _App_UserBackList_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
