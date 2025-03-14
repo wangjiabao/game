@@ -2,19 +2,47 @@ package biz
 
 import (
 	"context"
+	"crypto/rand"
 	pb "game/api/app/v1"
 	"github.com/go-kratos/kratos/v2/errors"
 	"github.com/go-kratos/kratos/v2/log"
+	"github.com/go-kratos/kratos/v2/middleware/auth/jwt"
+	jwt2 "github.com/golang-jwt/jwt/v4"
+	"math/big"
+	"strconv"
 	"time"
 )
 
 type User struct {
+	ID               uint64
+	Address          string
+	Level            uint64
+	Giw              float64
+	GiwAdd           float64
+	Git              float64
+	Total            float64
+	TotalOne         float64
+	TotalTwo         float64
+	TotalThree       float64
+	RewardOne        float64
+	RewardTwo        float64
+	RewardThree      float64
+	RewardTwoOne     float64
+	RewardTwoTwo     float64
+	RewardTwoThree   float64
+	RewardThreeOne   float64
+	RewardThreeTwo   float64
+	RewardThreeThree float64
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
+}
+
+type BoxRecord struct {
 	ID        uint64
-	Address   string
-	Level     uint64
-	Giw       float64
-	Git       float64
-	Total     float64
+	UserId    uint64
+	Num       uint64
+	GoodId    uint64
+	GoodType  uint64
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -71,11 +99,53 @@ type Seed struct {
 	UpdatedAt    time.Time
 }
 
+type Config struct {
+	ID      int64
+	KeyName string
+	Name    string
+	Value   string
+}
+
+type SkateGit struct {
+	ID        uint64
+	UserId    uint64
+	Status    uint64
+	Amount    float64
+	Reward    float64
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+type SkateGet struct {
+	ID        uint64
+	UserId    uint64
+	Status    uint64
+	SkateRate float64
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+type SkateGetTotal struct {
+	ID        uint64
+	Amount    float64
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
 type UserRepo interface {
+	GetAllUsers(ctx context.Context) ([]*User, error)
+	GetUserByUserIds(ctx context.Context, userIds []uint64) (map[uint64]*User, error)
 	GetUserByAddress(ctx context.Context, address string) (*User, error)
 	GetUserRecommendByUserId(ctx context.Context, userId uint64) (*UserRecommend, error)
+	GetUserRecommendByCode(ctx context.Context, code string) ([]*UserRecommend, error)
+	GetUserRecommends(ctx context.Context) ([]*UserRecommend, error)
 	CreateUser(ctx context.Context, uc *User) (*User, error)
 	CreateUserRecommend(ctx context.Context, user *User, recommendUser *UserRecommend) (*UserRecommend, error)
+	GetConfigByKeys(ctx context.Context, keys ...string) ([]*Config, error)
+	GetSkateGitByUserId(ctx context.Context, userId uint64) (*SkateGit, error)
+	GetBoxRecord(ctx context.Context, num uint64) ([]*BoxRecord, error)
+	GetSkateGetTotal(ctx context.Context) (*SkateGetTotal, error)
+	GetUserSkateGet(ctx context.Context, userId uint64) (*SkateGet, error)
 }
 
 // AppUsecase is an app usecase.
@@ -88,6 +158,14 @@ type AppUsecase struct {
 // NewAppUsecase new a app usecase.
 func NewAppUsecase(userRepo UserRepo, tx Transaction, logger log.Logger) *AppUsecase {
 	return &AppUsecase{userRepo: userRepo, tx: tx, log: log.NewHelper(logger)}
+}
+
+func RandomBoolCrypto() (bool, error) {
+	n, err := rand.Int(rand.Reader, big.NewInt(100))
+	if err != nil {
+		return false, err
+	}
+	return n.Int64() < 5, nil
 }
 
 func (ac *AppUsecase) GetExistUserByAddressOrCreate(ctx context.Context, address string, req *pb.EthAuthorizeRequest) (*User, error, string) {
@@ -114,7 +192,7 @@ func (ac *AppUsecase) GetExistUserByAddressOrCreate(ctx context.Context, address
 				return nil, errors.New(500, "USER_ERROR", "无效的推荐码1"), "无效的推荐码"
 			}
 
-			if 0 >= rUser.Giw {
+			if 0 >= rUser.GiwAdd {
 				return nil, errors.New(500, "USER_ERROR", "推荐人未入金"), "推荐人未入金"
 			}
 
@@ -149,8 +227,21 @@ func (ac *AppUsecase) GetExistUserByAddressOrCreate(ctx context.Context, address
 
 func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInfoReply, error) {
 	var (
-		user *User
-		err  error
+		user            *User
+		boxNum          uint64
+		configs         []*Config
+		bPrice          float64
+		exchangeFeeRate float64
+		rewardSkateRate float64
+		boxMax          uint64
+		boxAmount       float64
+		boxStart        string
+		boxEnd          string
+		skateOverRate   float64
+		sellFeeRate     float64
+		withdrawMin     uint64
+		withdrawMax     uint64
+		err             error
 	)
 	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
 	if nil != err || nil == user {
@@ -159,35 +250,174 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		}, nil
 	}
 
+	// 配置
+	configs, err = ac.userRepo.GetConfigByKeys(ctx,
+		"box_num",
+		"b_price",
+		"exchange_fee_rate",
+		"reward_skate_rate",
+		"box_max",
+		"box_start",
+		"box_end",
+		"box_amount",
+		"skate_over_rate",
+		"sell_fee_rate",
+		"withdraw_amount_min",
+		"withdraw_amount_max",
+	)
+	if nil != err || nil == configs {
+		return &pb.UserInfoReply{
+			Status: "配置错误",
+		}, nil
+	}
+
+	for _, vConfig := range configs {
+		if "box_num" == vConfig.KeyName {
+			boxNum, _ = strconv.ParseUint(vConfig.Value, 10, 64)
+		}
+		if "withdraw_amount_min" == vConfig.KeyName {
+			withdrawMin, _ = strconv.ParseUint(vConfig.Value, 10, 64)
+		}
+		if "withdraw_amount_max" == vConfig.KeyName {
+			withdrawMax, _ = strconv.ParseUint(vConfig.Value, 10, 64)
+		}
+		if "b_price" == vConfig.KeyName {
+			bPrice, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+		if "exchange_fee_rate" == vConfig.KeyName {
+			exchangeFeeRate, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+		if "reward_skate_rate" == vConfig.KeyName {
+			rewardSkateRate, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+		if "box_start" == vConfig.KeyName {
+			boxStart = vConfig.Value
+		}
+		if "box_end" == vConfig.KeyName {
+			boxEnd = vConfig.Value
+		}
+		if "box_amount" == vConfig.KeyName {
+			boxAmount, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+		if "box_max" == vConfig.KeyName {
+			boxMax, _ = strconv.ParseUint(vConfig.Value, 10, 64)
+		}
+		if "skate_over_rate" == vConfig.KeyName {
+			skateOverRate, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+		if "sell_fee_rate" == vConfig.KeyName {
+			sellFeeRate, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+	}
+
+	// 推荐
+	var (
+		userRecommend   *UserRecommend
+		myUserRecommend []*UserRecommend
+	)
+	userRecommend, err = ac.userRepo.GetUserRecommendByUserId(ctx, user.ID)
+	if nil == userRecommend || nil != err {
+		return &pb.UserInfoReply{
+			Status: "推荐错误查询",
+		}, nil
+	}
+
+	myUserRecommend, err = ac.userRepo.GetUserRecommendByCode(ctx, userRecommend.RecommendCode+"D"+strconv.FormatUint(user.ID, 10))
+	if nil == myUserRecommend || nil != err {
+		return &pb.UserInfoReply{
+			Status: "推荐错误查询",
+		}, nil
+	}
+
+	RecommendTotalRewardOne := user.RewardOne + user.RewardTwo + user.RewardThree
+	RecommendTotalRewardTwo := user.RewardTwoOne + user.RewardTwoTwo + user.RewardTwoThree
+	RecommendTotalRewardThree := user.RewardThreeOne + user.RewardThreeTwo + user.RewardThreeThree
+	RecommendTotalReward := +RecommendTotalRewardOne + RecommendTotalRewardTwo + RecommendTotalRewardThree
+
+	var (
+		skateGit *SkateGit
+	)
+	skateGit, err = ac.userRepo.GetSkateGitByUserId(ctx, user.ID)
+	if nil != err {
+		return &pb.UserInfoReply{
+			Status: "粮仓错误查询",
+		}, nil
+	}
+	skateGitAmount := float64(0)
+	if nil != skateGit {
+		skateGitAmount = skateGit.Amount
+	}
+
+	boxSellNum := uint64(0)
+	if boxNum > 0 {
+		var (
+			boxRecord []*BoxRecord
+		)
+		boxRecord, err = ac.userRepo.GetBoxRecord(ctx, boxNum)
+		if nil == boxRecord || nil != err {
+			return &pb.UserInfoReply{
+				Status: "盲盒错误查询",
+			}, nil
+		}
+
+		boxSellNum = uint64(len(boxRecord))
+	}
+
+	var (
+		skateGetTotal       *SkateGetTotal
+		skateGet            *SkateGet
+		skateGetTotalAmount float64
+		skateGetTotalMy     float64
+	)
+	skateGetTotal, err = ac.userRepo.GetSkateGetTotal(ctx)
+	if nil == skateGetTotal || nil != err {
+		return &pb.UserInfoReply{
+			Status: "放大器错误查询",
+		}, nil
+	}
+
+	skateGet, err = ac.userRepo.GetUserSkateGet(ctx, user.ID)
+	if nil != err {
+		return &pb.UserInfoReply{
+			Status: "我的放大器错误查询",
+		}, nil
+	}
+	skateGetTotalAmount = skateGetTotal.Amount
+	if nil != skateGet {
+		skateGetTotalMy = skateGet.SkateRate * skateGetTotalAmount
+	}
+
 	return &pb.UserInfoReply{
 		Status:                    "ok",
 		MyAddress:                 user.Address,
 		Level:                     user.Level,
 		Giw:                       user.Giw,
 		Git:                       user.Git,
-		RecommendTotal:            262,
-		RecommendTotalBiw:         464,
-		RecommendTotalReward:      33663,
-		RecommendTotalBiwOne:      225,
-		RecommendTotalRewardOne:   3433,
-		RecommendTotalBiwTwo:      34,
-		RecommendTotalRewardTwo:   6666,
-		RecommendTotalBiwThree:    324,
-		RecommendTotalRewardThree: 5324,
-		MyStakeGit:                130777,
-		TodayRewardSkateGit:       1377774,
-		RewardStakeRate:           0.3,
-		Box:                       123,
-		BoxSell:                   5,
-		Start:                     "2025-03-01 00:00:00",
-		End:                       "2025-05-01 00:00:00",
-		BoxSellAmount:             343432,
-		ExchangeRate:              0.21,
-		ExchangeFeeRate:           0.04,
-		StakeGetTotal:             2134342,
-		MyStakeGetTotal:           332,
-		StakeGetOverFeeRate:       0.5,
-		SellFeeRate:               0.05,
+		RecommendTotal:            uint64(len(myUserRecommend)),
+		RecommendTotalBiw:         user.Total,
+		RecommendTotalReward:      RecommendTotalReward,
+		RecommendTotalBiwOne:      user.TotalOne,
+		RecommendTotalRewardOne:   RecommendTotalRewardOne,
+		RecommendTotalBiwTwo:      user.TotalTwo,
+		RecommendTotalRewardTwo:   RecommendTotalRewardTwo,
+		RecommendTotalBiwThree:    user.TotalThree,
+		RecommendTotalRewardThree: RecommendTotalRewardThree,
+		MyStakeGit:                skateGitAmount,
+		TodayRewardSkateGit:       skateGitAmount * rewardSkateRate,
+		RewardStakeRate:           rewardSkateRate,
+		Box:                       boxMax,
+		BoxSell:                   boxSellNum,
+		Start:                     boxStart,
+		End:                       boxEnd,
+		BoxSellAmount:             boxAmount,
+		ExchangeRate:              bPrice,
+		ExchangeFeeRate:           exchangeFeeRate,
+		StakeGetTotal:             skateGetTotalAmount,
+		MyStakeGetTotal:           skateGetTotalMy,
+		StakeGetOverFeeRate:       skateOverRate,
+		SellFeeRate:               sellFeeRate,
+		WithdrawMax:               withdrawMax,
+		WithdrawMin:               withdrawMin,
 	}, nil
 }
 
@@ -391,4 +621,223 @@ func (ac *AppUsecase) UserBackList(ctx context.Context, address string, req *pb.
 		Count:  3,
 		List:   res,
 	}, nil
+}
+
+// UserMarketSeedList userMarketSeedList.
+func (ac *AppUsecase) UserMarketSeedList(ctx context.Context, address string, req *pb.UserMarketSeedListRequest) (*pb.UserMarketSeedListReply, error) {
+	var (
+		user *User
+		err  error
+	)
+	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
+	if nil != err || nil == user {
+		return &pb.UserMarketSeedListReply{
+			Status: "不存在用户",
+		}, nil
+	}
+
+}
+
+// UserMarketLandList userMarketLandList.
+func (ac *AppUsecase) UserMarketLandList(ctx context.Context, address string, req *pb.UserMarketLandListRequest) (*pb.UserMarketLandListReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		address string
+	)
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["Address"] == nil {
+			return &pb.UserBackListReply{Status: "无效token"}, nil
+		}
+
+		address = c["Address"].(string)
+
+		// 验证
+		var (
+			res bool
+			err error
+		)
+		res, err = addressCheck(address)
+		if nil != err {
+			return &pb.UserBackListReply{Status: "无效token"}, nil
+		}
+
+		if !res {
+			return &pb.UserBackListReply{Status: "无效token"}, nil
+		}
+	} else {
+		return &pb.UserBackListReply{Status: "无效token"}, nil
+	}
+
+	return a.ac.UserBackList(ctx, address, req)
+}
+
+// UserMarketPropList userMarketPropList.
+func (ac *AppUsecase) UserMarketPropList(ctx context.Context, address string, req *pb.UserMarketPropListRequest) (*pb.UserMarketPropListReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		address string
+	)
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["Address"] == nil {
+			return &pb.UserBackListReply{Status: "无效token"}, nil
+		}
+
+		address = c["Address"].(string)
+
+		// 验证
+		var (
+			res bool
+			err error
+		)
+		res, err = addressCheck(address)
+		if nil != err {
+			return &pb.UserBackListReply{Status: "无效token"}, nil
+		}
+
+		if !res {
+			return &pb.UserBackListReply{Status: "无效token"}, nil
+		}
+	} else {
+		return &pb.UserBackListReply{Status: "无效token"}, nil
+	}
+
+	return a.ac.UserBackList(ctx, address, req)
+}
+
+// UserMarketRentLandList userMarketRentLandList.
+func (ac *AppUsecase) UserMarketRentLandList(ctx context.Context, address string, req *pb.UserMarketRentLandListRequest) (*pb.UserMarketRentLandListReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		address string
+	)
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["Address"] == nil {
+			return &pb.UserBackListReply{Status: "无效token"}, nil
+		}
+
+		address = c["Address"].(string)
+
+		// 验证
+		var (
+			res bool
+			err error
+		)
+		res, err = addressCheck(address)
+		if nil != err {
+			return &pb.UserBackListReply{Status: "无效token"}, nil
+		}
+
+		if !res {
+			return &pb.UserBackListReply{Status: "无效token"}, nil
+		}
+	} else {
+		return &pb.UserBackListReply{Status: "无效token"}, nil
+	}
+
+	return a.ac.UserBackList(ctx, address, req)
+}
+
+// UserMyMarketList userMyMarketList.
+func (ac *AppUsecase) UserMyMarketList(ctx context.Context, address string, req *pb.UserMyMarketListRequest) (*pb.UserMyMarketListReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		address string
+	)
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["Address"] == nil {
+			return &pb.UserBackListReply{Status: "无效token"}, nil
+		}
+
+		address = c["Address"].(string)
+
+		// 验证
+		var (
+			res bool
+			err error
+		)
+		res, err = addressCheck(address)
+		if nil != err {
+			return &pb.UserBackListReply{Status: "无效token"}, nil
+		}
+
+		if !res {
+			return &pb.UserBackListReply{Status: "无效token"}, nil
+		}
+	} else {
+		return &pb.UserBackListReply{Status: "无效token"}, nil
+	}
+
+	return a.ac.UserBackList(ctx, address, req)
+}
+
+// UserNoticeList NoticeList.
+func (ac *AppUsecase) UserNoticeList(ctx context.Context, address string, req *pb.UserNoticeListRequest) (*pb.UserNoticeListReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		address string
+	)
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["Address"] == nil {
+			return &pb.UserBackListReply{Status: "无效token"}, nil
+		}
+
+		address = c["Address"].(string)
+
+		// 验证
+		var (
+			res bool
+			err error
+		)
+		res, err = addressCheck(address)
+		if nil != err {
+			return &pb.UserBackListReply{Status: "无效token"}, nil
+		}
+
+		if !res {
+			return &pb.UserBackListReply{Status: "无效token"}, nil
+		}
+	} else {
+		return &pb.UserBackListReply{Status: "无效token"}, nil
+	}
+
+	return a.ac.UserBackList(ctx, address, req)
+}
+
+// UserSkateRewardList userSkateRewardList.
+func (ac *AppUsecase) UserSkateRewardList(ctx context.Context, address string, req *pb.UserSkateRewardListRequest) (*pb.UserSkateRewardListReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		address string
+	)
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["Address"] == nil {
+			return &pb.UserBackListReply{Status: "无效token"}, nil
+		}
+
+		address = c["Address"].(string)
+
+		// 验证
+		var (
+			res bool
+			err error
+		)
+		res, err = addressCheck(address)
+		if nil != err {
+			return &pb.UserBackListReply{Status: "无效token"}, nil
+		}
+
+		if !res {
+			return &pb.UserBackListReply{Status: "无效token"}, nil
+		}
+	} else {
+		return &pb.UserBackListReply{Status: "无效token"}, nil
+	}
+
+	return a.ac.UserBackList(ctx, address, req)
 }

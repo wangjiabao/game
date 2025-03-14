@@ -70,6 +70,55 @@ service App {
 			get: "/api/app_server/user_back_list"
 		};
 	};
+
+	// 市场 种子
+	rpc UserMarketSeedList (UserMarketSeedListRequest) returns (UserMarketSeedListReply) {
+		option (google.api.http) = {
+			get: "/api/app_server/user_market_seed_list"
+		};
+	};
+
+	// 市场 土地
+	rpc UserMarketLandList (UserMarketLandListRequest) returns (UserMarketLandListReply) {
+		option (google.api.http) = {
+			get: "/api/app_server/user_market_land_list"
+		};
+	};
+
+	// 市场 道具
+	rpc UserMarketPropList (UserMarketPropListRequest) returns (UserMarketPropListReply) {
+		option (google.api.http) = {
+			get: "/api/app_server/user_market_prop_list"
+		};
+	};
+
+	// 市场 出租
+	rpc UserMarketRentLandList (UserMarketRentLandListRequest) returns (UserMarketRentLandListReply) {
+		option (google.api.http) = {
+			get: "/api/app_server/user_market_rent_land_list"
+		};
+	};
+
+	// 市场 我的
+	rpc UserMyMarketList (UserMyMarketListRequest) returns (UserMyMarketListReply) {
+		option (google.api.http) = {
+			get: "/api/app_server/user_market_my_list"
+		};
+	};
+
+	// 通知
+	rpc UserNoticeList (UserNoticeListRequest) returns (UserNoticeListReply) {
+		option (google.api.http) = {
+			get: "/api/app_server/user_notice_list"
+		};
+	};
+
+	// 果实放大器 获奖记录
+	rpc UserSkateRewardList (UserSkateRewardListRequest) returns (UserSkateRewardListReply) {
+		option (google.api.http) = {
+			get: "/api/app_server/user_skate_reward_list"
+		};
+	};
 }
 
 message TestSignRequest {
@@ -139,6 +188,9 @@ message UserInfoReply {
 	double stakeGetOverFeeRate = 27; // 果实放大器的 赎回手续费用系数
 
 	double sellFeeRate = 28; // 售卖手续费用系数
+
+	uint64 withdrawMin = 29; // 提现最小
+	uint64 withdrawMax = 30; // 提现最大
 }
 
 message UserRecommendRequest {
@@ -153,7 +205,7 @@ message UserRecommendReply {
 	message List {
 		string address = 1; // 地址
 		double level = 2; // 等级
-		string created_at = 3; // 时间
+		string createdAt = 3; // 时间
 	}
 }
 
@@ -170,7 +222,7 @@ message UserRecommendLReply {
 	message List {
 		string address = 1; // 地址
 		double amount = 2; // 奖励GIT
-		string created_at = 3; // 奖励时间
+		string createdAt = 3; // 奖励时间
 	}
 }
 
@@ -204,7 +256,7 @@ message UserStakeRewardListReply {
 	repeated List list = 3;
 	message List {
 		double amount = 2; // 收益
-		string created_at = 3; // 日期
+		string createdAt = 3; // 日期
 	}
 }
 
@@ -219,7 +271,7 @@ message UserBoxListReply {
 	repeated List list = 3;
 	message List {
 		string content = 2; // 内容 开盲盒获得文案后边的内容
-		string created_at = 3; // 日期
+		string createdAt = 3; // 日期
 	}
 }
 
@@ -236,8 +288,135 @@ message UserBackListReply {
 		uint64 id = 1; // id 操作时需要使用的参数，显示时#000001，一共6个整数位
 		uint64 type = 5; // 1种子，2道具
 		uint64 num = 2; // 对应的内容：对应文档种子和道具那列从上到下，1-14，15铲子，16盲盒
-		uint64 use_num = 3; // 剩余使用次数
+		uint64 useNum = 3; // 剩余使用次数
 		uint64 status = 4; // 状态：默认1，2，出售中4，左上角显示对应的英文文案，在资源里找对应的图
-		double out_max = 6; // 如果是种子，需要展示的产出数量
+		double outMax = 6; // 如果是种子，需要展示的产出数量
+	}
+}
+
+message UserMarketSeedListRequest {
+	uint64 page = 1; // 页数
+}
+
+message UserMarketSeedListReply {
+	string status = 1; // 状态为字符串"ok"时接口正常，其他情况忽略，弹出显示该字段文案即可
+
+	uint64 count = 2; // 总个数，每页1000个
+	repeated List list = 3;
+	message List {
+		uint64 id = 1; // id 操作时需要使用的参数，显示时#000001，一共6个整数位
+		uint64 num = 2; // 对应的内容：对应文档种子和道具那列从上到下，1-14，15铲子，16盲盒
+		double amount = 3; // 售价
+		double outMax = 4; // 最大产出
+	}
+}
+
+
+message UserMarketLandListRequest {
+	uint64 page = 1; // 页数
+}
+
+message UserMarketLandListReply {
+	string status = 1; // 状态为字符串"ok"时接口正常，其他情况忽略，弹出显示该字段文案即可
+
+	uint64 count = 2; // 总个数，每页1000个
+	repeated List list = 3;
+	message List {
+		uint64 id = 1; // id 操作时需要使用的参数，显示时#000001，一共6个整数位
+		double level = 2; // 等级 对应的内容：对应文档土地颜色那列从上到下，对应图片资源
+		double maxHealth = 4; // 肥沃度
+		double amount = 3; // 售价
+	}
+}
+
+
+message UserMarketPropListRequest {
+	uint64 page = 1; // 页数
+}
+
+message UserMarketPropListReply {
+	string status = 1; // 状态为字符串"ok"时接口正常，其他情况忽略，弹出显示该字段文案即可
+
+	uint64 count = 2; // 总个数，每页1000个
+	repeated List list = 3;
+	message List {
+		uint64 id = 1; // id 操作时需要使用的参数，显示时#000001，一共6个整数位
+		uint64 num = 2; // 对应的内容：对应文档种子和道具那列从上到下，1-14，15铲子，16盲盒
+		double amount = 3; // 售价
+		double useMax = 4; // 可用次数
+	}
+}
+
+message UserMarketRentLandListRequest {
+	uint64 page = 1; // 页数
+}
+
+message UserMarketRentLandListReply {
+	string status = 1; // 状态为字符串"ok"时接口正常，其他情况忽略，弹出显示该字段文案即可
+
+	uint64 count = 2; // 总个数，每页1000个
+	repeated List list = 3;
+	message List {
+		uint64 id = 1; // id 操作时需要使用的参数，显示时#000001，一共6个整数位
+		uint64 level = 2; // 土地级别
+		double maxHealth = 3; // 肥沃度
+		double rentAmount = 4; // 出租收益
+	}
+}
+
+message UserMyMarketListRequest {
+	uint64 page = 1; // 页数
+}
+
+message UserMyMarketListReply {
+	string status = 1; // 状态为字符串"ok"时接口正常，其他情况忽略，弹出显示该字段文案即可
+
+	uint64 count = 2; // 总个数，每页1000个
+	repeated List list = 3;
+	message List {
+		uint64 id = 1; // id 操作时需要使用的参数，显示时#000001，一共6个整数位
+		uint64 type = 5; // 1种子和道具，2土地
+
+		uint64 num = 2; // 如果是种子和道具，对应的内容：对应文档种子和道具那列从上到下，1-14，15铲子，16盲盒
+		uint64 useNum = 3; // 如果是道具，剩余使用次数
+		double outMax = 6; // 如果是种子，需要展示的产出数量
+
+		uint64 level = 7; // 如果是土地，土地级别
+		uint64 status = 4; // 如果是土地，状态：默认1出租，2出售
+		double maxHealth = 9; // 如果是土地， 肥沃度
+
+		double amount = 8; // 售价
+
+		double rentAmount = 10; // 如果是土地，出租收益
+	}
+}
+
+message UserNoticeListRequest {
+	uint64 page = 1; // 页数
+}
+
+message UserNoticeListReply {
+	string status = 1; // 状态为字符串"ok"时接口正常，其他情况忽略，弹出显示该字段文案即可
+
+	uint64 count = 2; // 总个数，每页20个
+	repeated List list = 3;
+	message List {
+		string content = 1; // 消息内容
+		string createdAt = 2; // 时间
+	}
+}
+
+message UserSkateRewardListRequest {
+	uint64 page = 1; // 页数
+}
+
+message UserSkateRewardListReply {
+	string status = 1; // 状态为字符串"ok"时接口正常，其他情况忽略，弹出显示该字段文案即可
+
+	uint64 count = 2; // 总个数，每页20个
+	repeated List list = 3;
+	message List {
+		string address = 1; // 地址
+		string content = 2; // 消息内容
 	}
 }

@@ -148,6 +148,150 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Status'
+    /api/app_server/user_market_land_list:
+        get:
+            tags:
+                - App
+            description: 市场 土地
+            operationId: App_UserMarketLandList
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UserMarketLandListReply'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /api/app_server/user_market_my_list:
+        get:
+            tags:
+                - App
+            description: 市场 我的
+            operationId: App_UserMyMarketList
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UserMyMarketListReply'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /api/app_server/user_market_prop_list:
+        get:
+            tags:
+                - App
+            description: 市场 道具
+            operationId: App_UserMarketPropList
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UserMarketPropListReply'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /api/app_server/user_market_rent_land_list:
+        get:
+            tags:
+                - App
+            description: 市场 出租
+            operationId: App_UserMarketRentLandList
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UserMarketRentLandListReply'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /api/app_server/user_market_seed_list:
+        get:
+            tags:
+                - App
+            description: 市场 种子
+            operationId: App_UserMarketSeedList
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UserMarketSeedListReply'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /api/app_server/user_notice_list:
+        get:
+            tags:
+                - App
+            description: 通知
+            operationId: App_UserNoticeList
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UserNoticeListReply'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
     /api/app_server/user_recommend:
         get:
             tags:
@@ -194,6 +338,30 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/UserRecommendLReply'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /api/app_server/user_skate_reward_list:
+        get:
+            tags:
+                - App
+            description: 果实放大器 获奖记录
+            operationId: App_UserSkateRewardList
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UserSkateRewardListReply'
                 default:
                     description: Default error response
                     content:
@@ -395,6 +563,10 @@ components:
                 sellFeeRate:
                     type: number
                     format: double
+                withdrawMin:
+                    type: string
+                withdrawMax:
+                    type: string
         UserLandReply:
             type: object
             properties:
@@ -423,6 +595,159 @@ components:
                 perHealth:
                     type: number
                     format: double
+        UserMarketLandListReply:
+            type: object
+            properties:
+                status:
+                    type: string
+                count:
+                    type: string
+                list:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/UserMarketLandListReply_List'
+        UserMarketLandListReply_List:
+            type: object
+            properties:
+                id:
+                    type: string
+                level:
+                    type: number
+                    format: double
+                maxHealth:
+                    type: number
+                    format: double
+                amount:
+                    type: number
+                    format: double
+        UserMarketPropListReply:
+            type: object
+            properties:
+                status:
+                    type: string
+                count:
+                    type: string
+                list:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/UserMarketPropListReply_List'
+        UserMarketPropListReply_List:
+            type: object
+            properties:
+                id:
+                    type: string
+                num:
+                    type: string
+                amount:
+                    type: number
+                    format: double
+                useMax:
+                    type: number
+                    format: double
+        UserMarketRentLandListReply:
+            type: object
+            properties:
+                status:
+                    type: string
+                count:
+                    type: string
+                list:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/UserMarketRentLandListReply_List'
+        UserMarketRentLandListReply_List:
+            type: object
+            properties:
+                id:
+                    type: string
+                level:
+                    type: string
+                maxHealth:
+                    type: number
+                    format: double
+                rentAmount:
+                    type: number
+                    format: double
+        UserMarketSeedListReply:
+            type: object
+            properties:
+                status:
+                    type: string
+                count:
+                    type: string
+                list:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/UserMarketSeedListReply_List'
+        UserMarketSeedListReply_List:
+            type: object
+            properties:
+                id:
+                    type: string
+                num:
+                    type: string
+                amount:
+                    type: number
+                    format: double
+                outMax:
+                    type: number
+                    format: double
+        UserMyMarketListReply:
+            type: object
+            properties:
+                status:
+                    type: string
+                count:
+                    type: string
+                list:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/UserMyMarketListReply_List'
+        UserMyMarketListReply_List:
+            type: object
+            properties:
+                id:
+                    type: string
+                type:
+                    type: string
+                num:
+                    type: string
+                useNum:
+                    type: string
+                outMax:
+                    type: number
+                    format: double
+                level:
+                    type: string
+                status:
+                    type: string
+                maxHealth:
+                    type: number
+                    format: double
+                amount:
+                    type: number
+                    format: double
+                rentAmount:
+                    type: number
+                    format: double
+        UserNoticeListReply:
+            type: object
+            properties:
+                status:
+                    type: string
+                count:
+                    type: string
+                list:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/UserNoticeListReply_List'
+        UserNoticeListReply_List:
+            type: object
+            properties:
+                content:
+                    type: string
+                createdAt:
+                    type: string
         UserRecommendLReply:
             type: object
             properties:
@@ -464,6 +789,24 @@ components:
                     type: number
                     format: double
                 createdAt:
+                    type: string
+        UserSkateRewardListReply:
+            type: object
+            properties:
+                status:
+                    type: string
+                count:
+                    type: string
+                list:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/UserSkateRewardListReply_List'
+        UserSkateRewardListReply_List:
+            type: object
+            properties:
+                address:
+                    type: string
+                content:
                     type: string
         UserStakeRewardListReply:
             type: object

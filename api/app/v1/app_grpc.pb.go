@@ -19,15 +19,22 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	App_TestSign_FullMethodName            = "/api.app.v1.App/TestSign"
-	App_EthAuthorize_FullMethodName        = "/api.app.v1.App/EthAuthorize"
-	App_UserInfo_FullMethodName            = "/api.app.v1.App/UserInfo"
-	App_UserRecommend_FullMethodName       = "/api.app.v1.App/UserRecommend"
-	App_UserRecommendL_FullMethodName      = "/api.app.v1.App/UserRecommendL"
-	App_UserLand_FullMethodName            = "/api.app.v1.App/UserLand"
-	App_UserStakeRewardList_FullMethodName = "/api.app.v1.App/UserStakeRewardList"
-	App_UserBoxList_FullMethodName         = "/api.app.v1.App/UserBoxList"
-	App_UserBackList_FullMethodName        = "/api.app.v1.App/UserBackList"
+	App_TestSign_FullMethodName               = "/api.app.v1.App/TestSign"
+	App_EthAuthorize_FullMethodName           = "/api.app.v1.App/EthAuthorize"
+	App_UserInfo_FullMethodName               = "/api.app.v1.App/UserInfo"
+	App_UserRecommend_FullMethodName          = "/api.app.v1.App/UserRecommend"
+	App_UserRecommendL_FullMethodName         = "/api.app.v1.App/UserRecommendL"
+	App_UserLand_FullMethodName               = "/api.app.v1.App/UserLand"
+	App_UserStakeRewardList_FullMethodName    = "/api.app.v1.App/UserStakeRewardList"
+	App_UserBoxList_FullMethodName            = "/api.app.v1.App/UserBoxList"
+	App_UserBackList_FullMethodName           = "/api.app.v1.App/UserBackList"
+	App_UserMarketSeedList_FullMethodName     = "/api.app.v1.App/UserMarketSeedList"
+	App_UserMarketLandList_FullMethodName     = "/api.app.v1.App/UserMarketLandList"
+	App_UserMarketPropList_FullMethodName     = "/api.app.v1.App/UserMarketPropList"
+	App_UserMarketRentLandList_FullMethodName = "/api.app.v1.App/UserMarketRentLandList"
+	App_UserMyMarketList_FullMethodName       = "/api.app.v1.App/UserMyMarketList"
+	App_UserNoticeList_FullMethodName         = "/api.app.v1.App/UserNoticeList"
+	App_UserSkateRewardList_FullMethodName    = "/api.app.v1.App/UserSkateRewardList"
 )
 
 // AppClient is the client API for App service.
@@ -50,6 +57,20 @@ type AppClient interface {
 	UserBoxList(ctx context.Context, in *UserBoxListRequest, opts ...grpc.CallOption) (*UserBoxListReply, error)
 	// 仓库
 	UserBackList(ctx context.Context, in *UserBackListRequest, opts ...grpc.CallOption) (*UserBackListReply, error)
+	// 市场 种子
+	UserMarketSeedList(ctx context.Context, in *UserMarketSeedListRequest, opts ...grpc.CallOption) (*UserMarketSeedListReply, error)
+	// 市场 土地
+	UserMarketLandList(ctx context.Context, in *UserMarketLandListRequest, opts ...grpc.CallOption) (*UserMarketLandListReply, error)
+	// 市场 道具
+	UserMarketPropList(ctx context.Context, in *UserMarketPropListRequest, opts ...grpc.CallOption) (*UserMarketPropListReply, error)
+	// 市场 出租
+	UserMarketRentLandList(ctx context.Context, in *UserMarketRentLandListRequest, opts ...grpc.CallOption) (*UserMarketRentLandListReply, error)
+	// 市场 我的
+	UserMyMarketList(ctx context.Context, in *UserMyMarketListRequest, opts ...grpc.CallOption) (*UserMyMarketListReply, error)
+	// 通知
+	UserNoticeList(ctx context.Context, in *UserNoticeListRequest, opts ...grpc.CallOption) (*UserNoticeListReply, error)
+	// 果实放大器 获奖记录
+	UserSkateRewardList(ctx context.Context, in *UserSkateRewardListRequest, opts ...grpc.CallOption) (*UserSkateRewardListReply, error)
 }
 
 type appClient struct {
@@ -141,6 +162,69 @@ func (c *appClient) UserBackList(ctx context.Context, in *UserBackListRequest, o
 	return out, nil
 }
 
+func (c *appClient) UserMarketSeedList(ctx context.Context, in *UserMarketSeedListRequest, opts ...grpc.CallOption) (*UserMarketSeedListReply, error) {
+	out := new(UserMarketSeedListReply)
+	err := c.cc.Invoke(ctx, App_UserMarketSeedList_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *appClient) UserMarketLandList(ctx context.Context, in *UserMarketLandListRequest, opts ...grpc.CallOption) (*UserMarketLandListReply, error) {
+	out := new(UserMarketLandListReply)
+	err := c.cc.Invoke(ctx, App_UserMarketLandList_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *appClient) UserMarketPropList(ctx context.Context, in *UserMarketPropListRequest, opts ...grpc.CallOption) (*UserMarketPropListReply, error) {
+	out := new(UserMarketPropListReply)
+	err := c.cc.Invoke(ctx, App_UserMarketPropList_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *appClient) UserMarketRentLandList(ctx context.Context, in *UserMarketRentLandListRequest, opts ...grpc.CallOption) (*UserMarketRentLandListReply, error) {
+	out := new(UserMarketRentLandListReply)
+	err := c.cc.Invoke(ctx, App_UserMarketRentLandList_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *appClient) UserMyMarketList(ctx context.Context, in *UserMyMarketListRequest, opts ...grpc.CallOption) (*UserMyMarketListReply, error) {
+	out := new(UserMyMarketListReply)
+	err := c.cc.Invoke(ctx, App_UserMyMarketList_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *appClient) UserNoticeList(ctx context.Context, in *UserNoticeListRequest, opts ...grpc.CallOption) (*UserNoticeListReply, error) {
+	out := new(UserNoticeListReply)
+	err := c.cc.Invoke(ctx, App_UserNoticeList_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *appClient) UserSkateRewardList(ctx context.Context, in *UserSkateRewardListRequest, opts ...grpc.CallOption) (*UserSkateRewardListReply, error) {
+	out := new(UserSkateRewardListReply)
+	err := c.cc.Invoke(ctx, App_UserSkateRewardList_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AppServer is the server API for App service.
 // All implementations must embed UnimplementedAppServer
 // for forward compatibility
@@ -161,6 +245,20 @@ type AppServer interface {
 	UserBoxList(context.Context, *UserBoxListRequest) (*UserBoxListReply, error)
 	// 仓库
 	UserBackList(context.Context, *UserBackListRequest) (*UserBackListReply, error)
+	// 市场 种子
+	UserMarketSeedList(context.Context, *UserMarketSeedListRequest) (*UserMarketSeedListReply, error)
+	// 市场 土地
+	UserMarketLandList(context.Context, *UserMarketLandListRequest) (*UserMarketLandListReply, error)
+	// 市场 道具
+	UserMarketPropList(context.Context, *UserMarketPropListRequest) (*UserMarketPropListReply, error)
+	// 市场 出租
+	UserMarketRentLandList(context.Context, *UserMarketRentLandListRequest) (*UserMarketRentLandListReply, error)
+	// 市场 我的
+	UserMyMarketList(context.Context, *UserMyMarketListRequest) (*UserMyMarketListReply, error)
+	// 通知
+	UserNoticeList(context.Context, *UserNoticeListRequest) (*UserNoticeListReply, error)
+	// 果实放大器 获奖记录
+	UserSkateRewardList(context.Context, *UserSkateRewardListRequest) (*UserSkateRewardListReply, error)
 	mustEmbedUnimplementedAppServer()
 }
 
@@ -194,6 +292,27 @@ func (UnimplementedAppServer) UserBoxList(context.Context, *UserBoxListRequest) 
 }
 func (UnimplementedAppServer) UserBackList(context.Context, *UserBackListRequest) (*UserBackListReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UserBackList not implemented")
+}
+func (UnimplementedAppServer) UserMarketSeedList(context.Context, *UserMarketSeedListRequest) (*UserMarketSeedListReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserMarketSeedList not implemented")
+}
+func (UnimplementedAppServer) UserMarketLandList(context.Context, *UserMarketLandListRequest) (*UserMarketLandListReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserMarketLandList not implemented")
+}
+func (UnimplementedAppServer) UserMarketPropList(context.Context, *UserMarketPropListRequest) (*UserMarketPropListReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserMarketPropList not implemented")
+}
+func (UnimplementedAppServer) UserMarketRentLandList(context.Context, *UserMarketRentLandListRequest) (*UserMarketRentLandListReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserMarketRentLandList not implemented")
+}
+func (UnimplementedAppServer) UserMyMarketList(context.Context, *UserMyMarketListRequest) (*UserMyMarketListReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserMyMarketList not implemented")
+}
+func (UnimplementedAppServer) UserNoticeList(context.Context, *UserNoticeListRequest) (*UserNoticeListReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserNoticeList not implemented")
+}
+func (UnimplementedAppServer) UserSkateRewardList(context.Context, *UserSkateRewardListRequest) (*UserSkateRewardListReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserSkateRewardList not implemented")
 }
 func (UnimplementedAppServer) mustEmbedUnimplementedAppServer() {}
 
@@ -370,6 +489,132 @@ func _App_UserBackList_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _App_UserMarketSeedList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserMarketSeedListRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AppServer).UserMarketSeedList(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: App_UserMarketSeedList_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppServer).UserMarketSeedList(ctx, req.(*UserMarketSeedListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _App_UserMarketLandList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserMarketLandListRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AppServer).UserMarketLandList(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: App_UserMarketLandList_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppServer).UserMarketLandList(ctx, req.(*UserMarketLandListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _App_UserMarketPropList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserMarketPropListRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AppServer).UserMarketPropList(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: App_UserMarketPropList_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppServer).UserMarketPropList(ctx, req.(*UserMarketPropListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _App_UserMarketRentLandList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserMarketRentLandListRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AppServer).UserMarketRentLandList(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: App_UserMarketRentLandList_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppServer).UserMarketRentLandList(ctx, req.(*UserMarketRentLandListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _App_UserMyMarketList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserMyMarketListRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AppServer).UserMyMarketList(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: App_UserMyMarketList_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppServer).UserMyMarketList(ctx, req.(*UserMyMarketListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _App_UserNoticeList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserNoticeListRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AppServer).UserNoticeList(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: App_UserNoticeList_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppServer).UserNoticeList(ctx, req.(*UserNoticeListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _App_UserSkateRewardList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserSkateRewardListRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AppServer).UserSkateRewardList(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: App_UserSkateRewardList_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppServer).UserSkateRewardList(ctx, req.(*UserSkateRewardListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // App_ServiceDesc is the grpc.ServiceDesc for App service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -412,6 +657,34 @@ var App_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UserBackList",
 			Handler:    _App_UserBackList_Handler,
+		},
+		{
+			MethodName: "UserMarketSeedList",
+			Handler:    _App_UserMarketSeedList_Handler,
+		},
+		{
+			MethodName: "UserMarketLandList",
+			Handler:    _App_UserMarketLandList_Handler,
+		},
+		{
+			MethodName: "UserMarketPropList",
+			Handler:    _App_UserMarketPropList_Handler,
+		},
+		{
+			MethodName: "UserMarketRentLandList",
+			Handler:    _App_UserMarketRentLandList_Handler,
+		},
+		{
+			MethodName: "UserMyMarketList",
+			Handler:    _App_UserMyMarketList_Handler,
+		},
+		{
+			MethodName: "UserNoticeList",
+			Handler:    _App_UserNoticeList_Handler,
+		},
+		{
+			MethodName: "UserSkateRewardList",
+			Handler:    _App_UserSkateRewardList_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

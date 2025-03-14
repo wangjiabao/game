@@ -7,6 +7,7 @@ import (
 	"game/internal/biz"
 	"game/internal/conf"
 	"game/internal/pkg/middleware/auth"
+	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -83,14 +84,14 @@ func (a *AppService) TestSign(ctx context.Context, req *pb.TestSignRequest) (*pb
 	}
 
 	data := []byte(req.SignContent)
-	hash := crypto.Keccak256Hash(data)
+	hash := accounts.TextHash(data)
 
-	signature, err := crypto.Sign(hash.Bytes(), privateKey)
+	signature, err := crypto.Sign(hash, privateKey)
 	if err != nil {
 		return &pb.TestSignReply{Sign: ""}, err
 	}
 
-	return &pb.TestSignReply{Sign: hexutil.Encode(signature)}, nil
+	return &pb.TestSignReply{Sign: string(signature)}, nil
 }
 
 func verifySig(sigHex string, msg []byte) (bool, string) {
@@ -102,12 +103,12 @@ func verifySig(sigHex string, msg []byte) (bool, string) {
 
 	sig := hexutil.MustDecode(sigHex)
 
-	hash := crypto.Keccak256Hash(msg)
+	msg = accounts.TextHash(msg)
 	if sig[crypto.RecoveryIDOffset] == 27 || sig[crypto.RecoveryIDOffset] == 28 {
 		sig[crypto.RecoveryIDOffset] -= 27 // Transform yellow paper V from 27/28 to 0/1
 	}
 
-	recovered, err := crypto.SigToPub(hash.Bytes(), sig)
+	recovered, err := crypto.SigToPub(msg, sig)
 	if err != nil {
 		return false, ""
 	}
@@ -116,7 +117,7 @@ func verifySig(sigHex string, msg []byte) (bool, string) {
 
 	sigPublicKeyBytes := crypto.FromECDSAPub(recovered)
 	signatureNoRecoverID := sig[:len(sig)-1] // remove recovery id
-	verified := crypto.VerifySignature(sigPublicKeyBytes, hash.Bytes(), signatureNoRecoverID)
+	verified := crypto.VerifySignature(sigPublicKeyBytes, msg, signatureNoRecoverID)
 	return verified, recoveredAddr.Hex()
 }
 
@@ -179,7 +180,7 @@ func (a *AppService) EthAuthorize(ctx context.Context, req *pb.EthAuthorizeReque
 		Address: user.Address,
 		StandardClaims: jwt2.StandardClaims{
 			NotBefore: time.Now().Unix(),              // 签名的生效时间
-			ExpiresAt: time.Now().Unix() + 60*60*24*2, // 7天过期
+			ExpiresAt: time.Now().Unix() + 60*60*24*2, // 2天过期
 			Issuer:    "game",
 		},
 	}
@@ -437,4 +438,242 @@ func (a *AppService) UserBackList(ctx context.Context, req *pb.UserBackListReque
 	}
 
 	return a.ac.UserBackList(ctx, address, req)
+}
+
+// UserMarketSeedList userMarketSeedList.
+func (a *AppService) UserMarketSeedList(ctx context.Context, req *pb.UserMarketSeedListRequest) (*pb.UserMarketSeedListReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		address string
+	)
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["Address"] == nil {
+			return &pb.UserMarketSeedListReply{Status: "无效token"}, nil
+		}
+
+		address = c["Address"].(string)
+
+		// 验证
+		var (
+			res bool
+			err error
+		)
+		res, err = addressCheck(address)
+		if nil != err {
+			return &pb.UserMarketSeedListReply{Status: "无效token"}, nil
+		}
+
+		if !res {
+			return &pb.UserMarketSeedListReply{Status: "无效token"}, nil
+		}
+	} else {
+		return &pb.UserMarketSeedListReply{Status: "无效token"}, nil
+	}
+
+	return a.ac.UserMarketSeedList(ctx, address, req)
+}
+
+// UserMarketLandList userMarketLandList.
+func (a *AppService) UserMarketLandList(ctx context.Context, req *pb.UserMarketLandListRequest) (*pb.UserMarketLandListReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		address string
+	)
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["Address"] == nil {
+			return &pb.UserMarketLandListReply{Status: "无效token"}, nil
+		}
+
+		address = c["Address"].(string)
+
+		// 验证
+		var (
+			res bool
+			err error
+		)
+		res, err = addressCheck(address)
+		if nil != err {
+			return &pb.UserMarketLandListReply{Status: "无效token"}, nil
+		}
+
+		if !res {
+			return &pb.UserMarketLandListReply{Status: "无效token"}, nil
+		}
+	} else {
+		return &pb.UserMarketLandListReply{Status: "无效token"}, nil
+	}
+
+	return a.ac.UserMarketLandList(ctx, address, req)
+}
+
+// UserMarketPropList userMarketPropList.
+func (a *AppService) UserMarketPropList(ctx context.Context, req *pb.UserMarketPropListRequest) (*pb.UserMarketPropListReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		address string
+	)
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["Address"] == nil {
+			return &pb.UserMarketPropListReply{Status: "无效token"}, nil
+		}
+
+		address = c["Address"].(string)
+
+		// 验证
+		var (
+			res bool
+			err error
+		)
+		res, err = addressCheck(address)
+		if nil != err {
+			return &pb.UserMarketPropListReply{Status: "无效token"}, nil
+		}
+
+		if !res {
+			return &pb.UserMarketPropListReply{Status: "无效token"}, nil
+		}
+	} else {
+		return &pb.UserMarketPropListReply{Status: "无效token"}, nil
+	}
+
+	return a.ac.UserMarketPropList(ctx, address, req)
+}
+
+// UserMarketRentLandList userMarketRentLandList.
+func (a *AppService) UserMarketRentLandList(ctx context.Context, req *pb.UserMarketRentLandListRequest) (*pb.UserMarketRentLandListReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		address string
+	)
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["Address"] == nil {
+			return &pb.UserMarketRentLandListReply{Status: "无效token"}, nil
+		}
+
+		address = c["Address"].(string)
+
+		// 验证
+		var (
+			res bool
+			err error
+		)
+		res, err = addressCheck(address)
+		if nil != err {
+			return &pb.UserMarketRentLandListReply{Status: "无效token"}, nil
+		}
+
+		if !res {
+			return &pb.UserMarketRentLandListReply{Status: "无效token"}, nil
+		}
+	} else {
+		return &pb.UserMarketRentLandListReply{Status: "无效token"}, nil
+	}
+
+	return a.ac.UserMarketRentLandList(ctx, address, req)
+}
+
+// UserMyMarketList userMyMarketList.
+func (a *AppService) UserMyMarketList(ctx context.Context, req *pb.UserMyMarketListRequest) (*pb.UserMyMarketListReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		address string
+	)
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["Address"] == nil {
+			return &pb.UserMyMarketListReply{Status: "无效token"}, nil
+		}
+
+		address = c["Address"].(string)
+
+		// 验证
+		var (
+			res bool
+			err error
+		)
+		res, err = addressCheck(address)
+		if nil != err {
+			return &pb.UserMyMarketListReply{Status: "无效token"}, nil
+		}
+
+		if !res {
+			return &pb.UserMyMarketListReply{Status: "无效token"}, nil
+		}
+	} else {
+		return &pb.UserMyMarketListReply{Status: "无效token"}, nil
+	}
+
+	return a.ac.UserMyMarketList(ctx, address, req)
+}
+
+// UserNoticeList NoticeList.
+func (a *AppService) UserNoticeList(ctx context.Context, req *pb.UserNoticeListRequest) (*pb.UserNoticeListReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		address string
+	)
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["Address"] == nil {
+			return &pb.UserNoticeListReply{Status: "无效token"}, nil
+		}
+
+		address = c["Address"].(string)
+
+		// 验证
+		var (
+			res bool
+			err error
+		)
+		res, err = addressCheck(address)
+		if nil != err {
+			return &pb.UserNoticeListReply{Status: "无效token"}, nil
+		}
+
+		if !res {
+			return &pb.UserNoticeListReply{Status: "无效token"}, nil
+		}
+	} else {
+		return &pb.UserNoticeListReply{Status: "无效token"}, nil
+	}
+
+	return a.ac.UserNoticeList(ctx, address, req)
+}
+
+// UserSkateRewardList userSkateRewardList.
+func (a *AppService) UserSkateRewardList(ctx context.Context, req *pb.UserSkateRewardListRequest) (*pb.UserSkateRewardListReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		address string
+	)
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["Address"] == nil {
+			return &pb.UserSkateRewardListReply{Status: "无效token"}, nil
+		}
+
+		address = c["Address"].(string)
+
+		// 验证
+		var (
+			res bool
+			err error
+		)
+		res, err = addressCheck(address)
+		if nil != err {
+			return &pb.UserSkateRewardListReply{Status: "无效token"}, nil
+		}
+
+		if !res {
+			return &pb.UserSkateRewardListReply{Status: "无效token"}, nil
+		}
+	} else {
+		return &pb.UserSkateRewardListReply{Status: "无效token"}, nil
+	}
+
+	return a.ac.UserSkateRewardList(ctx, address, req)
 }
