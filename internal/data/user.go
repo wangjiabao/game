@@ -798,7 +798,7 @@ func (u *UserRepo) GetUserRewardPage(ctx context.Context, userId uint64, reason 
 
 	res := make([]*biz.Reward, 0)
 	instance := u.data.DB(ctx).Table("reward").
-		Where("user_id=?").
+		Where("user_id=?", userId).
 		Where("reason in (?)", reason).
 		Order("id desc").
 		Scopes(Paginate(b.PageNum, b.PageSize))
