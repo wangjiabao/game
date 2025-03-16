@@ -119,6 +119,172 @@ service App {
 			get: "/api/app_server/user_skate_reward_list"
 		};
 	};
+
+	// 首页
+	rpc UserIndexList (UserIndexListRequest) returns (UserIndexListReply) {
+		option (google.api.http) = {
+			get: "/api/app_server/user_index_list"
+		};
+	};
+
+	// 排行榜
+	rpc UserOrderList (UserOrderListRequest) returns (UserOrderListReply) {
+		option (google.api.http) = {
+			get: "/api/app_server/user_order_list"
+		};
+	};
+
+	// 提现
+	rpc Withdraw (WithdrawRequest) returns (WithdrawReply) {
+		option (google.api.http) = {
+			post: "/api/app_server/withdraw"
+			body: "send_body"
+		};
+	};
+
+	// 兑换
+	rpc Exchange (ExchangeRequest) returns (ExchangeReply) {
+		option (google.api.http) = {
+			post: "/api/app_server/exchange"
+			body: "send_body"
+		};
+	};
+
+	// 合成土地
+	rpc GetLand (GetLandRequest) returns (GetLandReply) {
+		option (google.api.http) = {
+			post: "/api/app_server/get_land"
+			body: "send_body"
+		};
+	};
+
+	// 粮仓的质押和赎回
+	rpc StakeGit (StakeGitRequest) returns (StakeGitReply) {
+		option (google.api.http) = {
+			post: "/api/app_server/stake_git"
+			body: "send_body"
+		};
+	};
+
+	//  购买盲盒
+	rpc BuyBox (BuyBoxRequest) returns (BuyBoxReply) {
+		option (google.api.http) = {
+			post: "/api/app_server/buy_box"
+			body: "send_body"
+		};
+	};
+
+	//  出售道具下架道具
+	rpc Sell (SellRequest) returns (SellReply) {
+		option (google.api.http) = {
+			post: "/api/app_server/sell"
+			body: "send_body"
+		};
+	};
+
+	//  购买道具
+	rpc Buy (BuyRequest) returns (BuyReply) {
+		option (google.api.http) = {
+			post: "/api/app_server/sell"
+			body: "send_body"
+		};
+	};
+
+	//  出租土地结束出租
+	rpc RentLand (RentLandRequest) returns (RentLandReply) {
+		option (google.api.http) = {
+			post: "/api/app_server/rent_land"
+			body: "send_body"
+		};
+	};
+
+	//  培育
+	rpc LandAddOutRate (LandAddOutRateRequest) returns (LandAddOutRateReply) {
+		option (google.api.http) = {
+			post: "/api/app_server/land_add_out_rate"
+			body: "send_body"
+		};
+	};
+
+	// 放大器质押解压
+	rpc SkateGet (SkateGetRequest) returns (SkateGetReply) {
+		option (google.api.http) = {
+			post: "/api/app_server/skate_get"
+			body: "send_body"
+		};
+	};
+
+	//  放大器游戏
+	rpc SkateGetPlay (SkateGetPlayRequest) returns (SkateGetPlayReply) {
+		option (google.api.http) = {
+			post: "/api/app_server/skate_get_play"
+			body: "send_body"
+		};
+	};
+
+	//  土地替换，收回
+	rpc LandPlay (LandPlayRequest) returns (LandPlayReply) {
+		option (google.api.http) = {
+			post: "/api/app_server/land_play"
+			body: "send_body"
+		};
+	};
+
+	//  种植和出租的种植
+	rpc LandPlayOne (LandPlayOneRequest) returns (LandPlayOneReply) {
+		option (google.api.http) = {
+			post: "/api/app_server/land_play_one"
+			body: "send_body"
+		};
+	};
+
+	//  收成熟植物和出租的
+	rpc LandPlayTwo (LandPlayTwoRequest) returns (LandPlayTwoReply) {
+		option (google.api.http) = {
+			post: "/api/app_server/land_play_two"
+			body: "send_body"
+		};
+	};
+
+	//  施肥和出租的
+	rpc LandPlayThree (LandPlayThreeRequest) returns (LandPlayThreeReply) {
+		option (google.api.http) = {
+			post: "/api/app_server/land_play_three"
+			body: "send_body"
+		};
+	};
+
+	// 杀虫和出租的
+	rpc LandPlayFour (LandPlayFourRequest) returns (LandPlayFourReply) {
+		option (google.api.http) = {
+			post: "/api/app_server/land_play_four"
+			body: "send_body"
+		};
+	};
+
+	// 浇水和出租的
+	rpc LandPlayFive (LandPlayFiveRequest) returns (LandPlayFiveReply) {
+		option (google.api.http) = {
+			post: "/api/app_server/land_play_five"
+			body: "send_body"
+		};
+	};
+
+	// 铲子铲别人
+	rpc LandPlaySix (LandPlaySixRequest) returns (LandPlaySixReply) {
+		option (google.api.http) = {
+			post: "/api/app_server/land_play_six"
+			body: "send_body"
+		};
+	};
+
+	// 手套偷别人
+	rpc LandPlaySeven (LandPlaySevenRequest) returns (LandPlaySevenReply) {
+		option (google.api.http) = {
+			post: "/api/app_server/land_play_seven"
+			body: "send_body"
+		};
+	};
 }
 
 message TestSignRequest {
@@ -204,7 +370,7 @@ message UserRecommendReply {
 	repeated List list = 3;
 	message List {
 		string address = 1; // 地址
-		double level = 2; // 等级
+		uint64 level = 2; // 等级
 		string createdAt = 3; // 时间
 	}
 }
@@ -239,9 +405,12 @@ message UserLandReply {
 		uint64 id = 1; // id 操作时需要使用的参数，显示时#000001，一共6个整数位
 		uint64 level = 2; // 等级 对应的内容：对应文档土地颜色那列从上到下，对应图片资源
 		uint64 health = 3; // 肥沃度
-		uint64 status = 4; // 状态：默认1, 出租中3，出售中4，拍卖中5，左上角显示对应的英文文案，在资源里找对应的图
+		uint64 status = 4; // 状态：默认1,种植2, 出租中3，出售中4，拍卖中5，左上角显示对应的英文文案，在资源里找对应的图
 		double outRate = 5; // 增产率
-		double perHealth = 6; // 种植消耗
+		uint64 perHealth = 6; // 种植消耗
+		uint64 one = 7; // 可出租
+		uint64 two = 8; // 可合成
+		uint64 three = 9; // 可出售
 	}
 }
 
@@ -287,7 +456,7 @@ message UserBackListReply {
 	message List {
 		uint64 id = 1; // id 操作时需要使用的参数，显示时#000001，一共6个整数位
 		uint64 type = 5; // 1种子，2道具
-		uint64 num = 2; // 对应的内容：对应文档种子和道具那列从上到下，1-14，15铲子，16盲盒
+		uint64 num = 2; // 对应的内容：对应文档种子和道具那列从上到下，1-14，15铲子，16盲盒，17地契
 		uint64 useNum = 3; // 剩余使用次数
 		uint64 status = 4; // 状态：默认1，2，出售中4，左上角显示对应的英文文案，在资源里找对应的图
 		double outMax = 6; // 如果是种子，需要展示的产出数量
@@ -323,8 +492,8 @@ message UserMarketLandListReply {
 	repeated List list = 3;
 	message List {
 		uint64 id = 1; // id 操作时需要使用的参数，显示时#000001，一共6个整数位
-		double level = 2; // 等级 对应的内容：对应文档土地颜色那列从上到下，对应图片资源
-		double maxHealth = 4; // 肥沃度
+		uint64 level = 2; // 等级 对应的内容：对应文档土地颜色那列从上到下，对应图片资源
+	  uint64 maxHealth = 4; // 肥沃度
 		double amount = 3; // 售价
 	}
 }
@@ -359,8 +528,9 @@ message UserMarketRentLandListReply {
 	message List {
 		uint64 id = 1; // id 操作时需要使用的参数，显示时#000001，一共6个整数位
 		uint64 level = 2; // 土地级别
-		double maxHealth = 3; // 肥沃度
+		uint64 maxHealth = 3; // 肥沃度
 		double rentAmount = 4; // 出租收益
+		string address = 5;
 	}
 }
 
@@ -383,7 +553,7 @@ message UserMyMarketListReply {
 
 		uint64 level = 7; // 如果是土地，土地级别
 		uint64 status = 4; // 如果是土地，状态：默认1出租，2出售
-		double maxHealth = 9; // 如果是土地， 肥沃度
+		uint64 maxHealth = 9; // 如果是土地， 肥沃度
 
 		double amount = 8; // 售价
 
@@ -418,5 +588,312 @@ message UserSkateRewardListReply {
 	message List {
 		string address = 1; // 地址
 		string content = 2; // 消息内容
+		double amount = 3; // 参与金额
+		double reward = 4; // 赢的钱
+		uint64 status = 5; // 1赢，2输
 	}
+}
+
+message UserIndexListRequest {
+	string address = 1; // 可选，如果是别人农场，直接传入地址参数
+}
+
+message UserIndexListReply {
+	string status = 1; // 状态为字符串"ok"时接口正常，其他情况忽略，弹出显示该字段文案即可
+
+	uint64 count = 2; // 总个数，每页1000个
+	repeated List list = 3;
+	message List {
+		uint64 locationNum = 4; // 土地在首页位置，1-9，从上左到右，从上到下
+
+		uint64 landId = 1; // 土地id，如果>0，表示布置了土地
+		uint64 landLevel = 3; // 布置了土地，土地的等级 1-10 对应10种颜色
+		uint64 health = 11; // 布置了土地，土肥沃度
+		double outRate = 12; // 布置了土地，增产率
+		uint64 perHealth = 13; // 布置了土地，种植消耗
+
+		uint64 landUseId = 2; // 土地正在种植的数据id，如果>0，表示这块土地上种植了，后续的操作都会用到和种植有关的
+		uint64 seedId = 6; // 种植了，种植的种子id
+		uint64 start = 7; // 种植了，开始时间戳
+		uint64 end = 8; // 种植了，结束时间戳
+		uint64 currentTime = 9; // 服务器当前时间戳，如果有显示的不同阶段的图片状态，就按时间看处于第几个状态显示对应的图片就行，比如有3个阶段的图片，那就计算一下处于时间显示就行
+
+		uint64 status = 10; // 当前种植状态，1表示正常，2表示虫子，3表示缺水，显示对应的图片
+		double reward = 5; // 种植了，结束时间<=当前时间戳, 如果=0没成熟，>0成熟后奖励数量，如果是别人农场，当>0时可以显示手套可以偷
+	}
+}
+
+
+message UserOrderListRequest {
+	uint64 page = 1;
+}
+
+message UserOrderListReply {
+	string status = 1; // 状态为字符串"ok"时接口正常，其他情况忽略，弹出显示该字段文案即可
+
+	uint64 count = 2; // 总个数，每页1000个
+	repeated List list = 3;
+	message List {
+		string address = 1; // 地址
+		double git = 2; // git
+	}
+}
+
+message WithdrawRequest {
+	message SendBody{
+		uint64 amount = 1; // 必须在userinfo接口的withdrawMin和withdrawMax之间的正整数
+		string sign = 2; // 签名
+	}
+
+	SendBody send_body = 1;
+}
+
+message WithdrawReply {
+	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
+}
+
+message ExchangeRequest {
+	message SendBody{
+		uint64 amount = 1; // 1和userinfo接口的git余额之间的正整数，注意手续费的显示，需要乘以userinfo的兑换手续费字段，第二个数字就是减去手续费的值
+		string sign = 2; // 签名
+	}
+
+	SendBody send_body = 1;
+}
+
+message ExchangeReply {
+	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
+}
+
+message GetLandRequest {
+	message SendBody{
+		uint64 num = 1; // 合成方方式：化肥1，土地2，注意合成的数量够不够，前端限制一下
+		uint64 landOneId = 2; // 如果num=2，必须参数，在背包中的选择的土地的id
+		uint64 landTwoId = 3; // 如果num=2，必须参数，在背包中的选择的土地的id
+		string sign = 4; // 签名
+	}
+
+	SendBody send_body = 1;
+}
+
+message GetLandReply {
+	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
+}
+
+message StakeGitRequest {
+	message SendBody{
+		uint64 num = 1; // 质押1，解压2
+		uint64 amount = 3; // 数量
+		string sign = 2; // 签名
+	}
+
+	SendBody send_body = 1;
+}
+
+message StakeGitReply {
+	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
+}
+
+message BuyBoxRequest {
+	message SendBody{
+		uint64 num = 1; // 购买数量
+		string sign = 2; // 签名
+	}
+
+	SendBody send_body = 1;
+}
+
+message BuyBoxReply {
+	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
+}
+
+message SellRequest {
+	message SendBody{
+		uint64 id = 1; // 出售id
+		uint64 num = 5; // 出售1，下架2
+		uint64 sellType = 3; // 出售类型，1种子，2道具，3土地
+		uint64 amount = 4; // 出售价格
+		string sign = 2; // 签名
+	}
+
+	SendBody send_body = 1;
+}
+
+message SellReply {
+	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
+}
+
+message BuyRequest {
+	message SendBody{
+		uint64 id = 1; // 购买道具id
+		uint64 buyType = 3; // 出售类型，1种子，2道具，3土地
+		string sign = 2; // 签名
+	}
+
+	SendBody send_body = 1;
+}
+
+message BuyReply {
+	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
+}
+
+message RentLandRequest {
+	message SendBody{
+		uint64 num = 4; // 1出租，2结束出租
+		uint64 landId = 1; // 土地id
+		uint64 rate = 3; // 收获比例 1-5个挡位
+		string sign = 2; // 签名
+	}
+
+	SendBody send_body = 1;
+}
+
+message RentLandReply {
+	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
+}
+
+message LandAddOutRateRequest {
+	message SendBody{
+		uint64 landId = 1; // 土地id
+		uint64 id = 3; // 选择的道具化肥id
+		string sign = 2; // 签名
+	}
+
+	SendBody send_body = 1;
+}
+
+message LandAddOutRateReply {
+	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
+}
+
+message SkateGetRequest {
+	message SendBody{
+		uint64 num = 1; // 质押1，解压2
+		uint64 amount = 3; // 数量
+		string sign = 2; // 签名
+	}
+
+	SendBody send_body = 1;
+}
+
+message SkateGetReply {
+	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
+}
+
+message SkateGetPlayRequest {
+	message SendBody{
+		uint64 amount = 1; // 数量
+	}
+
+	SendBody send_body = 1;
+}
+
+message SkateGetPlayReply {
+	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
+}
+
+message LandPlayRequest {
+	message SendBody{
+		uint64 num = 2; // 1收回土地，2替换土地
+		uint64 landId = 1; // 土地id，必须
+		uint64 landTwoId = 3; // 替换土地必须
+	}
+
+	SendBody send_body = 1;
+}
+
+message LandPlayReply {
+	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
+}
+
+
+message LandPlayOneRequest {
+	message SendBody{
+		uint64 landId = 1; // 土地id，必须，我怕能判断是否是出租
+		uint64 seedId = 3; // 种子d，必须
+	}
+
+	SendBody send_body = 1;
+}
+
+message LandPlayOneReply {
+	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
+}
+
+message LandPlayTwoRequest {
+	message SendBody{
+		uint64 landUseId = 1; // index列表里的landUseId，种植记录
+	}
+
+	SendBody send_body = 1;
+}
+
+message LandPlayTwoReply {
+	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
+}
+
+message LandPlayThreeRequest {
+	message SendBody{
+		uint64 landUseId = 1; // index列表里的landUseId，种植记录
+		uint64 id = 2; // 化肥id
+	}
+
+	SendBody send_body = 1;
+}
+
+message LandPlayThreeReply {
+	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
+}
+
+message LandPlayFourRequest {
+	message SendBody{
+		uint64 landUseId = 1; // index列表里的landUseId，种植记录
+		uint64 id = 2; // 化肥id
+	}
+
+	SendBody send_body = 1;
+}
+
+message LandPlayFourReply {
+	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
+}
+
+
+message LandPlayFiveRequest {
+	message SendBody{
+		uint64 landUseId = 1; // index列表里的landUseId，种植记录
+		uint64 id = 2; // 水id
+	}
+
+	SendBody send_body = 1;
+}
+
+message LandPlayFiveReply {
+	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
+}
+
+message LandPlaySixRequest {
+	message SendBody{
+		uint64 landUseId = 1; // index列表里的landUseId，种植记录
+		uint64 id = 2; // 铲子id
+	}
+
+	SendBody send_body = 1;
+}
+
+message LandPlaySixReply {
+	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
+}
+
+message LandPlaySevenRequest {
+	message SendBody{
+		uint64 landUseId = 1; // index列表里的landUseId，种植记录
+		uint64 id = 2; // 手套id
+	}
+
+	SendBody send_body = 1;
+}
+
+message LandPlaySevenReply {
+	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
 }
