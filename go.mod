@@ -2,8 +2,6 @@ module game
 
 go 1.22.0
 
-toolchain go1.22.3
-
 require (
 	github.com/go-kratos/kratos/v2 v2.4.1
 	github.com/go-redis/redis/v8 v8.11.5
