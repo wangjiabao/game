@@ -567,12 +567,12 @@ func (u *UserRepo) GetConfigByKeys(ctx context.Context, keys ...string) ([]*biz.
 // GetSkateGitByUserId .
 func (u *UserRepo) GetSkateGitByUserId(ctx context.Context, userId uint64) (*biz.SkateGit, error) {
 	var skateGit *SkateGit
-	if err := u.data.DB(ctx).Where("user_id=?", userId).Table("skate_git").First(&skateGit).Error; err != nil {
+	if err := u.data.DB(ctx).Where("user_id=?", userId).Table("stake_git").First(&skateGit).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
 
-		return nil, errors.New(500, "SKATE GIT ERROR", err.Error())
+		return nil, errors.New(500, "stake GIT ERROR", err.Error())
 	}
 
 	return &biz.SkateGit{
@@ -707,12 +707,12 @@ func (u *UserRepo) GetBoxRecordCount(ctx context.Context, num uint64) (int64, er
 // GetSkateGetTotal .
 func (u *UserRepo) GetSkateGetTotal(ctx context.Context) (*biz.SkateGetTotal, error) {
 	var skateGetTotal *SkateGetTotal
-	if err := u.data.DB(ctx).Table("skate_get_total").First(&skateGetTotal).Error; err != nil {
+	if err := u.data.DB(ctx).Table("stake_get_total").First(&skateGetTotal).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
 
-		return nil, errors.New(500, "skate_get_total ERROR", err.Error())
+		return nil, errors.New(500, "stake_get_total ERROR", err.Error())
 	}
 
 	return &biz.SkateGetTotal{
@@ -726,12 +726,12 @@ func (u *UserRepo) GetSkateGetTotal(ctx context.Context) (*biz.SkateGetTotal, er
 // GetUserSkateGet .
 func (u *UserRepo) GetUserSkateGet(ctx context.Context, userId uint64) (*biz.SkateGet, error) {
 	var skateGet *SkateGet
-	if err := u.data.DB(ctx).Table("skate_get").Where("user_id=?", userId).First(&skateGet).Error; err != nil {
+	if err := u.data.DB(ctx).Table("stake_get").Where("user_id=?", userId).First(&skateGet).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
 
-		return nil, errors.New(500, "SKATE GET ERROR", err.Error())
+		return nil, errors.New(500, "stake GET ERROR", err.Error())
 	}
 
 	return &biz.SkateGet{
