@@ -1449,7 +1449,7 @@ func (ac *AppUsecase) UserIndexList(ctx context.Context, address string, req *pb
 	lands, err = ac.userRepo.GetLandByUserIDUsing(ctx, user.ID, status)
 	if nil != err {
 		return &pb.UserIndexListReply{
-			Status: "不存在用户",
+			Status: "错误查询",
 		}, nil
 	}
 
@@ -1464,12 +1464,31 @@ func (ac *AppUsecase) UserIndexList(ctx context.Context, address string, req *pb
 	landUserUse, err = ac.userRepo.GetLandUserUseByLandIDsMapUsing(ctx, user.ID, landIds)
 	if nil != err {
 		return &pb.UserIndexListReply{
-			Status: "不存在用户",
+			Status: "错误查询",
+		}, nil
+	}
+
+	userIds := make([]uint64, 0)
+	for _, vLand := range landUserUse {
+		userIds = append(userIds, vLand.UserId)
+	}
+
+	usersMap := make(map[uint64]*User)
+	usersMap, err = ac.userRepo.GetUserByUserIds(ctx, userIds)
+	if nil != err {
+		return &pb.UserIndexListReply{
+			Status: "错误查询",
 		}, nil
 	}
 
 	for _, vLand := range lands {
+		plantUserAddressTmp := ""
+
 		if _, ok := landUserUse[vLand.ID]; ok {
+			if _, ok2 := usersMap[landUserUse[vLand.ID].UserId]; ok2 {
+				plantUserAddressTmp = usersMap[landUserUse[vLand.ID].UserId].Address
+			}
+
 			rewardTmp := float64(0)
 			statusTmp := uint64(1)
 			if landUserUse[vLand.ID].OverTime <= uint64(time.Now().Unix()) {
@@ -1483,40 +1502,46 @@ func (ac *AppUsecase) UserIndexList(ctx context.Context, address string, req *pb
 			}
 
 			res = append(res, &pb.UserIndexListReply_List{
-				LocationNum: vLand.LocationNum,
-				LandId:      vLand.ID,
-				LandLevel:   vLand.Level,
-				Health:      vLand.MaxHealth,
-				OutRate:     vLand.OutPutRate,
-				PerHealth:   vLand.PerHealth,
-				LandUseId:   landUserUse[vLand.ID].ID,
-				SeedId:      landUserUse[vLand.ID].SeedTypeId,
-				Start:       landUserUse[vLand.ID].BeginTime,
-				End:         landUserUse[vLand.ID].OverTime,
-				CurrentTime: uint64(time.Now().Unix()),
-				Status:      statusTmp,
-				Reward:      rewardTmp,
+				LocationNum:      vLand.LocationNum,
+				LandId:           vLand.ID,
+				LandLevel:        vLand.Level,
+				Health:           vLand.MaxHealth,
+				OutRate:          vLand.OutPutRate,
+				PerHealth:        vLand.PerHealth,
+				LandUseId:        landUserUse[vLand.ID].ID,
+				SeedId:           landUserUse[vLand.ID].SeedTypeId,
+				Start:            landUserUse[vLand.ID].BeginTime,
+				End:              landUserUse[vLand.ID].OverTime,
+				CurrentTime:      uint64(time.Now().Unix()),
+				Status:           statusTmp,
+				Reward:           rewardTmp,
+				PlantUserAddress: plantUserAddressTmp,
 			})
 		} else {
 			res = append(res, &pb.UserIndexListReply_List{
-				LocationNum: vLand.LocationNum,
-				LandId:      vLand.ID,
-				LandLevel:   vLand.Level,
-				Health:      vLand.MaxHealth,
-				OutRate:     vLand.OutPutRate,
-				PerHealth:   vLand.PerHealth,
-				LandUseId:   0,
-				SeedId:      0,
-				Start:       0,
-				End:         0,
-				CurrentTime: 0,
-				Status:      0,
-				Reward:      0,
+				LocationNum:      vLand.LocationNum,
+				LandId:           vLand.ID,
+				LandLevel:        vLand.Level,
+				Health:           vLand.MaxHealth,
+				OutRate:          vLand.OutPutRate,
+				PerHealth:        vLand.PerHealth,
+				LandUseId:        0,
+				SeedId:           0,
+				Start:            0,
+				End:              0,
+				CurrentTime:      0,
+				Status:           0,
+				Reward:           0,
+				PlantUserAddress: plantUserAddressTmp,
 			})
 		}
 	}
 
-	return nil, nil
+	return &pb.UserIndexListReply{
+		Status: "ok",
+		Count:  9,
+		List:   res,
+	}, nil
 }
 
 // UserOrderList userOrderList.

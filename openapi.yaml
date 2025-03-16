@@ -1260,6 +1260,8 @@ components:
                 reward:
                     type: number
                     format: double
+                plantUserAddress:
+                    type: string
         UserInfoReply:
             type: object
             properties:
