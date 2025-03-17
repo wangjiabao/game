@@ -560,6 +560,27 @@ func (u *UserRepo) CreateUser(ctx context.Context, uc *biz.User) (*biz.User, err
 	}, nil
 }
 
+// CreateSkateGit 创建 SkateGit 记录
+func (u *UserRepo) CreateSkateGit(ctx context.Context, sg *biz.SkateGit) (*biz.SkateGit, error) {
+	var skateGit SkateGit
+	skateGit.UserId = sg.UserId
+
+	res := u.data.DB(ctx).Table("skate_git").Create(&skateGit)
+	if res.Error != nil {
+		return nil, errors.New(500, "CREATE_SKATEGIT_ERROR", "SkateGit 记录创建失败")
+	}
+
+	return &biz.SkateGit{
+		ID:        skateGit.ID,
+		UserId:    skateGit.UserId,
+		Status:    skateGit.Status,
+		Amount:    skateGit.Amount,
+		Reward:    skateGit.Reward,
+		CreatedAt: skateGit.CreatedAt,
+		UpdatedAt: skateGit.UpdatedAt,
+	}, nil
+}
+
 // CreateUserRecommend .
 func (u *UserRepo) CreateUserRecommend(ctx context.Context, user *biz.User, recommendUser *biz.UserRecommend) (*biz.UserRecommend, error) {
 	var tmpRecommendCode string
@@ -2032,14 +2053,15 @@ func (u *UserRepo) GetLandByID(ctx context.Context, landID uint64) (*biz.Land, e
 }
 
 // Plant .
-func (u *UserRepo) Plant(ctx context.Context, status, originStatus uint64, landUserUse *biz.LandUserUse) error {
-	res := u.data.DB(ctx).Table("land").Where("id=?", landUserUse.LandId).Where("status=?", originStatus).Where("limit_date>=?", time.Now().Unix()).
+func (u *UserRepo) Plant(ctx context.Context, status, originStatus, perHealth uint64, landUserUse *biz.LandUserUse) error {
+	res := u.data.DB(ctx).Table("land").Where("id=?", landUserUse.LandId).Where("status=?", originStatus).Where("limit_date>=?", time.Now().Unix()).Where("max_health>=?", perHealth).
 		Updates(map[string]interface{}{
 			"status":     status,
+			"max_health": gorm.Expr("max_health - ?", perHealth),
 			"updated_at": time.Now().Format("2006-01-02 15:04:05"),
 		})
 	if res.Error != nil {
-		return errors.New(500, "plant", "更新盲盒记录失败")
+		return errors.New(500, "plant", "更新记录失败")
 	}
 
 	res = u.data.DB(ctx).Table("seed").Where("id=?", landUserUse.SeedId).Where("status=?", 0).
@@ -2048,7 +2070,7 @@ func (u *UserRepo) Plant(ctx context.Context, status, originStatus uint64, landU
 			"updated_at": time.Now().Format("2006-01-02 15:04:05"),
 		})
 	if res.Error != nil {
-		return errors.New(500, "plant", "更新盲盒记录失败")
+		return errors.New(500, "plant", "更新失败")
 	}
 
 	res = u.data.DB(ctx).Table("land_user_use").Create(&LandUserUse{
@@ -2269,5 +2291,56 @@ func (u *UserRepo) SellLand(ctx context.Context, propId uint64, userId uint64, s
 	if res.Error != nil {
 		return errors.New(500, "sellLand", "用户信息修改失败")
 	}
+	return nil
+}
+
+// RentLand .
+func (u *UserRepo) RentLand(ctx context.Context, landId uint64, userId uint64, rentRate float64) error {
+	res := u.data.DB(ctx).Table("land").Where("id=?", landId).Where("user_id=?", userId).Where("status=?", 1).
+		Updates(map[string]interface{}{"status": 3, "rent_out_put_rate": rentRate, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "RentLand", "用户信息修改失败")
+	}
+	return nil
+}
+
+// UnRentLand .
+func (u *UserRepo) UnRentLand(ctx context.Context, landId uint64, userId uint64) error {
+	res := u.data.DB(ctx).Table("land").Where("id=?", landId).Where("user_id=?", userId).Where("status=?", 3).
+		Updates(map[string]interface{}{"status": 1, "rent_out_put_rate": 0, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "RentLand", "用户信息修改失败")
+	}
+	return nil
+}
+
+// LandPull .
+func (u *UserRepo) LandPull(ctx context.Context, landId uint64, userId uint64) error {
+	res := u.data.DB(ctx).Table("land").Where("id=?", landId).Where("user_id=?", userId).Where("status=?", 1).
+		Updates(map[string]interface{}{"status": 0, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "LandPull", "用户信息修改失败")
+	}
+	return nil
+}
+
+// LandPush .
+func (u *UserRepo) LandPush(ctx context.Context, landId uint64, userId uint64) error {
+	res := u.data.DB(ctx).Table("land").Where("id=?", landId).Where("user_id=?", userId).Where("status=?", 0).
+		Updates(map[string]interface{}{"status": 1, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "LandPush", "用户信息修改失败")
+	}
+	return nil
+}
+
+// stakeGit .
+func (u *UserRepo) stakeGit(ctx context.Context, propId uint64, userId uint64, sellAmount float64) error {
+	res := u.data.DB(ctx).Table("stake_git").Where("user_id=?", userId).Where("status=?", 1).
+		Updates(map[string]interface{}{"status": 4, "sell_amount": sellAmount, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "sellLand", "用户信息修改失败")
+	}
+
 	return nil
 }

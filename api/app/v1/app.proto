@@ -823,7 +823,7 @@ message SkateGetPlayReply {
 
 message LandPlayRequest {
 	message SendBody{
-		uint64 num = 2; // 1收回土地，2替换土地
+		uint64 num = 2; // 1收回土地，2替换土地, 3放置土地
 		uint64 landId = 1; // 土地id，必须
 		uint64 landTwoId = 3; // 替换土地必须
 		string sign = 4; // 签名
