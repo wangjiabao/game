@@ -2061,6 +2061,68 @@ func (u *UserRepo) UpdateSeedValue(ctx context.Context, scene uint64, newSeed ui
 	return nil
 }
 
+// GetLandByUserIdLocationNum
+func (u *UserRepo) GetLandByUserIdLocationNum(ctx context.Context, userId uint64, locationNum uint64) (*biz.Land, error) {
+	var land Land
+
+	if err := u.data.DB(ctx).Table("land").Where("user_id = ?", userId).Where("location_num = ?", locationNum).First(&land).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil // 没有找到返回 nil
+		}
+		return nil, errors.New(500, "LAND ERROR", err.Error())
+	}
+
+	return &biz.Land{
+		ID:             land.ID,
+		UserId:         land.UserId,
+		Level:          land.Level,
+		OutPutRate:     land.OutPutRate,
+		RentOutPutRate: land.RentOutPutRate,
+		MaxHealth:      land.MaxHealth,
+		PerHealth:      land.PerHealth,
+		LimitDate:      land.LimitDate,
+		Status:         land.Status,
+		LocationNum:    land.LocationNum,
+		CreatedAt:      land.CreatedAt,
+		UpdatedAt:      land.UpdatedAt,
+		One:            land.One,
+		Two:            land.Two,
+		Three:          land.Three,
+		SellAmount:     land.SellAmount,
+	}, nil
+}
+
+// GetLandByIDTwo
+func (u *UserRepo) GetLandByIDTwo(ctx context.Context, landID uint64) (*biz.Land, error) {
+	var land Land
+
+	if err := u.data.DB(ctx).Table("land").Where("id = ?", landID).First(&land).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil // 没有找到返回 nil
+		}
+		return nil, errors.New(500, "LAND ERROR", err.Error())
+	}
+
+	return &biz.Land{
+		ID:             land.ID,
+		UserId:         land.UserId,
+		Level:          land.Level,
+		OutPutRate:     land.OutPutRate,
+		RentOutPutRate: land.RentOutPutRate,
+		MaxHealth:      land.MaxHealth,
+		PerHealth:      land.PerHealth,
+		LimitDate:      land.LimitDate,
+		Status:         land.Status,
+		LocationNum:    land.LocationNum,
+		CreatedAt:      land.CreatedAt,
+		UpdatedAt:      land.UpdatedAt,
+		One:            land.One,
+		Two:            land.Two,
+		Three:          land.Three,
+		SellAmount:     land.SellAmount,
+	}, nil
+}
+
 // GetLandByID 根据 Land ID 查询单条 Land 记录
 func (u *UserRepo) GetLandByID(ctx context.Context, landID uint64) (*biz.Land, error) {
 	var land Land
@@ -2357,7 +2419,7 @@ func (u *UserRepo) UnRentLand(ctx context.Context, landId uint64, userId uint64)
 // LandPull .
 func (u *UserRepo) LandPull(ctx context.Context, landId uint64, userId uint64) error {
 	res := u.data.DB(ctx).Table("land").Where("id=?", landId).Where("user_id=?", userId).Where("status=?", 1).
-		Updates(map[string]interface{}{"status": 0, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+		Updates(map[string]interface{}{"status": 0, "location_num": 0, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil {
 		return errors.New(500, "LandPull", "用户信息修改失败")
 	}
@@ -2365,9 +2427,9 @@ func (u *UserRepo) LandPull(ctx context.Context, landId uint64, userId uint64) e
 }
 
 // LandPush .
-func (u *UserRepo) LandPush(ctx context.Context, landId uint64, userId uint64) error {
-	res := u.data.DB(ctx).Table("land").Where("id=?", landId).Where("user_id=?", userId).Where("status=?", 0).
-		Updates(map[string]interface{}{"status": 1, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+func (u *UserRepo) LandPush(ctx context.Context, landId uint64, userId, locationNum uint64) error {
+	res := u.data.DB(ctx).Table("land").Where("id=?", landId).Where("user_id=?", userId).Where("status=?", 0).Where("location_num=?", 0).
+		Updates(map[string]interface{}{"status": 1, "location_num": locationNum, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil {
 		return errors.New(500, "LandPush", "用户信息修改失败")
 	}

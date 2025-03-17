@@ -1065,6 +1065,8 @@ components:
                     type: string
                 landTwoId:
                     type: string
+                locationNum:
+                    type: string
                 sign:
                     type: string
         LandPlaySevenReply:

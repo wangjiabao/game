@@ -383,6 +383,8 @@ type UserRepo interface {
 	UpdateSeedValue(ctx context.Context, scene uint64, newSeed uint64) error
 	GetSeedByID(ctx context.Context, seedID, userId, status uint64) (*Seed, error)
 	GetLandByID(ctx context.Context, landID uint64) (*Land, error)
+	GetLandByIDTwo(ctx context.Context, landID uint64) (*Land, error)
+	GetLandByUserIdLocationNum(ctx context.Context, userId uint64, locationNum uint64) (*Land, error)
 	Plant(ctx context.Context, status, originStatus, perHealth uint64, landUserUse *LandUserUse) error
 	GetSeedBuyByID(ctx context.Context, seedID, status uint64) (*Seed, error)
 	GetPropByID(ctx context.Context, propID, status uint64) (*Prop, error)
@@ -399,7 +401,7 @@ type UserRepo interface {
 	RentLand(ctx context.Context, landId uint64, userId uint64, rentRate float64) error
 	UnRentLand(ctx context.Context, landId uint64, userId uint64) error
 	LandPull(ctx context.Context, landId uint64, userId uint64) error
-	LandPush(ctx context.Context, landId uint64, userId uint64) error
+	LandPush(ctx context.Context, landId uint64, userId, locationNum uint64) error
 }
 
 // AppUsecase is an app usecase.
@@ -2676,6 +2678,12 @@ func (ac *AppUsecase) Sell(ctx context.Context, address string, req *pb.SellRequ
 				}, nil
 			}
 
+			if 0 != land.LocationNum {
+				return &pb.SellReply{
+					Status: "土地布置中",
+				}, nil
+			}
+
 			if 0 != land.Status {
 				return &pb.SellReply{
 					Status: "不符合上架要求",
@@ -2760,6 +2768,12 @@ func (ac *AppUsecase) Sell(ctx context.Context, address string, req *pb.SellRequ
 			if user.ID != land.UserId {
 				return &pb.SellReply{
 					Status: "不是自己的",
+				}, nil
+			}
+
+			if 0 != land.LocationNum {
+				return &pb.SellReply{
+					Status: "土地布置中",
 				}, nil
 			}
 
@@ -2942,7 +2956,7 @@ func (ac *AppUsecase) LandPlay(ctx context.Context, address string, req *pb.Land
 		var (
 			land *Land
 		)
-		land, err = ac.userRepo.GetLandByID(ctx, req.SendBody.LandId)
+		land, err = ac.userRepo.GetLandByIDTwo(ctx, req.SendBody.LandId)
 		if nil != err || nil == land {
 			return &pb.LandPlayReply{
 				Status: "不存在土地",
@@ -2974,10 +2988,18 @@ func (ac *AppUsecase) LandPlay(ctx context.Context, address string, req *pb.Land
 			land  *Land
 			land2 *Land
 		)
-		land, err = ac.userRepo.GetLandByID(ctx, req.SendBody.LandId)
+		land, err = ac.userRepo.GetLandByIDTwo(ctx, req.SendBody.LandId)
 		if nil != err || nil == land {
 			return &pb.LandPlayReply{
 				Status: "不存在土地",
+			}, nil
+		}
+
+		if 1 <= land.LocationNum && 9 >= land.LocationNum {
+
+		} else {
+			return &pb.LandPlayReply{
+				Status: "非布置土地",
 			}, nil
 		}
 
@@ -2985,6 +3007,12 @@ func (ac *AppUsecase) LandPlay(ctx context.Context, address string, req *pb.Land
 		if nil != err || nil == land2 {
 			return &pb.LandPlayReply{
 				Status: "不存在土地",
+			}, nil
+		}
+
+		if 0 != land2.LocationNum {
+			return &pb.LandPlayReply{
+				Status: "已布置土地",
 			}, nil
 		}
 
@@ -3018,7 +3046,7 @@ func (ac *AppUsecase) LandPlay(ctx context.Context, address string, req *pb.Land
 				return err
 			}
 
-			return ac.userRepo.LandPush(ctx, land2.ID, user.ID)
+			return ac.userRepo.LandPush(ctx, land2.ID, user.ID, land.LocationNum)
 		}); nil != err {
 			fmt.Println(err, "LandPullPush", user)
 			return &pb.LandPlayReply{
@@ -3027,8 +3055,22 @@ func (ac *AppUsecase) LandPlay(ctx context.Context, address string, req *pb.Land
 		}
 	} else if 3 == req.SendBody.Num {
 		var (
-			land *Land
+			tmpLand *Land
+			land    *Land
 		)
+		tmpLand, err = ac.userRepo.GetLandByUserIdLocationNum(ctx, user.ID, req.SendBody.LocationNum)
+		if nil != err {
+			return &pb.LandPlayReply{
+				Status: "错误查询",
+			}, nil
+		}
+
+		if nil != tmpLand {
+			return &pb.LandPlayReply{
+				Status: "存在布置土地",
+			}, nil
+		}
+
 		land, err = ac.userRepo.GetLandByID(ctx, req.SendBody.LandId)
 		if nil != err || nil == land {
 			return &pb.LandPlayReply{
@@ -3039,6 +3081,12 @@ func (ac *AppUsecase) LandPlay(ctx context.Context, address string, req *pb.Land
 		if user.ID != land.UserId {
 			return &pb.LandPlayReply{
 				Status: "不是自己的",
+			}, nil
+		}
+
+		if 0 != land.LocationNum {
+			return &pb.LandPlayReply{
+				Status: "不是空闲的土地",
 			}, nil
 		}
 
@@ -3055,7 +3103,7 @@ func (ac *AppUsecase) LandPlay(ctx context.Context, address string, req *pb.Land
 		}
 
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-			return ac.userRepo.LandPush(ctx, land.ID, user.ID)
+			return ac.userRepo.LandPush(ctx, land.ID, user.ID, req.SendBody.LocationNum)
 		}); nil != err {
 			fmt.Println(err, "LandPush", user)
 			return &pb.LandPlayReply{
