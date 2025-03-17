@@ -1328,6 +1328,8 @@ components:
                 reward:
                     type: number
                     format: double
+                rewardStatus:
+                    type: string
                 plantUserAddress:
                     type: string
         UserInfoReply:

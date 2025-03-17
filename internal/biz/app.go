@@ -1589,6 +1589,7 @@ func (ac *AppUsecase) UserIndexList(ctx context.Context, address string, req *pb
 				plantUserAddressTmp = usersMap[landUserUse[vLand.ID].UserId].Address
 			}
 
+			tmpRewardStatus := uint64(2)
 			rewardTmp := float64(0)
 			statusTmp := uint64(1)
 			if 0 != landUserUse[vLand.ID].One {
@@ -1607,10 +1608,13 @@ func (ac *AppUsecase) UserIndexList(ctx context.Context, address string, req *pb
 							rewardTmp = landUserUse[vLand.ID].OutNum - tmp
 						}
 					}
+
+					tmpRewardStatus = 1
 				}
 			} else {
 				if landUserUse[vLand.ID].OverTime <= uint64(now) {
 					rewardTmp = landUserUse[vLand.ID].OutNum
+					tmpRewardStatus = 1
 				}
 			}
 
@@ -1629,6 +1633,7 @@ func (ac *AppUsecase) UserIndexList(ctx context.Context, address string, req *pb
 				Status:           statusTmp,
 				Reward:           rewardTmp,
 				PlantUserAddress: plantUserAddressTmp,
+				RewardStatus:     tmpRewardStatus,
 			}
 		} else {
 			resTmp[vLand.LocationNum] = &pb.UserIndexListReply_List{
@@ -1646,6 +1651,7 @@ func (ac *AppUsecase) UserIndexList(ctx context.Context, address string, req *pb
 				Status:           0,
 				Reward:           0,
 				PlantUserAddress: plantUserAddressTmp,
+				RewardStatus:     2,
 			}
 		}
 	}
