@@ -469,9 +469,9 @@ func (ac *AppUsecase) GetExistUserByAddressOrCreate(ctx context.Context, address
 				return err
 			}
 
-			_, err = ac.userRepo.CreateSkateGit(ctx, &SkateGit{
-				UserId: user.ID,
-			})
+			//_, err = ac.userRepo.CreateSkateGit(ctx, &SkateGit{
+			//	UserId: user.ID,
+			//})
 			if err != nil {
 				return err
 			}
