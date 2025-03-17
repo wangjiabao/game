@@ -1580,6 +1580,7 @@ func (ac *AppUsecase) UserIndexList(ctx context.Context, address string, req *pb
 	}
 
 	resTmp := make(map[uint64]*pb.UserIndexListReply_List, 0)
+	now := time.Now().Unix()
 	for _, vLand := range lands {
 		plantUserAddressTmp := ""
 
@@ -1590,13 +1591,26 @@ func (ac *AppUsecase) UserIndexList(ctx context.Context, address string, req *pb
 
 			rewardTmp := float64(0)
 			statusTmp := uint64(1)
-			if landUserUse[vLand.ID].OverTime <= uint64(time.Now().Unix()) {
-				rewardTmp = landUserUse[vLand.ID].OutNum
+			if 0 != landUserUse[vLand.ID].One {
+				statusTmp = 3
+
+			} else if 0 != landUserUse[vLand.ID].Two {
+				statusTmp = 2
+				// 有虫子但是已经结束
+				if landUserUse[vLand.ID].OverTime <= uint64(now) {
+					if uint64(now) > landUserUse[vLand.ID].Two {
+						tmp := landUserUse[vLand.ID].OutNum * 0.01 * float64(uint64(now)-landUserUse[vLand.ID].Two) / 300
+
+						if tmp >= landUserUse[vLand.ID].OutNum {
+							rewardTmp = 0
+						} else {
+							rewardTmp = landUserUse[vLand.ID].OutNum - tmp
+						}
+					}
+				}
 			} else {
-				if 2 == landUserUse[vLand.ID].StopStatus {
-					statusTmp = 3
-				} else if 2 == landUserUse[vLand.ID].InsectStatus {
-					statusTmp = 2
+				if landUserUse[vLand.ID].OverTime <= uint64(now) {
+					rewardTmp = landUserUse[vLand.ID].OutNum
 				}
 			}
 
@@ -1611,7 +1625,7 @@ func (ac *AppUsecase) UserIndexList(ctx context.Context, address string, req *pb
 				SeedId:           landUserUse[vLand.ID].SeedTypeId,
 				Start:            landUserUse[vLand.ID].BeginTime,
 				End:              landUserUse[vLand.ID].OverTime,
-				CurrentTime:      uint64(time.Now().Unix()),
+				CurrentTime:      uint64(now),
 				Status:           statusTmp,
 				Reward:           rewardTmp,
 				PlantUserAddress: plantUserAddressTmp,
@@ -2145,6 +2159,12 @@ func (ac *AppUsecase) LandPlayOne(ctx context.Context, address string, req *pb.L
 	} else {
 		return &pb.LandPlayOneReply{
 			Status: "错误参数",
+		}, nil
+	}
+
+	if 0 == land.LocationNum {
+		return &pb.LandPlayOneReply{
+			Status: "未布置土地",
 		}, nil
 	}
 

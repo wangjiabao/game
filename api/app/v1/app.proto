@@ -628,6 +628,7 @@ message UserIndexListReply {
 
 		uint64 status = 10; // 当前种植状态，1表示正常，2表示虫子，3表示缺水，显示对应的图片
 		double reward = 5; // 种植了，结束时间<=当前时间戳, 如果=0没成熟，>0成熟后奖励数量，如果是别人农场，当>0时可以显示手套可以偷
+		uint64 rewardStatus = 17; // 成熟1,未成熟2
 
 		string plantUserAddress = 18;
 	}
