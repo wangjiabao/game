@@ -565,7 +565,7 @@ func (u *UserRepo) CreateSkateGit(ctx context.Context, sg *biz.SkateGit) (*biz.S
 	var skateGit SkateGit
 	skateGit.UserId = sg.UserId
 
-	res := u.data.DB(ctx).Table("skate_git").Create(&skateGit)
+	res := u.data.DB(ctx).Table("stake_git").Create(&skateGit)
 	if res.Error != nil {
 		return nil, errors.New(500, "CREATE_SKATEGIT_ERROR", "SkateGit 记录创建失败")
 	}
@@ -1288,6 +1288,46 @@ func (u *UserRepo) GetExchangeRecordsByUserID(ctx context.Context, userID uint64
 	}
 
 	return res, nil
+}
+
+// GetLandUserUseByID 根据 ID 获取一条 LandUserUse 记录
+func (u *UserRepo) GetLandUserUseByID(ctx context.Context, id uint64) (*biz.LandUserUse, error) {
+	var landUserUse LandUserUse
+
+	res := u.data.DB(ctx).Table("land_user_use").Where("id = ?", id).First(&landUserUse)
+	if res.Error != nil {
+		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, errors.New(500, "GET_LAND_USER_USE_ERROR", res.Error.Error())
+	}
+
+	return &biz.LandUserUse{
+		ID:           landUserUse.ID,
+		LandId:       landUserUse.LandId,
+		Level:        landUserUse.Level,
+		UserId:       landUserUse.UserId,
+		OwnerUserId:  landUserUse.OwnerUserId,
+		SeedId:       landUserUse.SeedId,
+		SeedTypeId:   landUserUse.SeedTypeId,
+		Status:       landUserUse.Status,
+		BeginTime:    landUserUse.BeginTime,
+		TotalTime:    landUserUse.TotalTime,
+		OverTime:     landUserUse.OverTime,
+		OutMaxNum:    landUserUse.OutMaxNum,
+		OutNum:       landUserUse.OutNum,
+		InsectStatus: landUserUse.InsectStatus,
+		OutSubNum:    landUserUse.OutSubNum,
+		StealNum:     landUserUse.StealNum,
+		StopStatus:   landUserUse.StopStatus,
+		StopTime:     landUserUse.StopTime,
+		SubTime:      landUserUse.SubTime,
+		UseChan:      landUserUse.UseChan,
+		CreatedAt:    landUserUse.CreatedAt,
+		UpdatedAt:    landUserUse.UpdatedAt,
+		One:          landUserUse.One,
+		Two:          landUserUse.Two,
+	}, nil
 }
 
 func (u *UserRepo) GetMarketRecordsByUserID(ctx context.Context, userID uint64, status uint64, b *biz.Pagination) ([]*biz.Market, error) {

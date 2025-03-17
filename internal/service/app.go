@@ -922,6 +922,50 @@ func (a *AppService) LandPlayOne(ctx context.Context, req *pb.LandPlayOneRequest
 	return a.ac.LandPlayOne(ctx, address, req)
 }
 
+func (a *AppService) LandPlayTwo(ctx context.Context, req *pb.LandPlayTwoRequest) (*pb.LandPlayTwoReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		address string
+	)
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["Address"] == nil {
+			return &pb.LandPlayTwoReply{Status: "无效token"}, nil
+		}
+
+		address = c["Address"].(string)
+
+		// 验证
+		var (
+			res bool
+			err error
+		)
+		res, err = addressCheck(address)
+		if nil != err {
+			return &pb.LandPlayTwoReply{Status: "无效token"}, nil
+		}
+
+		if !res {
+			return &pb.LandPlayTwoReply{Status: "无效token"}, nil
+		}
+	} else {
+		return &pb.LandPlayTwoReply{Status: "无效token"}, nil
+	}
+
+	var (
+		res             bool
+		addressFromSign string
+	)
+	res, addressFromSign = verifySig(req.SendBody.Sign, []byte(address))
+	if !res || addressFromSign != address {
+		return &pb.LandPlayTwoReply{
+			Status: "地址签名错误",
+		}, nil
+	}
+
+	return a.ac.LandPlayTwo(ctx, address, req)
+}
+
 func (a *AppService) Buy(ctx context.Context, req *pb.BuyRequest) (*pb.BuyReply, error) {
 	// 在上下文 context 中取出 claims 对象
 	var (
