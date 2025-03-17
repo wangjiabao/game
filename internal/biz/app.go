@@ -1577,6 +1577,7 @@ func (ac *AppUsecase) UserIndexList(ctx context.Context, address string, req *pb
 		}, nil
 	}
 
+	resTmp := make(map[uint64]*pb.UserIndexListReply_List, 0)
 	for _, vLand := range lands {
 		plantUserAddressTmp := ""
 
@@ -1597,7 +1598,7 @@ func (ac *AppUsecase) UserIndexList(ctx context.Context, address string, req *pb
 				}
 			}
 
-			res = append(res, &pb.UserIndexListReply_List{
+			resTmp[vLand.LocationNum] = &pb.UserIndexListReply_List{
 				LocationNum:      vLand.LocationNum,
 				LandId:           vLand.ID,
 				LandLevel:        vLand.Level,
@@ -1612,9 +1613,9 @@ func (ac *AppUsecase) UserIndexList(ctx context.Context, address string, req *pb
 				Status:           statusTmp,
 				Reward:           rewardTmp,
 				PlantUserAddress: plantUserAddressTmp,
-			})
+			}
 		} else {
-			res = append(res, &pb.UserIndexListReply_List{
+			resTmp[vLand.LocationNum] = &pb.UserIndexListReply_List{
 				LocationNum:      vLand.LocationNum,
 				LandId:           vLand.ID,
 				LandLevel:        vLand.Level,
@@ -1629,7 +1630,30 @@ func (ac *AppUsecase) UserIndexList(ctx context.Context, address string, req *pb
 				Status:           0,
 				Reward:           0,
 				PlantUserAddress: plantUserAddressTmp,
+			}
+		}
+	}
+
+	for i := uint64(1); i <= 9; i++ {
+		if _, ok := resTmp[i]; ok {
+			res = append(res, &pb.UserIndexListReply_List{
+				LocationNum:      0,
+				LandId:           0,
+				LandLevel:        0,
+				Health:           0,
+				OutRate:          0,
+				PerHealth:        0,
+				LandUseId:        0,
+				SeedId:           0,
+				Start:            0,
+				End:              0,
+				CurrentTime:      0,
+				Status:           0,
+				Reward:           0,
+				PlantUserAddress: "",
 			})
+		} else {
+			res = append(res, resTmp[i])
 		}
 	}
 
@@ -2154,13 +2178,14 @@ func (ac *AppUsecase) LandPlayOne(ctx context.Context, address string, req *pb.L
 		rngPlant = rand2.New(rand2.NewSource(seedInt))
 	}
 
+	now := uint64(time.Now().Unix())
 	one := uint64(0)
 	two := uint64(0)
 	r := rngPlant.Float64() // 生成 0.0 ~ 1.0 之间的随机数
 	if r < 0.05 {
-		one = 1
+		one = now + (seed.OutOverTime / 2)
 	} else if r < 0.10 {
-		two = 1
+		two = now + (seed.OutOverTime / 2)
 	}
 
 	originStatusTmp := land.Status
@@ -2169,7 +2194,6 @@ func (ac *AppUsecase) LandPlayOne(ctx context.Context, address string, req *pb.L
 		statusTmp = 8
 	}
 
-	now := uint64(time.Now().Unix())
 	if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 		return ac.userRepo.Plant(ctx, statusTmp, originStatusTmp, land.PerHealth, &LandUserUse{
 			LandId:      land.ID,
@@ -2183,8 +2207,8 @@ func (ac *AppUsecase) LandPlayOne(ctx context.Context, address string, req *pb.L
 			TotalTime:   seed.OutOverTime,
 			OverTime:    now + seed.OutOverTime,
 			OutMaxNum:   seed.OutMaxAmount * land.OutPutRate,
-			One:         one,
-			Two:         two,
+			One:         one, // 水时间
+			Two:         two, // 虫子时间
 		})
 	}); nil != err {
 		fmt.Println(err, "openBox", user)
