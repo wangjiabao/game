@@ -3,11 +3,14 @@ package biz
 import (
 	"context"
 	"crypto/rand"
+	"fmt"
 	pb "game/api/app/v1"
 	"github.com/go-kratos/kratos/v2/errors"
 	"github.com/go-kratos/kratos/v2/log"
 	"math/big"
+	rand2 "math/rand"
 	"strconv"
+	"sync"
 	"time"
 )
 
@@ -119,6 +122,44 @@ type Seed struct {
 	UpdatedAt    time.Time
 }
 
+type PropInfo struct {
+	ID       uint64
+	PropType uint64
+
+	// 化肥相关字段
+	OneOne uint64
+	OneTwo uint64
+
+	// 铲子相关字段
+	TwoOne uint64
+	TwoTwo float64
+
+	// 水相关字段
+	ThreeOne uint64
+
+	// 除虫剂相关字段
+	FourOne uint64
+
+	// 手套相关字段
+	FiveOne uint64
+	GetRate float64
+
+	// 时间字段
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+type SeedInfo struct {
+	ID           uint64
+	Name         string
+	OutMinAmount float64
+	OutMaxAmount float64
+	GetRate      float64
+	OutOverTime  uint64
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+}
+
 type Land struct {
 	ID             uint64
 	UserId         uint64
@@ -161,6 +202,8 @@ type LandUserUse struct {
 	UseChan      uint64
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
+	One          uint64
+	Two          uint64
 }
 
 type ExchangeRecord struct {
@@ -276,6 +319,14 @@ type Withdraw struct {
 	UpdatedAt time.Time
 }
 
+type RandomSeed struct {
+	ID        uint64
+	Scene     uint64
+	SeedValue uint64
+	UpdatedAt time.Time
+	CreatedAt time.Time
+}
+
 type UserRepo interface {
 	GetAllUsers(ctx context.Context) ([]*User, error)
 	GetUserByUserIds(ctx context.Context, userIds []uint64) (map[uint64]*User, error)
@@ -320,6 +371,29 @@ type UserRepo interface {
 	GetUserOrderCount(ctx context.Context) (int64, error)
 	GetUserOrder(ctx context.Context, b *Pagination) ([]*User, error)
 	GetLandUserUseByLandIDsMapUsing(ctx context.Context, userId uint64, landIDs []uint64) (map[uint64]*LandUserUse, error)
+	BuyBox(ctx context.Context, giw float64, originValue, value string, uc *BoxRecord) error
+	GetUserBoxRecordById(ctx context.Context, id uint64) (*BoxRecord, error)
+	OpenBoxSeed(ctx context.Context, id uint64, content string, seedInfo *Seed) error
+	OpenBoxProp(ctx context.Context, id uint64, content string, propInfo *Prop) error
+	GetAllSeedInfo(ctx context.Context) ([]*SeedInfo, error)
+	GetAllPropInfo(ctx context.Context) ([]*PropInfo, error)
+	GetAllRandomSeeds(ctx context.Context) ([]*RandomSeed, error)
+	UpdateSeedValue(ctx context.Context, scene uint64, newSeed uint64) error
+	GetSeedByID(ctx context.Context, seedID, userId, status uint64) (*Seed, error)
+	GetLandByID(ctx context.Context, landID uint64) (*Land, error)
+	Plant(ctx context.Context, status, originStatus uint64, landUserUse *LandUserUse) error
+	GetSeedBuyByID(ctx context.Context, seedID, status uint64) (*Seed, error)
+	GetPropByID(ctx context.Context, propID, status uint64) (*Prop, error)
+	BuySeed(ctx context.Context, git, getGit float64, userId, userIdGet, seedId uint64) error
+	BuyLand(ctx context.Context, git, getGit float64, userId, userIdGet, landId uint64) error
+	BuyProp(ctx context.Context, git, getGit float64, userId, userIdGet, propId uint64) error
+	SellLand(ctx context.Context, propId uint64, userId uint64, sellAmount float64) error
+	SellProp(ctx context.Context, propId uint64, userId uint64, sellAmount float64) error
+	SellSeed(ctx context.Context, seedId uint64, userId uint64, sellAmount float64) error
+	GetPropByIDSell(ctx context.Context, propID, status uint64) (*Prop, error)
+	UnSellLand(ctx context.Context, propId uint64, userId uint64) error
+	UnSellProp(ctx context.Context, propId uint64, userId uint64) error
+	UnSellSeed(ctx context.Context, seedId, userId uint64) error
 }
 
 // AppUsecase is an app usecase.
@@ -403,6 +477,7 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 	var (
 		user            *User
 		boxNum          uint64
+		boxSellNum      uint64
 		configs         []*Config
 		bPrice          float64
 		exchangeFeeRate float64
@@ -431,6 +506,7 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		"exchange_fee_rate",
 		"reward_skate_rate",
 		"box_max",
+		"box_sell_num",
 		"box_start",
 		"box_end",
 		"box_amount",
@@ -448,6 +524,9 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 	for _, vConfig := range configs {
 		if "box_num" == vConfig.KeyName {
 			boxNum, _ = strconv.ParseUint(vConfig.Value, 10, 64)
+		}
+		if "box_sell_num" == vConfig.KeyName {
+			boxSellNum, _ = strconv.ParseUint(vConfig.Value, 10, 64)
 		}
 		if "withdraw_amount_min" == vConfig.KeyName {
 			withdrawMin, _ = strconv.ParseUint(vConfig.Value, 10, 64)
@@ -522,19 +601,18 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		skateGitAmount = skateGit.Amount
 	}
 
-	boxSellNum := uint64(0)
 	if boxNum > 0 {
-		var (
-			countBox int64
-		)
-		countBox, err = ac.userRepo.GetBoxRecordCount(ctx, boxNum)
-		if nil != err {
-			return &pb.UserInfoReply{
-				Status: "盲盒错误查询",
-			}, nil
-		}
-
-		boxSellNum = uint64(countBox)
+		//var (
+		//	countBox int64
+		//)
+		//countBox, err = ac.userRepo.GetBoxRecordCount(ctx, boxNum)
+		//if nil != err {
+		//	return &pb.UserInfoReply{
+		//		Status: "盲盒错误查询",
+		//	}, nil
+		//}
+		//
+		//boxSellNum = uint64(countBox)
 	}
 
 	var (
@@ -760,7 +838,7 @@ func (ac *AppUsecase) UserLand(ctx context.Context, address string, req *pb.User
 			Status: "不存在用户",
 		}, nil
 	}
-	status := []uint64{0, 1, 2, 3, 4, 5}
+	status := []uint64{0, 1, 2, 3, 4, 5, 8}
 	lands, err = ac.userRepo.GetLandByUserID(ctx, user.ID, status, nil)
 	if nil != err {
 		return &pb.UserLandReply{
@@ -769,11 +847,16 @@ func (ac *AppUsecase) UserLand(ctx context.Context, address string, req *pb.User
 	}
 
 	for _, v := range lands {
+		statusTmp := v.Status
+		if 8 == v.Status {
+			statusTmp = 3
+		}
+
 		res = append(res, &pb.UserLandReply_List{
 			Id:        v.ID,
 			Level:     v.Level,
 			Health:    v.MaxHealth,
-			Status:    v.Status,
+			Status:    statusTmp,
 			OutRate:   v.OutPutRate,
 			PerHealth: v.PerHealth,
 			One:       v.One,
@@ -1268,7 +1351,7 @@ func (ac *AppUsecase) UserMyMarketList(ctx context.Context, address string, req 
 	var (
 		land []*Land
 	)
-	landStatus := []uint64{3, 4}
+	landStatus := []uint64{3, 4, 8}
 	land, err = ac.userRepo.GetLandByExUserID(ctx, user.ID, landStatus, nil)
 	if nil != err {
 		return &pb.UserMyMarketListReply{
@@ -1445,7 +1528,7 @@ func (ac *AppUsecase) UserIndexList(ctx context.Context, address string, req *pb
 		}, nil
 	}
 
-	status := []uint64{1, 2, 3}
+	status := []uint64{1, 2, 3, 8}
 	lands, err = ac.userRepo.GetLandByUserIDUsing(ctx, user.ID, status)
 	if nil != err {
 		return &pb.UserIndexListReply{
@@ -1592,4 +1675,903 @@ func (ac *AppUsecase) UserOrderList(ctx context.Context, address string, req *pb
 		List:   res,
 		Status: "ok",
 	}, nil
+}
+
+// 随机数生成器的初始化锁
+var rngMutexBuyBox sync.Mutex
+
+func (ac *AppUsecase) BuyBox(ctx context.Context, address string, req *pb.BuyBoxRequest) (*pb.BuyBoxReply, error) {
+	rngMutexBuyBox.Lock()
+	defer rngMutexBuyBox.Unlock()
+
+	var (
+		user             *User
+		err              error
+		boxNum           uint64
+		boxSellNum       uint64
+		boxSellNumOrigin string
+		configs          []*Config
+		boxMax           uint64
+		boxAmount        float64
+		boxStart         string
+		boxEnd           string
+	)
+	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
+	if nil != err || nil == user {
+		return &pb.BuyBoxReply{
+			Status: "不存在用户",
+		}, nil
+	}
+
+	// 配置
+	configs, err = ac.userRepo.GetConfigByKeys(ctx,
+		"box_num",
+		"b_price",
+		"exchange_fee_rate",
+		"reward_skate_rate",
+		"box_max",
+		"box_sell_num",
+		"box_start",
+		"box_end",
+		"box_amount",
+		"skate_over_rate",
+		"sell_fee_rate",
+		"withdraw_amount_min",
+		"withdraw_amount_max",
+	)
+	if nil != err || nil == configs {
+		return &pb.BuyBoxReply{
+			Status: "配置错误",
+		}, nil
+	}
+
+	for _, vConfig := range configs {
+		if "box_num" == vConfig.KeyName {
+			boxNum, _ = strconv.ParseUint(vConfig.Value, 10, 64)
+		}
+		if "box_sell_num" == vConfig.KeyName {
+			boxSellNum, _ = strconv.ParseUint(vConfig.Value, 10, 64)
+		}
+		boxSellNumOrigin = vConfig.Value
+		if "box_start" == vConfig.KeyName {
+			boxStart = vConfig.Value
+		}
+		if "box_end" == vConfig.KeyName {
+			boxEnd = vConfig.Value
+		}
+		if "box_amount" == vConfig.KeyName {
+			boxAmount, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+		if "box_max" == vConfig.KeyName {
+			boxMax, _ = strconv.ParseUint(vConfig.Value, 10, 64)
+		}
+	}
+	// 解析时间字符串
+
+	var (
+		parsedboxStart time.Time
+		parsedboxEnd   time.Time
+	)
+	parsedboxStart, err = time.Parse("2006-01-02 15:04:05", boxStart)
+	if err != nil {
+		return &pb.BuyBoxReply{
+			Status: "解析时间失败",
+		}, nil
+	}
+
+	parsedboxEnd, err = time.Parse("2006-01-02 15:04:05", boxEnd)
+	if err != nil {
+		return &pb.BuyBoxReply{
+			Status: "解析时间失败",
+		}, nil
+	}
+
+	// 获取当前时间
+	now := time.Now()
+
+	// 比较时间
+	if now.After(parsedboxEnd) {
+		return &pb.BuyBoxReply{
+			Status: "已结束",
+		}, nil
+	}
+
+	if now.Before(parsedboxStart) {
+		return &pb.BuyBoxReply{
+			Status: "未开始",
+		}, nil
+	}
+
+	if boxSellNum >= boxMax {
+		return &pb.BuyBoxReply{
+			Status: "已售空",
+		}, nil
+	}
+
+	if boxAmount >= user.Giw {
+		return &pb.BuyBoxReply{
+			Status: "余额不足",
+		}, nil
+	}
+
+	tmpSellNumNew := strconv.FormatUint(boxSellNum+1, 10)
+	if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+		return ac.userRepo.BuyBox(ctx, boxAmount, boxSellNumOrigin, tmpSellNumNew, &BoxRecord{
+			UserId: user.ID,
+			Num:    boxNum,
+		})
+	}); nil != err {
+		fmt.Println(err, "buybox", user)
+		return &pb.BuyBoxReply{
+			Status: "购买失败",
+		}, nil
+	}
+
+	return &pb.BuyBoxReply{
+		Status: "ok",
+	}, nil
+}
+
+// 随机数生成器
+var rngBox *rand2.Rand
+var rngPlant *rand2.Rand
+
+// 随机数生成器的初始化锁
+var rngMutexBox sync.Mutex
+
+func (ac *AppUsecase) OpenBox(ctx context.Context, address string, req *pb.OpenBoxRequest) (*pb.OpenBoxReply, error) {
+	rngMutexBox.Lock()
+	defer rngMutexBox.Unlock()
+
+	var (
+		user *User
+		box  *BoxRecord
+		err  error
+	)
+
+	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
+	if nil != err || nil == user {
+		return &pb.OpenBoxReply{
+			Status: "不存在用户",
+		}, nil
+	}
+
+	box, err = ac.userRepo.GetUserBoxRecordById(ctx, req.SendBody.Id)
+	if nil != err || nil == box {
+		return &pb.OpenBoxReply{
+			Status: "不存在盲盒",
+		}, nil
+	}
+
+	if user.ID != box.UserId {
+		return &pb.OpenBoxReply{
+			Status: "非用户盲盒",
+		}, nil
+	}
+
+	if 0 != box.GoodId {
+		return &pb.OpenBoxReply{
+			Status: "已开盲盒",
+		}, nil
+	}
+
+	// 盲盒道具池
+	blindBoxItems := make([]struct {
+		Name   uint64
+		Weight float64
+	}, 0)
+
+	var (
+		seedInfos    []*SeedInfo
+		seedInfosMap map[uint64]*SeedInfo
+	)
+	seedInfos, err = ac.userRepo.GetAllSeedInfo(ctx)
+	if nil != err {
+		return &pb.OpenBoxReply{
+			Status: "异常配置",
+		}, nil
+	}
+
+	for _, v := range seedInfos {
+		seedInfosMap[v.ID] = v
+
+		blindBoxItems = append(blindBoxItems, struct {
+			Name   uint64
+			Weight float64
+		}{Name: v.ID, Weight: v.GetRate})
+	}
+
+	var (
+		propInfos    []*PropInfo
+		propInfosMap map[uint64]*PropInfo
+	)
+	propInfos, err = ac.userRepo.GetAllPropInfo(ctx)
+	if nil != err {
+		return &pb.OpenBoxReply{
+			Status: "异常配置",
+		}, nil
+	}
+
+	for _, v := range propInfos {
+		propInfosMap[v.PropType] = v
+
+		blindBoxItems = append(blindBoxItems, struct {
+			Name   uint64
+			Weight float64
+		}{Name: v.PropType, Weight: v.GetRate})
+	}
+
+	result := uint64(0)
+	if nil == rngBox {
+		var (
+			seedInt     int64
+			randomSeeds []*RandomSeed
+		)
+		randomSeeds, err = ac.userRepo.GetAllRandomSeeds(ctx)
+		if nil != err {
+			return &pb.OpenBoxReply{
+				Status: "异常",
+			}, nil
+		}
+
+		for _, v := range randomSeeds {
+			if 1 == v.Scene {
+				seedInt = int64(v.SeedValue)
+				break
+			}
+		}
+
+		if 0 >= seedInt {
+			seedInt = time.Now().UnixNano()
+			err = ac.userRepo.UpdateSeedValue(ctx, 1, uint64(seedInt))
+			if nil != err {
+				return &pb.OpenBoxReply{
+					Status: "异常",
+				}, nil
+			}
+		}
+
+		rngBox = rand2.New(rand2.NewSource(seedInt))
+	}
+
+	r := rngBox.Float64() // 生成 0.0 ~ 1.0 之间的随机数
+	// 计算总权重
+	var totalWeight float64
+	for _, item := range blindBoxItems {
+		totalWeight += item.Weight
+	}
+
+	// 按照概率随机选择
+	var sum float64
+	for _, item := range blindBoxItems {
+		sum += item.Weight / totalWeight // 归一化
+		if r < sum {
+			result = item.Name
+			break
+		}
+	}
+
+	if 0 >= result {
+		return &pb.OpenBoxReply{
+			Status: "错误盲盒",
+		}, nil
+	}
+
+	if 1 >= result && result <= 10 {
+		if _, ok := seedInfosMap[result]; !ok {
+			return &pb.OpenBoxReply{
+				Status: "不存在盲盒信息",
+			}, nil
+		}
+		rngTmp := rand2.New(rand2.NewSource(time.Now().UnixNano()))
+
+		outMin := int64(seedInfosMap[result].OutMinAmount)
+		outMax := int64(seedInfosMap[result].OutMaxAmount)
+
+		// 计算随机范围
+		tmpNum := outMax - outMin
+		if tmpNum <= 0 {
+			tmpNum = 1 // 避免 Int63n(0) panic
+		}
+
+		// 生成随机数
+		randomNumber := outMin + rngTmp.Int63n(tmpNum)
+
+		// 种子
+		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+			return ac.userRepo.OpenBoxSeed(ctx, box.ID, "", &Seed{
+				UserId:       user.ID,
+				SeedId:       result,
+				Name:         seedInfosMap[result].Name,
+				OutOverTime:  seedInfosMap[result].OutOverTime,
+				OutMaxAmount: float64(randomNumber),
+			})
+		}); nil != err {
+			fmt.Println(err, "openBox", user)
+			return &pb.OpenBoxReply{
+				Status: "开启失败",
+			}, nil
+		}
+
+		return &pb.OpenBoxReply{
+			Status:   "ok",
+			OpenType: 1,
+			Num:      result,
+			OutMax:   float64(randomNumber),
+		}, nil
+	} else if 11 >= result && result <= 15 {
+		if _, ok := propInfosMap[result]; !ok {
+			return &pb.OpenBoxReply{
+				Status: "不存在盲盒信息",
+			}, nil
+		}
+
+		// 种子
+		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+			return ac.userRepo.OpenBoxProp(ctx, box.ID, "", &Prop{
+				UserId:   user.ID,
+				PropType: int(result),
+				OneOne:   int(propInfosMap[result].OneOne),
+				OneTwo:   int(propInfosMap[result].OneTwo),
+				TwoOne:   int(propInfosMap[result].TwoOne),
+				TwoTwo:   propInfosMap[result].TwoTwo,
+				ThreeOne: int(propInfosMap[result].ThreeOne),
+				FourOne:  int(propInfosMap[result].FourOne),
+				FiveOne:  int(propInfosMap[result].FiveOne),
+			})
+		}); nil != err {
+			fmt.Println(err, "openBox", user)
+			return &pb.OpenBoxReply{
+				Status: "开启失败",
+			}, nil
+		}
+
+		return &pb.OpenBoxReply{
+			Status:   "ok",
+			OpenType: 2,
+			Num:      result,
+			OutMax:   0,
+		}, nil
+	} else {
+		return &pb.OpenBoxReply{
+			Status: "开盲盒失败",
+		}, nil
+	}
+}
+
+var rngMutexPlant sync.Mutex
+
+func (ac *AppUsecase) LandPlayOne(ctx context.Context, address string, req *pb.LandPlayOneRequest) (*pb.LandPlayOneReply, error) {
+	rngMutexPlant.Lock()
+	defer rngMutexPlant.Unlock()
+
+	var (
+		user *User
+		err  error
+	)
+
+	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
+	if nil != err || nil == user {
+		return &pb.LandPlayOneReply{
+			Status: "不存在用户",
+		}, nil
+	}
+
+	var (
+		seed *Seed
+	)
+	seed, err = ac.userRepo.GetSeedByID(ctx, req.SendBody.SeedId, user.ID, 0)
+	if nil != err || nil == seed {
+		return &pb.LandPlayOneReply{
+			Status: "不存种子",
+		}, nil
+	}
+
+	var (
+		land *Land
+	)
+	land, err = ac.userRepo.GetLandByID(ctx, req.SendBody.LandId)
+	if nil != err || nil == land {
+		return &pb.LandPlayOneReply{
+			Status: "土地信息错误",
+		}, nil
+	}
+
+	if land.UserId != user.ID {
+		if 3 != land.Status {
+			return &pb.LandPlayOneReply{
+				Status: "未出租土地",
+			}, nil
+		}
+	} else if land.UserId == user.ID {
+		if 1 != land.Status {
+			return &pb.LandPlayOneReply{
+				Status: "未布置土地",
+			}, nil
+		}
+	} else {
+		return &pb.LandPlayOneReply{
+			Status: "错误参数",
+		}, nil
+	}
+
+	if nil == rngPlant {
+		var (
+			seedInt     int64
+			randomSeeds []*RandomSeed
+		)
+		randomSeeds, err = ac.userRepo.GetAllRandomSeeds(ctx)
+		if nil != err {
+			return &pb.LandPlayOneReply{
+				Status: "异常",
+			}, nil
+		}
+
+		for _, v := range randomSeeds {
+			if 2 == v.Scene {
+				seedInt = int64(v.SeedValue)
+				break
+			}
+		}
+
+		if 0 >= seedInt {
+			seedInt = time.Now().UnixNano()
+			err = ac.userRepo.UpdateSeedValue(ctx, 2, uint64(seedInt))
+			if nil != err {
+				return &pb.LandPlayOneReply{
+					Status: "异常",
+				}, nil
+			}
+		}
+
+		rngPlant = rand2.New(rand2.NewSource(seedInt))
+	}
+
+	one := uint64(0)
+	two := uint64(0)
+	r := rngPlant.Float64() // 生成 0.0 ~ 1.0 之间的随机数
+	if r < 0.05 {
+		one = 1
+	} else if r < 0.10 {
+		two = 1
+	}
+
+	originStatusTmp := land.Status
+	statusTmp := uint64(1)
+	if 3 == originStatusTmp {
+		statusTmp = 8
+	}
+
+	now := uint64(time.Now().Unix())
+	if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+		return ac.userRepo.Plant(ctx, statusTmp, originStatusTmp, &LandUserUse{
+			LandId:      land.ID,
+			Level:       land.Level,
+			UserId:      user.ID,
+			OwnerUserId: land.UserId,
+			SeedId:      seed.ID,
+			SeedTypeId:  seed.SeedId,
+			Status:      1,
+			BeginTime:   now,
+			TotalTime:   seed.OutOverTime,
+			OverTime:    seed.OutOverTime,
+			OutMaxNum:   seed.OutMaxAmount,
+			One:         one,
+			Two:         two,
+		})
+	}); nil != err {
+		fmt.Println(err, "openBox", user)
+		return &pb.LandPlayOneReply{
+			Status: "种植失败",
+		}, nil
+	}
+
+	return &pb.LandPlayOneReply{
+		Status: "ok",
+	}, nil
+
+}
+
+var rngMutexBuy sync.Mutex
+
+func (ac *AppUsecase) Buy(ctx context.Context, address string, req *pb.BuyRequest) (*pb.BuyReply, error) {
+	rngMutexBuy.Lock()
+	defer rngMutexBuy.Unlock()
+
+	var (
+		user    *User
+		feeRate float64
+		configs []*Config
+		err     error
+	)
+
+	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
+	if nil != err || nil == user {
+		return &pb.BuyReply{
+			Status: "不存在用户",
+		}, nil
+	}
+
+	// 配置
+	configs, err = ac.userRepo.GetConfigByKeys(ctx,
+		"sell_fee_rate",
+	)
+	if nil != err || nil == configs {
+		return &pb.BuyReply{
+			Status: "配置错误",
+		}, nil
+	}
+
+	for _, vConfig := range configs {
+		if "sell_fee_rate" == vConfig.KeyName {
+			feeRate, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+	}
+
+	if 1 == req.SendBody.BuyType {
+		var (
+			seed *Seed
+		)
+		seed, err = ac.userRepo.GetSeedBuyByID(ctx, req.SendBody.Id, 4)
+		if nil != err || nil == seed {
+			return &pb.BuyReply{
+				Status: "不存种子",
+			}, nil
+		}
+
+		if user.ID == seed.UserId {
+			return &pb.BuyReply{
+				Status: "不允许购买自己的",
+			}, nil
+		}
+		if 0 >= seed.SellAmount {
+			return &pb.BuyReply{
+				Status: "金额错误",
+			}, nil
+		}
+
+		if user.Git < seed.SellAmount {
+			return &pb.BuyReply{
+				Status: "余额不足",
+			}, nil
+		}
+		// 种子
+		tmpGet := seed.SellAmount - seed.SellAmount*feeRate
+		if 0 >= tmpGet {
+			return &pb.BuyReply{
+				Status: "金额错误",
+			}, nil
+		}
+
+		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+			return ac.userRepo.BuySeed(ctx, seed.SellAmount, tmpGet, seed.UserId, user.ID, seed.ID)
+		}); nil != err {
+			fmt.Println(err, "buySeed", user)
+			return &pb.BuyReply{
+				Status: "购买失败",
+			}, nil
+		}
+	} else if 2 == req.SendBody.BuyType {
+		var (
+			prop *Prop
+		)
+		prop, err = ac.userRepo.GetPropByID(ctx, req.SendBody.Id, 4)
+		if nil != err || nil == prop {
+			return &pb.BuyReply{
+				Status: "不存道具",
+			}, nil
+		}
+
+		if user.ID == prop.UserId {
+			return &pb.BuyReply{
+				Status: "不允许购买自己的",
+			}, nil
+		}
+
+		if 0 >= prop.SellAmount {
+			return &pb.BuyReply{
+				Status: "金额错误",
+			}, nil
+		}
+
+		if user.Git < prop.SellAmount {
+			return &pb.BuyReply{
+				Status: "余额不足",
+			}, nil
+		}
+
+		// 种子
+		tmpGet := prop.SellAmount - prop.SellAmount*feeRate
+		if 0 >= tmpGet {
+			return &pb.BuyReply{
+				Status: "金额错误",
+			}, nil
+		}
+
+		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+			return ac.userRepo.BuyProp(ctx, prop.SellAmount, tmpGet, prop.UserId, user.ID, prop.ID)
+		}); nil != err {
+			fmt.Println(err, "buyProp", user)
+			return &pb.BuyReply{
+				Status: "购买失败",
+			}, nil
+		}
+	} else if 3 == req.SendBody.BuyType {
+		var (
+			land *Land
+		)
+		land, err = ac.userRepo.GetLandByID(ctx, req.SendBody.Id)
+		if nil != err || nil == land {
+			return &pb.BuyReply{
+				Status: "不存道具",
+			}, nil
+		}
+
+		if user.ID == land.UserId {
+			return &pb.BuyReply{
+				Status: "不允许购买自己的",
+			}, nil
+		}
+
+		if 4 != land.Status {
+			return &pb.BuyReply{
+				Status: "未出售",
+			}, nil
+		}
+
+		if 0 >= land.SellAmount {
+			return &pb.BuyReply{
+				Status: "金额错误",
+			}, nil
+		}
+
+		if user.Git < land.SellAmount {
+			return &pb.BuyReply{
+				Status: "余额不足",
+			}, nil
+		}
+
+		// 土地
+		tmpGet := land.SellAmount - land.SellAmount*feeRate
+		if 0 >= tmpGet {
+			return &pb.BuyReply{
+				Status: "金额错误",
+			}, nil
+		}
+
+		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+			return ac.userRepo.BuyLand(ctx, land.SellAmount, tmpGet, land.UserId, user.ID, land.ID)
+		}); nil != err {
+			fmt.Println(err, "buyLand", user)
+			return &pb.BuyReply{
+				Status: "购买失败",
+			}, nil
+		}
+	} else {
+		return &pb.BuyReply{
+			Status: "参数错误",
+		}, nil
+	}
+
+	return &pb.BuyReply{
+		Status: "ok",
+	}, nil
+}
+
+func (ac *AppUsecase) Sell(ctx context.Context, address string, req *pb.SellRequest) (*pb.SellReply, error) {
+	var (
+		user *User
+		err  error
+	)
+
+	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
+	if nil != err || nil == user {
+		return &pb.SellReply{
+			Status: "不存在用户",
+		}, nil
+	}
+
+	tmpSellAmount := float64(req.SendBody.Amount)
+	if 1 == req.SendBody.Num {
+		if 0 >= tmpSellAmount {
+			return &pb.SellReply{
+				Status: "售价不能为0",
+			}, nil
+		}
+
+		if 1 == req.SendBody.SellType {
+			var (
+				seed *Seed
+			)
+			seed, err = ac.userRepo.GetSeedBuyByID(ctx, req.SendBody.Id, 0)
+			if nil != err || nil == seed {
+				return &pb.SellReply{
+					Status: "不存种子",
+				}, nil
+			}
+
+			if user.ID != seed.UserId {
+				return &pb.SellReply{
+					Status: "不是自己的种子",
+				}, nil
+			}
+
+			if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+				return ac.userRepo.SellSeed(ctx, seed.ID, user.ID, tmpSellAmount)
+			}); nil != err {
+				fmt.Println(err, "sellSeed", user)
+				return &pb.SellReply{
+					Status: "上架失败",
+				}, nil
+			}
+		} else if 2 == req.SendBody.SellType {
+			var (
+				prop *Prop
+			)
+			prop, err = ac.userRepo.GetPropByIDSell(ctx, req.SendBody.Id, 2)
+			if nil != err || nil == prop {
+				return &pb.SellReply{
+					Status: "不存道具",
+				}, nil
+			}
+
+			if user.ID != prop.UserId {
+				return &pb.SellReply{
+					Status: "不是自己的",
+				}, nil
+			}
+
+			if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+				return ac.userRepo.SellProp(ctx, prop.ID, user.ID, tmpSellAmount)
+			}); nil != err {
+				fmt.Println(err, "sellProp", user)
+				return &pb.SellReply{
+					Status: "上架失败",
+				}, nil
+			}
+		} else if 3 == req.SendBody.SellType {
+			var (
+				land *Land
+			)
+			land, err = ac.userRepo.GetLandByID(ctx, req.SendBody.Id)
+			if nil != err || nil == land {
+				return &pb.SellReply{
+					Status: "不存道具",
+				}, nil
+			}
+
+			if user.ID != land.UserId {
+				return &pb.SellReply{
+					Status: "不是自己的",
+				}, nil
+			}
+
+			if 0 != land.Status {
+				return &pb.SellReply{
+					Status: "不符合上架要求",
+				}, nil
+			}
+
+			if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+				return ac.userRepo.SellLand(ctx, land.ID, user.ID, tmpSellAmount)
+			}); nil != err {
+				fmt.Println(err, "sellProp", user)
+				return &pb.SellReply{
+					Status: "上架失败",
+				}, nil
+			}
+		} else {
+			return &pb.SellReply{
+				Status: "参数错误",
+			}, nil
+		}
+	} else {
+		if 1 == req.SendBody.SellType {
+			var (
+				seed *Seed
+			)
+			seed, err = ac.userRepo.GetSeedBuyByID(ctx, req.SendBody.Id, 4)
+			if nil != err || nil == seed {
+				return &pb.SellReply{
+					Status: "不存种子",
+				}, nil
+			}
+
+			if user.ID != seed.UserId {
+				return &pb.SellReply{
+					Status: "不是自己的种子",
+				}, nil
+			}
+
+			if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+				return ac.userRepo.UnSellSeed(ctx, seed.ID, user.ID)
+			}); nil != err {
+				fmt.Println(err, "sellSeed", user)
+				return &pb.SellReply{
+					Status: "上架失败",
+				}, nil
+			}
+		} else if 2 == req.SendBody.SellType {
+			var (
+				prop *Prop
+			)
+			prop, err = ac.userRepo.GetPropByID(ctx, req.SendBody.Id, 4)
+			if nil != err || nil == prop {
+				return &pb.SellReply{
+					Status: "不存道具",
+				}, nil
+			}
+
+			if user.ID != prop.UserId {
+				return &pb.SellReply{
+					Status: "不是自己的",
+				}, nil
+			}
+
+			if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+				return ac.userRepo.UnSellProp(ctx, prop.ID, user.ID)
+			}); nil != err {
+				fmt.Println(err, "sellProp", user)
+				return &pb.SellReply{
+					Status: "上架失败",
+				}, nil
+			}
+		} else if 3 == req.SendBody.SellType {
+			var (
+				land *Land
+			)
+			land, err = ac.userRepo.GetLandByID(ctx, req.SendBody.Id)
+			if nil != err || nil == land {
+				return &pb.SellReply{
+					Status: "不存道具",
+				}, nil
+			}
+
+			if user.ID != land.UserId {
+				return &pb.SellReply{
+					Status: "不是自己的",
+				}, nil
+			}
+
+			if 4 != land.Status {
+				return &pb.SellReply{
+					Status: "不符合下架要求",
+				}, nil
+			}
+
+			if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+				return ac.userRepo.UnSellLand(ctx, land.ID, user.ID)
+			}); nil != err {
+				fmt.Println(err, "sellProp", user)
+				return &pb.SellReply{
+					Status: "上架失败",
+				}, nil
+			}
+		} else {
+			return &pb.SellReply{
+				Status: "参数错误",
+			}, nil
+		}
+	}
+
+	return &pb.SellReply{
+		Status: "ok",
+	}, nil
+}
+
+func (ac *AppUsecase) LandPlay(ctx context.Context, address string, req *pb.LandPlayRequest) (*pb.LandPlayReply, error) {
+	var (
+		user *User
+		//box  *BoxRecord
+		err error
+	)
+
+	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
+	if nil != err || nil == user {
+		return &pb.LandPlayReply{
+			Status: "不存在用户",
+		}, nil
+	}
+
+	return &pb.LandPlayReply{Status: "ok"}, nil
 }

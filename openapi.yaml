@@ -330,6 +330,31 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Status'
+    /api/app_server/open_box:
+        post:
+            tags:
+                - App
+            description: 开盲盒
+            operationId: App_OpenBox
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/OpenBoxRequest_SendBody'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/OpenBoxReply'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
     /api/app_server/rent_land:
         post:
             tags:
@@ -992,6 +1017,8 @@ components:
         LandPlayFiveRequest_SendBody:
             type: object
             properties:
+                sign:
+                    type: string
                 landUseId:
                     type: string
                 id:
@@ -1004,6 +1031,8 @@ components:
         LandPlayFourRequest_SendBody:
             type: object
             properties:
+                sign:
+                    type: string
                 landUseId:
                     type: string
                 id:
@@ -1020,6 +1049,8 @@ components:
                     type: string
                 seedId:
                     type: string
+                sign:
+                    type: string
         LandPlayReply:
             type: object
             properties:
@@ -1034,6 +1065,8 @@ components:
                     type: string
                 landTwoId:
                     type: string
+                sign:
+                    type: string
         LandPlaySevenReply:
             type: object
             properties:
@@ -1042,6 +1075,8 @@ components:
         LandPlaySevenRequest_SendBody:
             type: object
             properties:
+                sign:
+                    type: string
                 landUseId:
                     type: string
                 id:
@@ -1054,6 +1089,8 @@ components:
         LandPlaySixRequest_SendBody:
             type: object
             properties:
+                sign:
+                    type: string
                 landUseId:
                     type: string
                 id:
@@ -1066,6 +1103,8 @@ components:
         LandPlayThreeRequest_SendBody:
             type: object
             properties:
+                sign:
+                    type: string
                 landUseId:
                     type: string
                 id:
@@ -1079,6 +1118,31 @@ components:
             type: object
             properties:
                 landUseId:
+                    type: string
+                sign:
+                    type: string
+        OpenBoxReply:
+            type: object
+            properties:
+                status:
+                    type: string
+                openType:
+                    type: string
+                num:
+                    type: string
+                useNum:
+                    type: string
+                time:
+                    type: string
+                outMax:
+                    type: number
+                    format: double
+        OpenBoxRequest_SendBody:
+            type: object
+            properties:
+                id:
+                    type: string
+                sign:
                     type: string
         RentLandReply:
             type: object
@@ -1123,6 +1187,8 @@ components:
             type: object
             properties:
                 amount:
+                    type: string
+                sign:
                     type: string
         SkateGetReply:
             type: object

@@ -745,3 +745,267 @@ func (a *AppService) UserOrderList(ctx context.Context, req *pb.UserOrderListReq
 
 	return a.ac.UserOrderList(ctx, address, req)
 }
+
+func (a *AppService) BuyBox(ctx context.Context, req *pb.BuyBoxRequest) (*pb.BuyBoxReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		address string
+	)
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["Address"] == nil {
+			return &pb.BuyBoxReply{Status: "无效token"}, nil
+		}
+
+		address = c["Address"].(string)
+
+		// 验证
+		var (
+			res bool
+			err error
+		)
+		res, err = addressCheck(address)
+		if nil != err {
+			return &pb.BuyBoxReply{Status: "无效token"}, nil
+		}
+
+		if !res {
+			return &pb.BuyBoxReply{Status: "无效token"}, nil
+		}
+	} else {
+		return &pb.BuyBoxReply{Status: "无效token"}, nil
+	}
+
+	var (
+		res             bool
+		addressFromSign string
+	)
+	res, addressFromSign = verifySig(req.SendBody.Sign, []byte(address))
+	if !res || addressFromSign != address {
+		return &pb.BuyBoxReply{
+			Status: "地址签名错误",
+		}, nil
+	}
+
+	return a.ac.BuyBox(ctx, address, req)
+}
+
+func (a *AppService) OpenBox(ctx context.Context, req *pb.OpenBoxRequest) (*pb.OpenBoxReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		address string
+	)
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["Address"] == nil {
+			return &pb.OpenBoxReply{Status: "无效token"}, nil
+		}
+
+		address = c["Address"].(string)
+
+		// 验证
+		var (
+			res bool
+			err error
+		)
+		res, err = addressCheck(address)
+		if nil != err {
+			return &pb.OpenBoxReply{Status: "无效token"}, nil
+		}
+
+		if !res {
+			return &pb.OpenBoxReply{Status: "无效token"}, nil
+		}
+	} else {
+		return &pb.OpenBoxReply{Status: "无效token"}, nil
+	}
+
+	var (
+		res             bool
+		addressFromSign string
+	)
+	res, addressFromSign = verifySig(req.SendBody.Sign, []byte(address))
+	if !res || addressFromSign != address {
+		return &pb.OpenBoxReply{
+			Status: "地址签名错误",
+		}, nil
+	}
+
+	return a.ac.OpenBox(ctx, address, req)
+}
+
+func (a *AppService) LandPlay(ctx context.Context, req *pb.LandPlayRequest) (*pb.LandPlayReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		address string
+	)
+	//if claims, ok := jwt.FromContext(ctx); ok {
+	//	c := claims.(jwt2.MapClaims)
+	//	if c["Address"] == nil {
+	//		return &pb.OpenBoxReply{Status: "无效token"}, nil
+	//	}
+	//
+	//	address = c["Address"].(string)
+	//
+	//	// 验证
+	//	var (
+	//		res bool
+	//		err error
+	//	)
+	//	res, err = addressCheck(address)
+	//	if nil != err {
+	//		return &pb.OpenBoxReply{Status: "无效token"}, nil
+	//	}
+	//
+	//	if !res {
+	//		return &pb.OpenBoxReply{Status: "无效token"}, nil
+	//	}
+	//} else {
+	//	return &pb.OpenBoxReply{Status: "无效token"}, nil
+	//}
+	//
+	//var (
+	//	res             bool
+	//	addressFromSign string
+	//)
+	//res, addressFromSign = verifySig(req.SendBody.Sign, []byte(address))
+	//if !res || addressFromSign != address {
+	//	return &pb.OpenBoxReply{
+	//		Status: "地址签名错误",
+	//	}, nil
+	//}
+
+	return a.ac.LandPlay(ctx, address, req)
+}
+
+func (a *AppService) LandPlayOne(ctx context.Context, req *pb.LandPlayOneRequest) (*pb.LandPlayOneReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		address string
+	)
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["Address"] == nil {
+			return &pb.LandPlayOneReply{Status: "无效token"}, nil
+		}
+
+		address = c["Address"].(string)
+
+		// 验证
+		var (
+			res bool
+			err error
+		)
+		res, err = addressCheck(address)
+		if nil != err {
+			return &pb.LandPlayOneReply{Status: "无效token"}, nil
+		}
+
+		if !res {
+			return &pb.LandPlayOneReply{Status: "无效token"}, nil
+		}
+	} else {
+		return &pb.LandPlayOneReply{Status: "无效token"}, nil
+	}
+
+	var (
+		res             bool
+		addressFromSign string
+	)
+	res, addressFromSign = verifySig(req.SendBody.Sign, []byte(address))
+	if !res || addressFromSign != address {
+		return &pb.LandPlayOneReply{
+			Status: "地址签名错误",
+		}, nil
+	}
+
+	return a.ac.LandPlayOne(ctx, address, req)
+}
+
+func (a *AppService) Buy(ctx context.Context, req *pb.BuyRequest) (*pb.BuyReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		address string
+	)
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["Address"] == nil {
+			return &pb.BuyReply{Status: "无效token"}, nil
+		}
+
+		address = c["Address"].(string)
+
+		// 验证
+		var (
+			res bool
+			err error
+		)
+		res, err = addressCheck(address)
+		if nil != err {
+			return &pb.BuyReply{Status: "无效token"}, nil
+		}
+
+		if !res {
+			return &pb.BuyReply{Status: "无效token"}, nil
+		}
+	} else {
+		return &pb.BuyReply{Status: "无效token"}, nil
+	}
+
+	var (
+		res             bool
+		addressFromSign string
+	)
+	res, addressFromSign = verifySig(req.SendBody.Sign, []byte(address))
+	if !res || addressFromSign != address {
+		return &pb.BuyReply{
+			Status: "地址签名错误",
+		}, nil
+	}
+
+	return a.ac.Buy(ctx, address, req)
+}
+
+func (a *AppService) Sell(ctx context.Context, req *pb.SellRequest) (*pb.SellReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		address string
+	)
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["Address"] == nil {
+			return &pb.SellReply{Status: "无效token"}, nil
+		}
+
+		address = c["Address"].(string)
+
+		// 验证
+		var (
+			res bool
+			err error
+		)
+		res, err = addressCheck(address)
+		if nil != err {
+			return &pb.SellReply{Status: "无效token"}, nil
+		}
+
+		if !res {
+			return &pb.SellReply{Status: "无效token"}, nil
+		}
+	} else {
+		return &pb.SellReply{Status: "无效token"}, nil
+	}
+
+	var (
+		res             bool
+		addressFromSign string
+	)
+	res, addressFromSign = verifySig(req.SendBody.Sign, []byte(address))
+	if !res || addressFromSign != address {
+		return &pb.SellReply{
+			Status: "地址签名错误",
+		}, nil
+	}
+
+	return a.ac.Sell(ctx, address, req)
+}

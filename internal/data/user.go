@@ -157,6 +157,8 @@ type LandUserUse struct {
 	UseChan      uint64    `gorm:"type:int;not null;default:0;comment:使用铲子次数"`
 	CreatedAt    time.Time `gorm:"type:datetime;not null"`
 	UpdatedAt    time.Time `gorm:"type:datetime;not null"`
+	One          uint64    `gorm:"type:int;not null;"`
+	Two          uint64    `gorm:"type:int;not null;"`
 }
 
 type ExchangeRecord struct {
@@ -270,6 +272,52 @@ type Withdraw struct {
 	Status    string    `gorm:"type:varchar(45);not null;default:'default';comment:状态"`
 	CreatedAt time.Time `gorm:"type:datetime;not null"`
 	UpdatedAt time.Time `gorm:"type:datetime;not null"`
+}
+
+type SeedInfo struct {
+	ID           uint64    `gorm:"primaryKey;autoIncrement" json:"id"`
+	Name         string    `gorm:"type:varchar(45);not null;default:'1'" json:"name"`
+	OutMinAmount float64   `gorm:"type:decimal(65,20);not null;default:0.00000000000000000000" json:"out_min_amount"`
+	OutMaxAmount float64   `gorm:"type:decimal(65,20);not null;default:0.00000000000000000000" json:"out_max_amount"`
+	GetRate      float64   `gorm:"type:decimal(65,20);not null;default:0.00000000000000000000" json:"get_rate"`
+	OutOverTime  uint64    `gorm:"type:int(10) unsigned;not null;default:0" json:"out_over_time"`
+	CreatedAt    time.Time `gorm:"type:datetime;not null" json:"created_at"`
+	UpdatedAt    time.Time `gorm:"type:datetime;not null" json:"updated_at"`
+}
+
+type PropInfo struct {
+	ID       uint64 `gorm:"primaryKey;autoIncrement" json:"id"`
+	PropType uint64 `gorm:"not null" json:"prop_type"` // 1:化肥, 2:铲子, 3:水, 4:除虫剂, 5:手套
+
+	// 化肥相关字段
+	OneOne uint64 `gorm:"not null;default:20" json:"one_one"`    // 化肥土地肥沃度增加量
+	OneTwo uint64 `gorm:"not null;default:14400" json:"one_two"` // 化肥植物加速成熟时间
+
+	// 铲子相关字段
+	TwoOne uint64  `gorm:"not null;default:7" json:"two_one"`                                           // 铲子最大试用次数
+	TwoTwo float64 `gorm:"type:decimal(65,20);not null;default:20.00000000000000000000" json:"two_two"` // 铲子使用获得的百分比
+
+	// 水相关字段
+	ThreeOne uint64 `gorm:"not null;default:7" json:"three_one"` // 水最大试用次数
+
+	// 除虫剂相关字段
+	FourOne uint64 `gorm:"not null;default:7" json:"four_one"` // 除虫剂最大试用次数
+
+	// 手套相关字段
+	FiveOne uint64  `gorm:"not null;default:20" json:"five_one"`                                         // 手套最大可偷次数
+	GetRate float64 `gorm:"type:decimal(65,20);not null;default:0.00000000000000000000" json:"get_rate"` // 获取概率
+
+	// 时间字段
+	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"`
+}
+
+type RandomSeed struct {
+	ID        uint64    `gorm:"primaryKey;autoIncrement"`
+	Scene     uint64    `gorm:"not null;unique"` // 业务场景 (如 1=blind_box, 2=plant)
+	SeedValue uint64    `gorm:"not null"`        // 随机种子
+	UpdatedAt time.Time `gorm:"autoUpdateTime"`
+	CreatedAt time.Time `gorm:"autoCreateTime"`
 }
 
 type UserRepo struct {
@@ -981,6 +1029,60 @@ func (u *UserRepo) GetLandByUserID(ctx context.Context, userID uint64, status []
 	return res, nil
 }
 
+// GetSeedByID 根据种子 ID 查询单条种子数据
+func (u *UserRepo) GetSeedByID(ctx context.Context, seedID, userId, status uint64) (*biz.Seed, error) {
+	var seed Seed
+
+	if err := u.data.DB(ctx).Table("seed").Where("id = ?", seedID).Where("user_id = ?", userId).Where("status=?", status).First(&seed).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil // 返回 nil 代表未找到
+		}
+		return nil, errors.New(500, "SEED ERROR", err.Error())
+	}
+
+	return &biz.Seed{
+		ID:           seed.ID,
+		UserId:       seed.UserId,
+		SeedId:       seed.SeedId,
+		Name:         seed.Name,
+		OutAmount:    seed.OutAmount,
+		OutOverTime:  seed.OutOverTime,
+		OutMaxAmount: seed.OutMaxAmount,
+		OutMinAmount: seed.OutMinAmount,
+		Status:       seed.Status,
+		CreatedAt:    seed.CreatedAt,
+		UpdatedAt:    seed.UpdatedAt,
+		SellAmount:   seed.SellAmount,
+	}, nil
+}
+
+// GetSeedBuyByID 根据种子 ID 查询单条种子数据
+func (u *UserRepo) GetSeedBuyByID(ctx context.Context, seedID, status uint64) (*biz.Seed, error) {
+	var seed Seed
+
+	if err := u.data.DB(ctx).Table("seed").Where("id = ?", seedID).Where("status=?", status).First(&seed).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil // 返回 nil 代表未找到
+		}
+		return nil, errors.New(500, "SEED ERROR", err.Error())
+	}
+
+	return &biz.Seed{
+		ID:           seed.ID,
+		UserId:       seed.UserId,
+		SeedId:       seed.SeedId,
+		Name:         seed.Name,
+		OutAmount:    seed.OutAmount,
+		OutOverTime:  seed.OutOverTime,
+		OutMaxAmount: seed.OutMaxAmount,
+		OutMinAmount: seed.OutMinAmount,
+		Status:       seed.Status,
+		CreatedAt:    seed.CreatedAt,
+		UpdatedAt:    seed.UpdatedAt,
+		SellAmount:   seed.SellAmount,
+	}, nil
+}
+
 // GetLandByUserIDUsing getLandByUserIDUsing
 func (u *UserRepo) GetLandByUserIDUsing(ctx context.Context, userID uint64, status []uint64) ([]*biz.Land, error) {
 	var (
@@ -1122,6 +1224,8 @@ func (u *UserRepo) GetLandUserUseByUserIDUseing(ctx context.Context, userID uint
 			UseChan:      landUserUse.UseChan,
 			CreatedAt:    landUserUse.CreatedAt,
 			UpdatedAt:    landUserUse.UpdatedAt,
+			One:          landUserUse.One,
+			Two:          landUserUse.Two,
 		})
 	}
 
@@ -1688,8 +1792,482 @@ func (u *UserRepo) GetLandUserUseByLandIDsMapUsing(ctx context.Context, userId u
 			UseChan:      landUserUse.UseChan,
 			CreatedAt:    landUserUse.CreatedAt,
 			UpdatedAt:    landUserUse.UpdatedAt,
+			One:          landUserUse.One,
+			Two:          landUserUse.Two,
 		}
 	}
 
 	return res, nil
+}
+
+// BuyBox .
+func (u *UserRepo) BuyBox(ctx context.Context, giw float64, originValue, value string, uc *biz.BoxRecord) error {
+	res := u.data.DB(ctx).Table("user").Where("id=?", uc.UserId).Where("giw>=?", giw).
+		Updates(map[string]interface{}{"giw": gorm.Expr("giw - ?", giw), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "BuyBox", "用户信息修改失败")
+	}
+
+	res = u.data.DB(ctx).Table("config").Where("id=?", 21).Where("value=?", originValue).
+		Updates(map[string]interface{}{"value": value, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "BuyBox", "config")
+	}
+
+	var box BoxRecord
+
+	box.UserId = uc.UserId
+	box.Num = uc.Num
+
+	res = u.data.DB(ctx).Table("box_record").Create(&box)
+	if res.Error != nil {
+		return errors.New(500, "BuyBox", "创建失败")
+	}
+
+	return nil
+}
+
+// GetUserBoxRecordById .
+func (u *UserRepo) GetUserBoxRecordById(ctx context.Context, id uint64) (*biz.BoxRecord, error) {
+	var v *BoxRecord
+	instance := u.data.DB(ctx).Where("id=?", id).Table("box_record")
+
+	if err := instance.First(&v).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+
+		return nil, errors.New(500, "box_record ERROR", err.Error())
+	}
+
+	return &biz.BoxRecord{
+		ID:        v.ID,
+		UserId:    v.UserId,
+		Num:       v.Num,
+		GoodId:    v.GoodId,
+		GoodType:  v.GoodType,
+		CreatedAt: v.CreatedAt,
+		UpdatedAt: v.UpdatedAt,
+		Content:   v.Content,
+	}, nil
+}
+
+// OpenBoxSeed .
+func (u *UserRepo) OpenBoxSeed(ctx context.Context, id uint64, content string, seedInfo *biz.Seed) error {
+	res := u.data.DB(ctx).Table("box_record").Where("id=?", id).Where("good_id=?", 0).
+		Updates(map[string]interface{}{"good_id": seedInfo.SeedId, "good_type": 1, "content": content, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "BuyBox", "config")
+	}
+
+	var seed Seed
+	seed.SeedId = seedInfo.SeedId
+	seed.UserId = seedInfo.UserId
+	seed.OutMaxAmount = seedInfo.OutMaxAmount
+	seed.OutOverTime = seedInfo.OutOverTime
+	res = u.data.DB(ctx).Table("seed").Create(&seed)
+	if res.Error != nil {
+		return errors.New(500, "BuyBox", "创建失败")
+	}
+
+	return nil
+}
+
+// OpenBoxProp .
+func (u *UserRepo) OpenBoxProp(ctx context.Context, id uint64, content string, propInfo *biz.Prop) error {
+	res := u.data.DB(ctx).Table("box_record").Where("id=?", id).Where("good_id=?", 0).
+		Updates(map[string]interface{}{"good_id": propInfo.PropType, "good_type": 2, "content": content, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "BuyBox", "config")
+	}
+
+	var prop Prop
+	prop.PropType = propInfo.PropType
+	prop.UserId = propInfo.UserId
+	prop.OneOne = propInfo.OneOne
+	prop.OneTwo = propInfo.OneTwo
+	prop.TwoOne = propInfo.TwoOne
+	prop.TwoTwo = propInfo.TwoTwo
+	prop.ThreeOne = propInfo.ThreeOne
+	prop.FourOne = propInfo.FourOne
+	prop.FiveOne = propInfo.FiveOne
+	res = u.data.DB(ctx).Table("prop").Create(&prop)
+	if res.Error != nil {
+		return errors.New(500, "BuyBox", "创建失败")
+	}
+
+	return nil
+}
+
+// GetAllSeedInfo 获取所有种子信息
+func (u *UserRepo) GetAllSeedInfo(ctx context.Context) ([]*biz.SeedInfo, error) {
+	var seeds []*SeedInfo
+
+	res := make([]*biz.SeedInfo, 0)
+	if err := u.data.DB(ctx).Table("seed_info").Order("id asc").Find(&seeds).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return res, nil
+		}
+
+		return nil, errors.New(500, "SEED ERROR", err.Error())
+	}
+
+	for _, seed := range seeds {
+		res = append(res, &biz.SeedInfo{
+			ID:           seed.ID,
+			Name:         seed.Name,
+			OutMinAmount: seed.OutMinAmount,
+			OutMaxAmount: seed.OutMaxAmount,
+			GetRate:      seed.GetRate,
+			OutOverTime:  seed.OutOverTime,
+			CreatedAt:    seed.CreatedAt,
+			UpdatedAt:    seed.UpdatedAt,
+		})
+	}
+
+	return res, nil
+}
+
+// GetAllPropInfo 获取所有道具信息
+func (u *UserRepo) GetAllPropInfo(ctx context.Context) ([]*biz.PropInfo, error) {
+	var props []*PropInfo
+
+	res := make([]*biz.PropInfo, 0)
+	if err := u.data.DB(ctx).Table("prop_info").Order("id asc").Find(&props).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return res, nil
+		}
+
+		return nil, errors.New(500, "PROP ERROR", err.Error())
+	}
+
+	for _, prop := range props {
+		res = append(res, &biz.PropInfo{
+			ID:        prop.ID,
+			PropType:  prop.PropType,
+			OneOne:    prop.OneOne,
+			OneTwo:    prop.OneTwo,
+			TwoOne:    prop.TwoOne,
+			TwoTwo:    prop.TwoTwo,
+			ThreeOne:  prop.ThreeOne,
+			FourOne:   prop.FourOne,
+			FiveOne:   prop.FiveOne,
+			GetRate:   prop.GetRate,
+			CreatedAt: prop.CreatedAt,
+			UpdatedAt: prop.UpdatedAt,
+		})
+	}
+
+	return res, nil
+}
+
+func (u *UserRepo) GetAllRandomSeeds(ctx context.Context) ([]*biz.RandomSeed, error) {
+	var seeds []*RandomSeed
+
+	res := make([]*biz.RandomSeed, 0)
+	if err := u.data.DB(ctx).Table("random_seeds").Order("id asc").Find(&seeds).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return res, nil
+		}
+
+		return nil, errors.New(500, "SEED ERROR", err.Error())
+	}
+
+	for _, seed := range seeds {
+		res = append(res, &biz.RandomSeed{
+			ID:        seed.ID,
+			Scene:     seed.Scene,
+			SeedValue: seed.SeedValue,
+			CreatedAt: seed.CreatedAt,
+			UpdatedAt: seed.UpdatedAt,
+		})
+	}
+
+	return res, nil
+}
+
+// UpdateSeedValue 更新种子值
+func (u *UserRepo) UpdateSeedValue(ctx context.Context, scene uint64, newSeed uint64) error {
+	err := u.data.DB(ctx).Table("random_seeds").
+		Where("scene = ?", scene).
+		Update("seed_value", newSeed).
+		Update("updated_at", time.Now()).Error
+
+	if err != nil {
+		return errors.New(500, "SEED UPDATE ERROR", err.Error())
+	}
+
+	return nil
+}
+
+// GetLandByID 根据 Land ID 查询单条 Land 记录
+func (u *UserRepo) GetLandByID(ctx context.Context, landID uint64) (*biz.Land, error) {
+	var land Land
+
+	if err := u.data.DB(ctx).Table("land").Where("limit_date>=?", time.Now().Unix()).Where("id = ?", landID).First(&land).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil // 没有找到返回 nil
+		}
+		return nil, errors.New(500, "LAND ERROR", err.Error())
+	}
+
+	return &biz.Land{
+		ID:             land.ID,
+		UserId:         land.UserId,
+		Level:          land.Level,
+		OutPutRate:     land.OutPutRate,
+		RentOutPutRate: land.RentOutPutRate,
+		MaxHealth:      land.MaxHealth,
+		PerHealth:      land.PerHealth,
+		LimitDate:      land.LimitDate,
+		Status:         land.Status,
+		LocationNum:    land.LocationNum,
+		CreatedAt:      land.CreatedAt,
+		UpdatedAt:      land.UpdatedAt,
+		One:            land.One,
+		Two:            land.Two,
+		Three:          land.Three,
+		SellAmount:     land.SellAmount,
+	}, nil
+}
+
+// Plant .
+func (u *UserRepo) Plant(ctx context.Context, status, originStatus uint64, landUserUse *biz.LandUserUse) error {
+	res := u.data.DB(ctx).Table("land").Where("id=?", landUserUse.LandId).Where("status=?", originStatus).Where("limit_date>=?", time.Now().Unix()).
+		Updates(map[string]interface{}{
+			"status":     status,
+			"updated_at": time.Now().Format("2006-01-02 15:04:05"),
+		})
+	if res.Error != nil {
+		return errors.New(500, "plant", "更新盲盒记录失败")
+	}
+
+	res = u.data.DB(ctx).Table("seed").Where("id=?", landUserUse.SeedId).Where("status=?", 0).
+		Updates(map[string]interface{}{
+			"status":     1,
+			"updated_at": time.Now().Format("2006-01-02 15:04:05"),
+		})
+	if res.Error != nil {
+		return errors.New(500, "plant", "更新盲盒记录失败")
+	}
+
+	res = u.data.DB(ctx).Table("land_user_use").Create(&LandUserUse{
+		LandId:       landUserUse.LandId,
+		Level:        landUserUse.Level,
+		UserId:       landUserUse.UserId,
+		OwnerUserId:  landUserUse.OwnerUserId,
+		SeedId:       landUserUse.SeedId,
+		SeedTypeId:   landUserUse.SeedTypeId,
+		Status:       landUserUse.Status,
+		BeginTime:    landUserUse.BeginTime,
+		TotalTime:    landUserUse.TotalTime,
+		OverTime:     landUserUse.OverTime,
+		OutMaxNum:    landUserUse.OutMaxNum,
+		OutNum:       landUserUse.OutNum,
+		InsectStatus: landUserUse.InsectStatus,
+		OutSubNum:    landUserUse.OutSubNum,
+		StealNum:     landUserUse.StealNum,
+		StopStatus:   landUserUse.StopStatus,
+		StopTime:     landUserUse.StopTime,
+		SubTime:      landUserUse.SubTime,
+		UseChan:      landUserUse.UseChan,
+		One:          landUserUse.One,
+		Two:          landUserUse.Two,
+	})
+	if res.Error != nil {
+		return errors.New(500, "OpenBox", "创建土地使用记录失败")
+	}
+
+	return nil
+}
+
+// GetPropByIDSell 根据道具 ID 查询单条道具数据
+func (u *UserRepo) GetPropByIDSell(ctx context.Context, propID, status uint64) (*biz.Prop, error) {
+	var prop Prop
+
+	if err := u.data.DB(ctx).Table("prop").
+		Where("id = ?", propID).
+		Where("status <=?", status).
+		First(&prop).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil // 返回 nil 代表未找到
+		}
+		return nil, errors.New(500, "PROP ERROR", err.Error())
+	}
+
+	return &biz.Prop{
+		ID:         prop.ID,
+		UserId:     prop.UserId,
+		Status:     prop.Status,
+		PropType:   prop.PropType,
+		OneOne:     prop.OneOne,
+		OneTwo:     prop.OneTwo,
+		TwoOne:     prop.TwoOne,
+		TwoTwo:     prop.TwoTwo,
+		ThreeOne:   prop.ThreeOne,
+		FourOne:    prop.FourOne,
+		FiveOne:    prop.FiveOne,
+		SellAmount: prop.SellAmount,
+		CreatedAt:  prop.CreatedAt,
+		UpdatedAt:  prop.UpdatedAt,
+	}, nil
+}
+
+// GetPropByID 根据道具 ID 查询单条道具数据
+func (u *UserRepo) GetPropByID(ctx context.Context, propID, status uint64) (*biz.Prop, error) {
+	var prop Prop
+
+	if err := u.data.DB(ctx).Table("prop").
+		Where("id = ?", propID).
+		Where("status = ?", status).
+		First(&prop).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil // 返回 nil 代表未找到
+		}
+		return nil, errors.New(500, "PROP ERROR", err.Error())
+	}
+
+	return &biz.Prop{
+		ID:         prop.ID,
+		UserId:     prop.UserId,
+		Status:     prop.Status,
+		PropType:   prop.PropType,
+		OneOne:     prop.OneOne,
+		OneTwo:     prop.OneTwo,
+		TwoOne:     prop.TwoOne,
+		TwoTwo:     prop.TwoTwo,
+		ThreeOne:   prop.ThreeOne,
+		FourOne:    prop.FourOne,
+		FiveOne:    prop.FiveOne,
+		SellAmount: prop.SellAmount,
+		CreatedAt:  prop.CreatedAt,
+		UpdatedAt:  prop.UpdatedAt,
+	}, nil
+}
+
+// BuySeed .
+func (u *UserRepo) BuySeed(ctx context.Context, git, getGit float64, userId, userIdGet, seedId uint64) error {
+	res := u.data.DB(ctx).Table("user").Where("id=?", userIdGet).Where("git>=?", git).
+		Updates(map[string]interface{}{"git": gorm.Expr("git - ?", git), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "BuyBox", "用户信息修改失败")
+	}
+
+	res = u.data.DB(ctx).Table("user").Where("id=?", userId).
+		Updates(map[string]interface{}{"git": gorm.Expr("git + ?", getGit), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "BuyBox", "用户信息修改失败")
+	}
+
+	res = u.data.DB(ctx).Table("seed").Where("id=?", seedId).Where("user_id=?", userId).Where("status=?", 4).
+		Updates(map[string]interface{}{"user_id": userIdGet, "status": 0, "sell_amount": 0, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "BuySeed", "用户信息修改失败")
+	}
+	return nil
+}
+
+// SellSeed .
+func (u *UserRepo) SellSeed(ctx context.Context, seedId, userId uint64, sellAmount float64) error {
+	res := u.data.DB(ctx).Table("seed").Where("id=?", seedId).Where("user_id=?", userId).Where("status=?", 0).
+		Updates(map[string]interface{}{"status": 4, "sell_amount": sellAmount, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "sellSeed", "用户信息修改失败")
+	}
+	return nil
+}
+
+// UnSellSeed .
+func (u *UserRepo) UnSellSeed(ctx context.Context, seedId, userId uint64) error {
+	res := u.data.DB(ctx).Table("seed").Where("id=?", seedId).Where("user_id=?", userId).Where("status=?", 4).
+		Updates(map[string]interface{}{"status": 0, "sell_amount": 0, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "sellSeed", "用户信息修改失败")
+	}
+	return nil
+}
+
+// BuyProp .
+func (u *UserRepo) BuyProp(ctx context.Context, git, getGit float64, userId, userIdGet, propId uint64) error {
+	res := u.data.DB(ctx).Table("user").Where("id=?", userIdGet).Where("git>=?", git).
+		Updates(map[string]interface{}{"git": gorm.Expr("git - ?", git), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "BuyBox", "用户信息修改失败")
+	}
+
+	res = u.data.DB(ctx).Table("user").Where("id=?", userId).
+		Updates(map[string]interface{}{"git": gorm.Expr("git + ?", getGit), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "BuyBox", "用户信息修改失败")
+	}
+
+	res = u.data.DB(ctx).Table("prop").Where("id=?", propId).Where("user_id=?", userId).Where("status=?", 4).
+		Updates(map[string]interface{}{"user_id": userIdGet, "status": 1, "sell_amount": 0, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "BuyProp", "用户信息修改失败")
+	}
+	return nil
+}
+
+// UnSellProp .
+func (u *UserRepo) UnSellProp(ctx context.Context, propId uint64, userId uint64) error {
+	res := u.data.DB(ctx).Table("prop").Where("id=?", propId).Where("user_id=?", userId).Where("status=?", 4).
+		Updates(map[string]interface{}{"status": 1, "sell_amount": 0, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "sellProp", "用户信息修改失败")
+	}
+	return nil
+}
+
+// SellProp .
+func (u *UserRepo) SellProp(ctx context.Context, propId uint64, userId uint64, sellAmount float64) error {
+	res := u.data.DB(ctx).Table("prop").Where("id=?", propId).Where("user_id=?", userId).Where("status<=?", 2).
+		Updates(map[string]interface{}{"status": 4, "sell_amount": sellAmount, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "sellProp", "用户信息修改失败")
+	}
+	return nil
+}
+
+// BuyLand .
+func (u *UserRepo) BuyLand(ctx context.Context, git, getGit float64, userId, userIdGet, landId uint64) error {
+	res := u.data.DB(ctx).Table("user").Where("id=?", userIdGet).Where("git>=?", git).
+		Updates(map[string]interface{}{"git": gorm.Expr("git - ?", git), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "BuyBox", "用户信息修改失败")
+	}
+
+	res = u.data.DB(ctx).Table("user").Where("id=?", userId).
+		Updates(map[string]interface{}{"git": gorm.Expr("git + ?", getGit), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "BuyBox", "用户信息修改失败")
+	}
+
+	res = u.data.DB(ctx).Table("land").Where("id=?", landId).Where("user_id=?", userId).Where("status=?", 4).Where("three=?", 1).Where("limit_date>=?", time.Now().Unix()).
+		Updates(map[string]interface{}{"user_id": userIdGet, "status": 0, "sell_amount": 0, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "BuyLand", "用户信息修改失败")
+	}
+
+	return nil
+}
+
+// UnSellLand .
+func (u *UserRepo) UnSellLand(ctx context.Context, propId uint64, userId uint64) error {
+	res := u.data.DB(ctx).Table("land").Where("id=?", propId).Where("user_id=?", userId).Where("status=?", 4).
+		Updates(map[string]interface{}{"status": 0, "sell_amount": 0, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "sellLand", "用户信息修改失败")
+	}
+	return nil
+}
+
+// SellLand .
+func (u *UserRepo) SellLand(ctx context.Context, propId uint64, userId uint64, sellAmount float64) error {
+	res := u.data.DB(ctx).Table("land").Where("id=?", propId).Where("user_id=?", userId).Where("status=?", 0).
+		Updates(map[string]interface{}{"status": 4, "sell_amount": sellAmount, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "sellLand", "用户信息修改失败")
+	}
+	return nil
 }
