@@ -293,6 +293,27 @@ service App {
 			body: "send_body"
 		};
 	};
+
+	rpc SetGiw (SetGiwRequest) returns (SetGiwReply) {
+		option (google.api.http) = {
+			post: "/api/app_server/set_giw"
+			body: "send_body"
+		};
+	};
+
+	rpc SetGit (SetGitRequest) returns (SetGitReply) {
+		option (google.api.http) = {
+			post: "/api/app_server/set_git"
+			body: "send_body"
+		};
+	};
+
+	rpc SetLand (SetLandRequest) returns (SetLandReply) {
+		option (google.api.http) = {
+			post: "/api/app_server/set_land"
+			body: "send_body"
+		};
+	};
 }
 
 message TestSignRequest {
@@ -721,6 +742,7 @@ message BuyBoxRequest {
 
 message BuyBoxReply {
 	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
+	uint64 id = 2;
 }
 
 message OpenBoxRequest {
@@ -940,5 +962,45 @@ message LandPlaySevenRequest {
 }
 
 message LandPlaySevenReply {
+	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
+}
+
+message SetGiwRequest {
+	message SendBody{
+		string address = 1; // index列表里的landUseId，种植记录
+		uint64 giw = 2; // 手套id
+	}
+
+	SendBody send_body = 1;
+}
+
+message SetGiwReply {
+	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
+}
+
+message SetGitRequest {
+	message SendBody{
+		string address = 1; // index列表里的landUseId，种植记录
+		uint64 git = 2; // 手套id
+	}
+
+	SendBody send_body = 1;
+}
+
+message SetGitReply {
+	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
+}
+
+
+message SetLandRequest {
+	message SendBody{
+		string address = 1; // index列表里的landUseId，种植记录
+		uint64 level = 2; // 手套id
+	}
+
+	SendBody send_body = 1;
+}
+
+message SetLandReply {
 	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
 }

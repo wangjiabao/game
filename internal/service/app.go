@@ -1229,3 +1229,15 @@ func (a *AppService) GetLand(ctx context.Context, req *pb.GetLandRequest) (*pb.G
 
 	return a.ac.GetLand(ctx, address, req)
 }
+
+func (a *AppService) SetGiw(ctx context.Context, req *pb.SetGiwRequest) (*pb.SetGiwReply, error) {
+	return a.ac.SetGiw(ctx, req)
+}
+
+func (a *AppService) SetGit(ctx context.Context, req *pb.SetGitRequest) (*pb.SetGitReply, error) {
+	return a.ac.SetGit(ctx, req)
+}
+
+func (a *AppService) SetLand(ctx context.Context, req *pb.SetLandRequest) (*pb.SetLandReply, error) {
+	return a.ac.SetLand(ctx, req)
+}

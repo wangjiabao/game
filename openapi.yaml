@@ -405,6 +405,78 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Status'
+    /api/app_server/set_git:
+        post:
+            tags:
+                - App
+            operationId: App_SetGit
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/SetGitRequest_SendBody'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SetGitReply'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /api/app_server/set_giw:
+        post:
+            tags:
+                - App
+            operationId: App_SetGiw
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/SetGiwRequest_SendBody'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SetGiwReply'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /api/app_server/set_land:
+        post:
+            tags:
+                - App
+            operationId: App_SetLand
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/SetLandRequest_SendBody'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SetLandReply'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
     /api/app_server/skate_get:
         post:
             tags:
@@ -922,6 +994,8 @@ components:
             properties:
                 status:
                     type: string
+                id:
+                    type: string
         BuyBoxRequest_SendBody:
             type: object
             properties:
@@ -1181,6 +1255,42 @@ components:
                 amount:
                     type: string
                 sign:
+                    type: string
+        SetGitReply:
+            type: object
+            properties:
+                status:
+                    type: string
+        SetGitRequest_SendBody:
+            type: object
+            properties:
+                address:
+                    type: string
+                git:
+                    type: string
+        SetGiwReply:
+            type: object
+            properties:
+                status:
+                    type: string
+        SetGiwRequest_SendBody:
+            type: object
+            properties:
+                address:
+                    type: string
+                giw:
+                    type: string
+        SetLandReply:
+            type: object
+            properties:
+                status:
+                    type: string
+        SetLandRequest_SendBody:
+            type: object
+            properties:
+                address:
+                    type: string
+                level:
                     type: string
         SkateGetPlayReply:
             type: object

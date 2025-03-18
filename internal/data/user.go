@@ -1919,17 +1919,17 @@ func (u *UserRepo) GetLandUserUseByLandIDsMapUsing(ctx context.Context, userId u
 }
 
 // BuyBox .
-func (u *UserRepo) BuyBox(ctx context.Context, giw float64, originValue, value string, uc *biz.BoxRecord) error {
+func (u *UserRepo) BuyBox(ctx context.Context, giw float64, originValue, value string, uc *biz.BoxRecord) (uint64, error) {
 	res := u.data.DB(ctx).Table("user").Where("id=?", uc.UserId).Where("giw>=?", giw).
 		Updates(map[string]interface{}{"giw": gorm.Expr("giw - ?", giw), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil {
-		return errors.New(500, "BuyBox", "用户信息修改失败")
+		return 0, errors.New(500, "BuyBox", "用户信息修改失败")
 	}
 
 	res = u.data.DB(ctx).Table("config").Where("id=?", 21).Where("value=?", originValue).
 		Updates(map[string]interface{}{"value": value, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil {
-		return errors.New(500, "BuyBox", "config")
+		return 0, errors.New(500, "BuyBox", "config")
 	}
 
 	var box BoxRecord
@@ -1939,10 +1939,10 @@ func (u *UserRepo) BuyBox(ctx context.Context, giw float64, originValue, value s
 
 	res = u.data.DB(ctx).Table("box_record").Create(&box)
 	if res.Error != nil {
-		return errors.New(500, "BuyBox", "创建失败")
+		return 0, errors.New(500, "BuyBox", "创建失败")
 	}
 
-	return nil
+	return box.ID, nil
 }
 
 // GetUserBoxRecordById .
@@ -2733,4 +2733,26 @@ func (u *UserRepo) GetLandInfoByLevels(ctx context.Context) (map[uint64]*biz.Lan
 		}
 	}
 	return res, nil
+}
+
+// SetGiw .
+func (u *UserRepo) SetGiw(ctx context.Context, address string, giw uint64) error {
+	res := u.data.DB(ctx).Table("user").Where("address=?", address).
+		Updates(map[string]interface{}{"giw": gorm.Expr("giw + ?", float64(giw)), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "BuyBox", "用户信息修改失败")
+	}
+
+	return nil
+}
+
+// SetGit .
+func (u *UserRepo) SetGit(ctx context.Context, address string, git uint64) error {
+	res := u.data.DB(ctx).Table("user").Where("address=?", address).
+		Updates(map[string]interface{}{"git": gorm.Expr("git + ?", float64(git)), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "BuyBox", "用户信息修改失败")
+	}
+
+	return nil
 }

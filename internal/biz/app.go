@@ -388,7 +388,7 @@ type UserRepo interface {
 	GetUserOrderCount(ctx context.Context) (int64, error)
 	GetUserOrder(ctx context.Context, b *Pagination) ([]*User, error)
 	GetLandUserUseByLandIDsMapUsing(ctx context.Context, userId uint64, landIDs []uint64) (map[uint64]*LandUserUse, error)
-	BuyBox(ctx context.Context, giw float64, originValue, value string, uc *BoxRecord) error
+	BuyBox(ctx context.Context, giw float64, originValue, value string, uc *BoxRecord) (uint64, error)
 	GetUserBoxRecordById(ctx context.Context, id uint64) (*BoxRecord, error)
 	OpenBoxSeed(ctx context.Context, id uint64, content string, seedInfo *Seed) (uint64, error)
 	OpenBoxProp(ctx context.Context, id uint64, content string, propInfo *Prop) (uint64, error)
@@ -424,6 +424,8 @@ type UserRepo interface {
 	CreateLand(ctx context.Context, lc *Land) (*Land, error)
 	GetLand(ctx context.Context, id, id2, userId uint64) error
 	GetLandInfoByLevels(ctx context.Context) (map[uint64]*LandInfo, error)
+	SetGiw(ctx context.Context, address string, giw uint64) error
+	SetGit(ctx context.Context, address string, git uint64) error
 }
 
 // AppUsecase is an app usecase.
@@ -1883,11 +1885,16 @@ func (ac *AppUsecase) BuyBox(ctx context.Context, address string, req *pb.BuyBox
 	}
 
 	tmpSellNumNew := strconv.FormatUint(boxSellNum+1, 10)
+	boxId := uint64(0)
 	if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-		return ac.userRepo.BuyBox(ctx, boxAmount, boxSellNumOrigin, tmpSellNumNew, &BoxRecord{
+		boxId, err = ac.userRepo.BuyBox(ctx, boxAmount, boxSellNumOrigin, tmpSellNumNew, &BoxRecord{
 			UserId: user.ID,
 			Num:    boxNum,
 		})
+		if nil != err {
+			return err
+		}
+		return nil
 	}); nil != err {
 		fmt.Println(err, "buybox", user)
 		return &pb.BuyBoxReply{
@@ -1897,6 +1904,7 @@ func (ac *AppUsecase) BuyBox(ctx context.Context, address string, req *pb.BuyBox
 
 	return &pb.BuyBoxReply{
 		Status: "ok",
+		Id:     boxId,
 	}, nil
 }
 
@@ -2249,13 +2257,25 @@ func (ac *AppUsecase) LandPlayOne(ctx context.Context, address string, req *pb.L
 	}
 
 	now := uint64(time.Now().Unix())
+	rngTmp := rand2.New(rand2.NewSource(time.Now().UnixNano()))
+	outMin := int64(now)
+	outMax := int64(now + seed.OutOverTime)
+
+	// 计算随机范围
+	tmpNum := outMax - outMin
+	if tmpNum <= 0 {
+		tmpNum = 1 // 避免 Int63n(0) panic
+	}
+	// 生成随机数
+	randomNumber := outMin + rngTmp.Int63n(tmpNum)
+
 	one := uint64(0)
 	two := uint64(0)
 	r := rngPlant.Float64() // 生成 0.0 ~ 1.0 之间的随机数
 	if r < 0.05 {
-		one = now + (seed.OutOverTime / 2)
+		one = uint64(randomNumber)
 	} else if r < 0.10 {
-		two = now + (seed.OutOverTime / 2)
+		two = uint64(randomNumber)
 	}
 
 	originStatusTmp := land.Status
@@ -3459,7 +3479,7 @@ func (ac *AppUsecase) GetLand(ctx context.Context, address string, req *pb.GetLa
 
 			return nil
 		}); nil != err {
-			fmt.Println(err, "LandAddOutRate", user)
+			fmt.Println(err, "GetLand", user)
 			return &pb.GetLandReply{
 				Status: "培育失败",
 			}, nil
@@ -3577,7 +3597,7 @@ func (ac *AppUsecase) GetLand(ctx context.Context, address string, req *pb.GetLa
 
 			return nil
 		}); nil != err {
-			fmt.Println(err, "LandAddOutRate", user)
+			fmt.Println(err, "GetLand", user)
 			return &pb.GetLandReply{
 				Status: "培育失败",
 			}, nil
@@ -3589,4 +3609,93 @@ func (ac *AppUsecase) GetLand(ctx context.Context, address string, req *pb.GetLa
 	}
 
 	return &pb.GetLandReply{Status: "ok"}, nil
+}
+
+func (ac *AppUsecase) SetGiw(ctx context.Context, req *pb.SetGiwRequest) (*pb.SetGiwReply, error) {
+	return &pb.SetGiwReply{Status: "ok"}, ac.userRepo.SetGiw(ctx, req.SendBody.Address, req.SendBody.Giw)
+}
+
+func (ac *AppUsecase) SetGit(ctx context.Context, req *pb.SetGitRequest) (*pb.SetGitReply, error) {
+	return &pb.SetGitReply{Status: "ok"}, ac.userRepo.SetGit(ctx, req.SendBody.Address, req.SendBody.Git)
+}
+
+func (ac *AppUsecase) SetLand(ctx context.Context, req *pb.SetLandRequest) (*pb.SetLandReply, error) {
+	var (
+		user *User
+		err  error
+
+		landInfos map[uint64]*LandInfo
+	)
+
+	user, err = ac.userRepo.GetUserByAddress(ctx, req.SendBody.Address)
+	if nil != err {
+		return &pb.SetLandReply{Status: "地址不存在用户"}, nil
+	}
+
+	if nil == user {
+		return &pb.SetLandReply{Status: "地址不存在用户"}, nil
+	}
+
+	landInfos, err = ac.userRepo.GetLandInfoByLevels(ctx)
+	if nil != err {
+		return &pb.SetLandReply{
+			Status: "信息错误",
+		}, nil
+	}
+
+	if 0 >= len(landInfos) {
+		return &pb.SetLandReply{
+			Status: "配置信息错误",
+		}, nil
+	}
+
+	tmpLevel := req.SendBody.Level
+	if _, ok := landInfos[tmpLevel]; !ok {
+		return &pb.SetLandReply{
+			Status: "级别错误",
+		}, nil
+	}
+
+	rngTmp := rand2.New(rand2.NewSource(time.Now().UnixNano()))
+	outMin := int64(landInfos[tmpLevel].OutPutRateMin)
+	outMax := int64(landInfos[tmpLevel].OutPutRateMax)
+
+	// 计算随机范围
+	tmpNum := outMax - outMin
+	if tmpNum <= 0 {
+		tmpNum = 1 // 避免 Int63n(0) panic
+	}
+
+	// 生成随机数
+	randomNumber := outMin + rngTmp.Int63n(tmpNum)
+
+	now := time.Now().Unix()
+	if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+		_, err = ac.userRepo.CreateLand(ctx, &Land{
+			UserId:     user.ID,
+			Level:      landInfos[tmpLevel].Level,
+			OutPutRate: float64(randomNumber),
+			MaxHealth:  landInfos[tmpLevel].MaxHealth,
+			PerHealth:  landInfos[tmpLevel].PerHealth,
+			LimitDate:  uint64(now) + landInfos[tmpLevel].LimitDateMax*3600*24,
+			Status:     0,
+			One:        1,
+			Two:        1,
+			Three:      1,
+		})
+		if nil != err {
+			return err
+		}
+
+		return nil
+	}); nil != err {
+		fmt.Println(err, "setLand", user)
+		return &pb.SetLandReply{
+			Status: "发放失败",
+		}, nil
+	}
+
+	return &pb.SetLandReply{
+		Status: "ok",
+	}, nil
 }
