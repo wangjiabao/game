@@ -663,12 +663,12 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		skateGetTotalAmount float64
 		skateGetTotal       *SkateGetTotal
 	)
-	skateGetAll, err = ac.userRepo.GetTotalStakeRate(ctx)
-	if nil != err {
-		return &pb.UserInfoReply{
-			Status: "放大器错误查询",
-		}, nil
-	}
+	//skateGetAll, err = ac.userRepo.GetTotalStakeRate(ctx)
+	//if nil != err {
+	//	return &pb.UserInfoReply{
+	//		Status: "放大器错误查询",
+	//	}, nil
+	//}
 
 	skateGetTotal, err = ac.userRepo.GetSkateGetTotal(ctx)
 	if nil != err || nil == skateGetTotal {
