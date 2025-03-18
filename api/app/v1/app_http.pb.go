@@ -181,9 +181,9 @@ func RegisterAppHTTPServer(s *http.Server, srv AppHTTPServer) {
 	r.POST("/api/app_server/land_play_five", _App_LandPlayFive0_HTTP_Handler(srv))
 	r.POST("/api/app_server/land_play_six", _App_LandPlaySix0_HTTP_Handler(srv))
 	r.POST("/api/app_server/land_play_seven", _App_LandPlaySeven0_HTTP_Handler(srv))
-	r.POST("/api/app_server/set_giw", _App_SetGiw0_HTTP_Handler(srv))
-	r.POST("/api/app_server/set_git", _App_SetGit0_HTTP_Handler(srv))
-	r.POST("/api/app_server/set_land", _App_SetLand0_HTTP_Handler(srv))
+	r.GET("/api/app_server/set_giw", _App_SetGiw0_HTTP_Handler(srv))
+	r.GET("/api/app_server/set_git", _App_SetGit0_HTTP_Handler(srv))
+	r.GET("/api/app_server/set_land", _App_SetLand0_HTTP_Handler(srv))
 }
 
 func _App_TestSign0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
@@ -974,9 +974,6 @@ func _App_LandPlaySeven0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) 
 func _App_SetGiw0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
 		var in SetGiwRequest
-		if err := ctx.Bind(&in.SendBody); err != nil {
-			return err
-		}
 		if err := ctx.BindQuery(&in); err != nil {
 			return err
 		}
@@ -996,9 +993,6 @@ func _App_SetGiw0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
 func _App_SetGit0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
 		var in SetGitRequest
-		if err := ctx.Bind(&in.SendBody); err != nil {
-			return err
-		}
 		if err := ctx.BindQuery(&in); err != nil {
 			return err
 		}
@@ -1018,9 +1012,6 @@ func _App_SetGit0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
 func _App_SetLand0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
 		var in SetLandRequest
-		if err := ctx.Bind(&in.SendBody); err != nil {
-			return err
-		}
 		if err := ctx.BindQuery(&in); err != nil {
 			return err
 		}
@@ -1313,10 +1304,10 @@ func (c *AppHTTPClientImpl) Sell(ctx context.Context, in *SellRequest, opts ...h
 func (c *AppHTTPClientImpl) SetGit(ctx context.Context, in *SetGitRequest, opts ...http.CallOption) (*SetGitReply, error) {
 	var out SetGitReply
 	pattern := "/api/app_server/set_git"
-	path := binding.EncodeURL(pattern, in, false)
+	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationAppSetGit))
 	opts = append(opts, http.PathTemplate(pattern))
-	err := c.cc.Invoke(ctx, "POST", path, in.SendBody, &out, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1326,10 +1317,10 @@ func (c *AppHTTPClientImpl) SetGit(ctx context.Context, in *SetGitRequest, opts 
 func (c *AppHTTPClientImpl) SetGiw(ctx context.Context, in *SetGiwRequest, opts ...http.CallOption) (*SetGiwReply, error) {
 	var out SetGiwReply
 	pattern := "/api/app_server/set_giw"
-	path := binding.EncodeURL(pattern, in, false)
+	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationAppSetGiw))
 	opts = append(opts, http.PathTemplate(pattern))
-	err := c.cc.Invoke(ctx, "POST", path, in.SendBody, &out, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1339,10 +1330,10 @@ func (c *AppHTTPClientImpl) SetGiw(ctx context.Context, in *SetGiwRequest, opts 
 func (c *AppHTTPClientImpl) SetLand(ctx context.Context, in *SetLandRequest, opts ...http.CallOption) (*SetLandReply, error) {
 	var out SetLandReply
 	pattern := "/api/app_server/set_land"
-	path := binding.EncodeURL(pattern, in, false)
+	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationAppSetLand))
 	opts = append(opts, http.PathTemplate(pattern))
-	err := c.cc.Invoke(ctx, "POST", path, in.SendBody, &out, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

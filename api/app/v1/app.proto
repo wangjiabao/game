@@ -296,22 +296,19 @@ service App {
 
 	rpc SetGiw (SetGiwRequest) returns (SetGiwReply) {
 		option (google.api.http) = {
-			post: "/api/app_server/set_giw"
-			body: "send_body"
+			get: "/api/app_server/set_giw"
 		};
 	};
 
 	rpc SetGit (SetGitRequest) returns (SetGitReply) {
 		option (google.api.http) = {
-			post: "/api/app_server/set_git"
-			body: "send_body"
+			get: "/api/app_server/set_git"
 		};
 	};
 
 	rpc SetLand (SetLandRequest) returns (SetLandReply) {
 		option (google.api.http) = {
-			post: "/api/app_server/set_land"
-			body: "send_body"
+			get: "/api/app_server/set_land"
 		};
 	};
 }
@@ -966,12 +963,8 @@ message LandPlaySevenReply {
 }
 
 message SetGiwRequest {
-	message SendBody{
-		string address = 1; // index列表里的landUseId，种植记录
-		uint64 giw = 2; // 手套id
-	}
-
-	SendBody send_body = 1;
+	string address = 1; // index列表里的landUseId，种植记录
+	uint64 giw = 2; // 手套id
 }
 
 message SetGiwReply {
@@ -979,12 +972,8 @@ message SetGiwReply {
 }
 
 message SetGitRequest {
-	message SendBody{
-		string address = 1; // index列表里的landUseId，种植记录
-		uint64 git = 2; // 手套id
-	}
-
-	SendBody send_body = 1;
+	string address = 1; // index列表里的landUseId，种植记录
+	uint64 git = 2; // 手套id
 }
 
 message SetGitReply {
@@ -993,12 +982,8 @@ message SetGitReply {
 
 
 message SetLandRequest {
-	message SendBody{
-		string address = 1; // index列表里的landUseId，种植记录
-		uint64 level = 2; // 手套id
-	}
-
-	SendBody send_body = 1;
+	string address = 1; // index列表里的landUseId，种植记录
+	uint64 level = 2; // 手套id
 }
 
 message SetLandReply {

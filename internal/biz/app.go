@@ -3727,11 +3727,11 @@ func (ac *AppUsecase) SkateGet(ctx context.Context, address string, req *pb.Skat
 }
 
 func (ac *AppUsecase) SetGiw(ctx context.Context, req *pb.SetGiwRequest) (*pb.SetGiwReply, error) {
-	return &pb.SetGiwReply{Status: "ok"}, ac.userRepo.SetGiw(ctx, req.SendBody.Address, req.SendBody.Giw)
+	return &pb.SetGiwReply{Status: "ok"}, ac.userRepo.SetGiw(ctx, req.Address, req.Giw)
 }
 
 func (ac *AppUsecase) SetGit(ctx context.Context, req *pb.SetGitRequest) (*pb.SetGitReply, error) {
-	return &pb.SetGitReply{Status: "ok"}, ac.userRepo.SetGit(ctx, req.SendBody.Address, req.SendBody.Git)
+	return &pb.SetGitReply{Status: "ok"}, ac.userRepo.SetGit(ctx, req.Address, req.Git)
 }
 
 func (ac *AppUsecase) SetLand(ctx context.Context, req *pb.SetLandRequest) (*pb.SetLandReply, error) {
@@ -3742,7 +3742,7 @@ func (ac *AppUsecase) SetLand(ctx context.Context, req *pb.SetLandRequest) (*pb.
 		landInfos map[uint64]*LandInfo
 	)
 
-	user, err = ac.userRepo.GetUserByAddress(ctx, req.SendBody.Address)
+	user, err = ac.userRepo.GetUserByAddress(ctx, req.Address)
 	if nil != err {
 		return &pb.SetLandReply{Status: "地址不存在用户"}, nil
 	}
@@ -3764,7 +3764,7 @@ func (ac *AppUsecase) SetLand(ctx context.Context, req *pb.SetLandRequest) (*pb.
 		}, nil
 	}
 
-	tmpLevel := req.SendBody.Level
+	tmpLevel := req.Level
 	if _, ok := landInfos[tmpLevel]; !ok {
 		return &pb.SetLandReply{
 			Status: "级别错误",

@@ -406,16 +406,19 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/Status'
     /api/app_server/set_git:
-        post:
+        get:
             tags:
                 - App
             operationId: App_SetGit
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/SetGitRequest_SendBody'
-                required: true
+            parameters:
+                - name: address
+                  in: query
+                  schema:
+                    type: string
+                - name: git
+                  in: query
+                  schema:
+                    type: string
             responses:
                 "200":
                     description: OK
@@ -430,16 +433,19 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/Status'
     /api/app_server/set_giw:
-        post:
+        get:
             tags:
                 - App
             operationId: App_SetGiw
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/SetGiwRequest_SendBody'
-                required: true
+            parameters:
+                - name: address
+                  in: query
+                  schema:
+                    type: string
+                - name: giw
+                  in: query
+                  schema:
+                    type: string
             responses:
                 "200":
                     description: OK
@@ -454,16 +460,19 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/Status'
     /api/app_server/set_land:
-        post:
+        get:
             tags:
                 - App
             operationId: App_SetLand
-            requestBody:
-                content:
-                    application/json:
-                        schema:
-                            $ref: '#/components/schemas/SetLandRequest_SendBody'
-                required: true
+            parameters:
+                - name: address
+                  in: query
+                  schema:
+                    type: string
+                - name: level
+                  in: query
+                  schema:
+                    type: string
             responses:
                 "200":
                     description: OK
@@ -1261,36 +1270,15 @@ components:
             properties:
                 status:
                     type: string
-        SetGitRequest_SendBody:
-            type: object
-            properties:
-                address:
-                    type: string
-                git:
-                    type: string
         SetGiwReply:
             type: object
             properties:
                 status:
                     type: string
-        SetGiwRequest_SendBody:
-            type: object
-            properties:
-                address:
-                    type: string
-                giw:
-                    type: string
         SetLandReply:
             type: object
             properties:
                 status:
-                    type: string
-        SetLandRequest_SendBody:
-            type: object
-            properties:
-                address:
-                    type: string
-                level:
                     type: string
         SkateGetPlayReply:
             type: object
