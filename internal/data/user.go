@@ -805,6 +805,16 @@ func (u *UserRepo) GetSkateGetTotal(ctx context.Context) (*biz.SkateGetTotal, er
 	}, nil
 }
 
+// GetTotalStakeRate 获取所有用户的质押比率总和
+func (u *UserRepo) GetTotalStakeRate(ctx context.Context) (float64, error) {
+	var totalStakeRate float64
+	if err := u.data.DB(ctx).Table("stake_get").Select("SUM(stake_rate)").Scan(&totalStakeRate).Error; err != nil {
+		return 0, errors.New(500, "STAKE_RATE_SUM_ERROR", err.Error())
+	}
+
+	return totalStakeRate, nil
+}
+
 // GetUserSkateGet .
 func (u *UserRepo) GetUserSkateGet(ctx context.Context, userId uint64) (*biz.SkateGet, error) {
 	var skateGet *SkateGet
@@ -2752,6 +2762,20 @@ func (u *UserRepo) SetGit(ctx context.Context, address string, git uint64) error
 		Updates(map[string]interface{}{"git": gorm.Expr("git + ?", float64(git)), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil {
 		return errors.New(500, "BuyBox", "用户信息修改失败")
+	}
+
+	return nil
+}
+
+func (u *UserRepo) CreateStakeGet(ctx context.Context, sg *biz.StakeGet) error {
+	var stakeGet StakeGet
+	stakeGet.UserId = sg.UserId
+	stakeGet.Status = sg.Status
+	stakeGet.StakeRate = sg.StakeRate
+
+	res := u.data.DB(ctx).Table("stake_get").Create(&stakeGet)
+	if res.Error != nil {
+		return errors.New(500, "CREATE_STAKE_GET_ERROR", "创建质押记录失败")
 	}
 
 	return nil

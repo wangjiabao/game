@@ -1230,6 +1230,50 @@ func (a *AppService) GetLand(ctx context.Context, req *pb.GetLandRequest) (*pb.G
 	return a.ac.GetLand(ctx, address, req)
 }
 
+func (a *AppService) SkateGet(ctx context.Context, req *pb.SkateGetRequest) (*pb.SkateGetReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		address string
+	)
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["Address"] == nil {
+			return &pb.SkateGetReply{Status: "无效token"}, nil
+		}
+
+		address = c["Address"].(string)
+
+		// 验证
+		var (
+			res bool
+			err error
+		)
+		res, err = addressCheck(address)
+		if nil != err {
+			return &pb.SkateGetReply{Status: "无效token"}, nil
+		}
+
+		if !res {
+			return &pb.SkateGetReply{Status: "无效token"}, nil
+		}
+	} else {
+		return &pb.SkateGetReply{Status: "无效token"}, nil
+	}
+
+	var (
+		res             bool
+		addressFromSign string
+	)
+	res, addressFromSign = verifySig(req.SendBody.Sign, []byte(address))
+	if !res || addressFromSign != address {
+		return &pb.SkateGetReply{
+			Status: "地址签名错误",
+		}, nil
+	}
+
+	return a.ac.SkateGet(ctx, address, req)
+}
+
 func (a *AppService) SetGiw(ctx context.Context, req *pb.SetGiwRequest) (*pb.SetGiwReply, error) {
 	return a.ac.SetGiw(ctx, req)
 }

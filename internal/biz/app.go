@@ -359,6 +359,7 @@ type UserRepo interface {
 	GetUserBoxRecordOpen(ctx context.Context, userId, num uint64, open bool, b *Pagination) ([]*BoxRecord, error)
 	GetSkateGetTotal(ctx context.Context) (*SkateGetTotal, error)
 	GetUserSkateGet(ctx context.Context, userId uint64) (*SkateGet, error)
+	GetTotalStakeRate(ctx context.Context) (float64, error)
 	GetUserRecommendCount(ctx context.Context, code string) (int64, error)
 	GetUserRecommendByCodePage(ctx context.Context, code string, b *Pagination) ([]*UserRecommend, error)
 	GetLandByUserIDUsing(ctx context.Context, userID uint64, status []uint64) ([]*Land, error)
@@ -655,17 +656,27 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 	}
 
 	var (
-		skateGetTotal       *SkateGetTotal
-		skateGet            *SkateGet
+		skateGetAll     float64
+		skateGetTotalMy float64
+		skateGet        *SkateGet
+
 		skateGetTotalAmount float64
-		skateGetTotalMy     float64
+		skateGetTotal       *SkateGetTotal
 	)
-	skateGetTotal, err = ac.userRepo.GetSkateGetTotal(ctx)
-	if nil == skateGetTotal || nil != err {
+	skateGetAll, err = ac.userRepo.GetTotalStakeRate(ctx)
+	if nil != err {
 		return &pb.UserInfoReply{
 			Status: "放大器错误查询",
 		}, nil
 	}
+
+	skateGetTotal, err = ac.userRepo.GetSkateGetTotal(ctx)
+	if nil != err || nil == skateGetTotal {
+		return &pb.UserInfoReply{
+			Status: "我的放大器错误查询",
+		}, nil
+	}
+	skateGetTotalAmount = skateGetTotal.Amount
 
 	skateGet, err = ac.userRepo.GetUserSkateGet(ctx, user.ID)
 	if nil != err {
@@ -673,9 +684,10 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 			Status: "我的放大器错误查询",
 		}, nil
 	}
-	skateGetTotalAmount = skateGetTotal.Amount
 	if nil != skateGet {
-		skateGetTotalMy = skateGet.SkateRate * skateGetTotalAmount
+		if 0 < skateGetAll {
+			skateGetTotalMy = skateGetTotalAmount * skateGet.SkateRate / skateGetAll
+		}
 	}
 
 	return &pb.UserInfoReply{
@@ -3609,6 +3621,109 @@ func (ac *AppUsecase) GetLand(ctx context.Context, address string, req *pb.GetLa
 	}
 
 	return &pb.GetLandReply{Status: "ok"}, nil
+}
+
+func (ac *AppUsecase) SkateGet(ctx context.Context, address string, req *pb.SkateGetRequest) (*pb.SkateGetReply, error) {
+	var (
+		user *User
+		err  error
+	)
+
+	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
+	if nil != err || nil == user {
+		return &pb.SkateGetReply{
+			Status: "不存在用户",
+		}, nil
+	}
+
+	if 1 == req.SendBody.Num {
+
+	} else if 2 == req.SendBody.Num {
+		//var (
+		//	configs       []*Config
+		//	skateOverRate float64
+		//)
+		//
+		//// 配置
+		//configs, err = ac.userRepo.GetConfigByKeys(ctx,
+		//	"one_rate", "two_rate", "three_rate",
+		//)
+		//if nil != err || nil == configs {
+		//	return &pb.SkateGetReply{
+		//		Status: "配置错误",
+		//	}, nil
+		//}
+		//
+		//for _, vConfig := range configs {
+		//	if "skate_over_rate" == vConfig.KeyName {
+		//		skateOverRate, _ = strconv.ParseFloat(vConfig.Value, 10)
+		//	}
+		//}
+		//
+		//var (
+		//	skateGetAll     float64
+		//	skateGetTotalMy float64
+		//	skateGet        *SkateGet
+		//
+		//	skateGetTotalAmount float64
+		//	skateGetTotal       *SkateGetTotal
+		//)
+		//skateGetAll, err = ac.userRepo.GetTotalStakeRate(ctx)
+		//if nil != err {
+		//	return &pb.SkateGetReply{
+		//		Status: "放大器错误查询",
+		//	}, nil
+		//}
+		//
+		//skateGetTotal, err = ac.userRepo.GetSkateGetTotal(ctx)
+		//if nil != err || nil == skateGetTotal {
+		//	return &pb.SkateGetReply{
+		//		Status: "我的放大器错误查询",
+		//	}, nil
+		//}
+		//skateGetTotalAmount = skateGetTotal.Amount
+		//if skateGetTotalAmount <= 0 {
+		//	return &pb.SkateGetReply{
+		//		Status: "池子余额不足",
+		//	}, nil
+		//}
+		//
+		//skateGet, err = ac.userRepo.GetUserSkateGet(ctx, user.ID)
+		//if nil != err {
+		//	return &pb.SkateGetReply{
+		//		Status: "我的放大器错误查询",
+		//	}, nil
+		//}
+		//if nil != skateGet {
+		//	if 0 < skateGetAll {
+		//		skateGetTotalMy = skateGetTotalAmount * skateGet.SkateRate / skateGetAll
+		//	}
+		//}
+		//
+		//if skateGetTotalMy <= 0 {
+		//	return &pb.SkateGetReply{
+		//		Status: "池子余额不足",
+		//	}, nil
+		//}
+		//
+		//skateGetTotalMy = skateGetTotalMy - skateGetTotalMy*skateOverRate
+		//if skateGetTotalMy <= 0 {
+		//	return &pb.SkateGetReply{
+		//		Status: "池子余额不足",
+		//	}, nil
+		//}
+		//
+		//// 提现
+
+	} else {
+		return &pb.SkateGetReply{
+			Status: "错误参数",
+		}, nil
+	}
+
+	return &pb.SkateGetReply{
+		Status: "ok",
+	}, nil
 }
 
 func (ac *AppUsecase) SetGiw(ctx context.Context, req *pb.SetGiwRequest) (*pb.SetGiwReply, error) {
