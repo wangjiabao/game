@@ -1141,3 +1141,91 @@ func (a *AppService) RentLand(ctx context.Context, req *pb.RentLandRequest) (*pb
 
 	return a.ac.RentLand(ctx, address, req)
 }
+
+func (a *AppService) LandAddOutRate(ctx context.Context, req *pb.LandAddOutRateRequest) (*pb.LandAddOutRateReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		address string
+	)
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["Address"] == nil {
+			return &pb.LandAddOutRateReply{Status: "无效token"}, nil
+		}
+
+		address = c["Address"].(string)
+
+		// 验证
+		var (
+			res bool
+			err error
+		)
+		res, err = addressCheck(address)
+		if nil != err {
+			return &pb.LandAddOutRateReply{Status: "无效token"}, nil
+		}
+
+		if !res {
+			return &pb.LandAddOutRateReply{Status: "无效token"}, nil
+		}
+	} else {
+		return &pb.LandAddOutRateReply{Status: "无效token"}, nil
+	}
+
+	var (
+		res             bool
+		addressFromSign string
+	)
+	res, addressFromSign = verifySig(req.SendBody.Sign, []byte(address))
+	if !res || addressFromSign != address {
+		return &pb.LandAddOutRateReply{
+			Status: "地址签名错误",
+		}, nil
+	}
+
+	return a.ac.LandAddOutRate(ctx, address, req)
+}
+
+func (a *AppService) GetLand(ctx context.Context, req *pb.GetLandRequest) (*pb.GetLandReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		address string
+	)
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["Address"] == nil {
+			return &pb.GetLandReply{Status: "无效token"}, nil
+		}
+
+		address = c["Address"].(string)
+
+		// 验证
+		var (
+			res bool
+			err error
+		)
+		res, err = addressCheck(address)
+		if nil != err {
+			return &pb.GetLandReply{Status: "无效token"}, nil
+		}
+
+		if !res {
+			return &pb.GetLandReply{Status: "无效token"}, nil
+		}
+	} else {
+		return &pb.GetLandReply{Status: "无效token"}, nil
+	}
+
+	var (
+		res             bool
+		addressFromSign string
+	)
+	res, addressFromSign = verifySig(req.SendBody.Sign, []byte(address))
+	if !res || addressFromSign != address {
+		return &pb.GetLandReply{
+			Status: "地址签名错误",
+		}, nil
+	}
+
+	return a.ac.GetLand(ctx, address, req)
+}

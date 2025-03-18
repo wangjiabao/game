@@ -285,6 +285,19 @@ type SeedInfo struct {
 	UpdatedAt    time.Time `gorm:"type:datetime;not null" json:"updated_at"`
 }
 
+type LandInfo struct {
+	ID                uint64    `gorm:"primaryKey;autoIncrement"`
+	Level             uint64    `gorm:"not null;default:1;comment:级别"`
+	OutPutRateMax     float64   `gorm:"type:decimal(65,20);not null;default:100.00000000000000000000;comment:最大增产量"`
+	OutPutRateMin     float64   `gorm:"type:decimal(65,20);not null;default:100.00000000000000000000;comment:最小增产量"`
+	RentOutPutRateMax float64   `gorm:"type:decimal(65,20);not null;default:0.00000000000000000000;comment:最大出租产出比率"`
+	MaxHealth         uint64    `gorm:"not null;default:100;comment:最大可消耗肥沃度"`
+	PerHealth         uint64    `gorm:"not null;default:10;comment:每次消耗肥沃度"`
+	LimitDateMax      uint64    `gorm:"not null;default:0;comment:最大使用期限"`
+	CreatedAt         time.Time `gorm:"type:datetime;not null"`
+	UpdatedAt         time.Time `gorm:"type:datetime;not null"`
+}
+
 type PropInfo struct {
 	ID       uint64 `gorm:"primaryKey;autoIncrement" json:"id"`
 	PropType uint64 `gorm:"not null" json:"prop_type"` // 1:化肥, 2:铲子, 3:水, 4:除虫剂, 5:手套
@@ -1464,6 +1477,50 @@ func (u *UserRepo) GetPropsByUserID(ctx context.Context, userID uint64, status [
 	return res, nil
 }
 
+func (u *UserRepo) GetPropsByUserIDPropType(ctx context.Context, userID uint64, propType []uint64) ([]*biz.Prop, error) {
+	var (
+		props []*Prop
+	)
+
+	res := make([]*biz.Prop, 0)
+	instance := u.data.DB(ctx).Table("prop")
+
+	if 0 < userID {
+		instance = instance.Where("user_id = ?", userID)
+	}
+
+	instance = instance.Where("status=?", 1).Where("prop_type in (?)", propType).Order("id asc")
+
+	if err := instance.Find(&props).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return res, nil
+		}
+
+		return nil, errors.New(500, "PROP RECORD ERROR", err.Error())
+	}
+
+	for _, prop := range props {
+		res = append(res, &biz.Prop{
+			ID:         prop.ID,
+			UserId:     prop.UserId,
+			Status:     prop.Status,
+			PropType:   prop.PropType,
+			OneOne:     prop.OneOne,
+			OneTwo:     prop.OneTwo,
+			TwoOne:     prop.TwoOne,
+			TwoTwo:     prop.TwoTwo,
+			ThreeOne:   prop.ThreeOne,
+			FourOne:    prop.FourOne,
+			FiveOne:    prop.FiveOne,
+			CreatedAt:  prop.CreatedAt,
+			UpdatedAt:  prop.UpdatedAt,
+			SellAmount: prop.SellAmount,
+		})
+	}
+
+	return res, nil
+}
+
 func (u *UserRepo) GetPropsByExUserID(ctx context.Context, userID uint64, status []uint64, b *biz.Pagination) ([]*biz.Prop, error) {
 	var (
 		props []*Prop
@@ -2572,4 +2629,108 @@ func (u *UserRepo) PlantPlatTwoTwoL(ctx context.Context, id, userId, lowUserId, 
 	}
 
 	return nil
+}
+
+// LandAddOutRate .
+func (u *UserRepo) LandAddOutRate(ctx context.Context, id, landId, userId uint64) error {
+	res := u.data.DB(ctx).Table("land").Where("id=?", landId).Where("user_id=?", userId).
+		Updates(map[string]interface{}{"max_health": gorm.Expr("max_health + ?", 20), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "LandAddOutRate", "用户信息修改失败")
+	}
+
+	res = u.data.DB(ctx).Table("prop").Where("id=?", id).Where("user_id=?", userId).
+		Updates(map[string]interface{}{"status": 3, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "LandAddOutRate", "用户信息修改失败")
+	}
+
+	return nil
+}
+
+// GetLand .
+func (u *UserRepo) GetLand(ctx context.Context, id, id2, userId uint64) error {
+	res := u.data.DB(ctx).Table("land").Where("id=?", id).Where("user_id=?", userId).Where("status=?", 0).
+		Updates(map[string]interface{}{"status": 10, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "GetLand", "用户信息修改失败")
+	}
+
+	res = u.data.DB(ctx).Table("land").Where("id=?", id2).Where("user_id=?", userId).Where("status=?", 0).
+		Updates(map[string]interface{}{"status": 10, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "GetLand", "用户信息修改失败")
+	}
+
+	return nil
+}
+
+// CreateLand 创建一条 Land 记录
+func (u *UserRepo) CreateLand(ctx context.Context, lc *biz.Land) (*biz.Land, error) {
+	var land Land
+	land.UserId = lc.UserId
+	land.Level = lc.Level
+	land.OutPutRate = lc.OutPutRate
+	land.RentOutPutRate = lc.RentOutPutRate
+	land.MaxHealth = lc.MaxHealth
+	land.PerHealth = lc.PerHealth
+	land.LimitDate = lc.LimitDate
+	land.Status = lc.Status
+	land.LocationNum = lc.LocationNum
+	land.One = lc.One
+	land.Two = lc.Two
+	land.Three = lc.Three
+	land.SellAmount = lc.SellAmount
+
+	res := u.data.DB(ctx).Table("land").Create(&land)
+	if res.Error != nil {
+		return nil, errors.New(500, "CREATE_LAND_ERROR", "土地创建失败")
+	}
+
+	return &biz.Land{
+		ID:             land.ID,
+		UserId:         land.UserId,
+		Level:          land.Level,
+		OutPutRate:     land.OutPutRate,
+		RentOutPutRate: land.RentOutPutRate,
+		MaxHealth:      land.MaxHealth,
+		PerHealth:      land.PerHealth,
+		LimitDate:      land.LimitDate,
+		Status:         land.Status,
+		LocationNum:    land.LocationNum,
+		One:            land.One,
+		Two:            land.Two,
+		Three:          land.Three,
+		SellAmount:     land.SellAmount,
+		CreatedAt:      land.CreatedAt,
+		UpdatedAt:      land.UpdatedAt,
+	}, nil
+}
+
+func (u *UserRepo) GetLandInfoByLevels(ctx context.Context) (map[uint64]*biz.LandInfo, error) {
+	var landInfos []*LandInfo
+
+	res := make(map[uint64]*biz.LandInfo, 0)
+	if err := u.data.DB(ctx).Table("land_info").Find(&landInfos).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return res, nil
+		}
+		return nil, errors.New(500, "LAND_INFO_ERROR", err.Error())
+	}
+
+	for _, landInfo := range landInfos {
+		res[landInfo.Level] = &biz.LandInfo{
+			ID:                landInfo.ID,
+			Level:             landInfo.Level,
+			OutPutRateMax:     landInfo.OutPutRateMax,
+			OutPutRateMin:     landInfo.OutPutRateMin,
+			RentOutPutRateMax: landInfo.RentOutPutRateMax,
+			MaxHealth:         landInfo.MaxHealth,
+			PerHealth:         landInfo.PerHealth,
+			LimitDateMax:      landInfo.LimitDateMax,
+			CreatedAt:         landInfo.CreatedAt,
+			UpdatedAt:         landInfo.UpdatedAt,
+		}
+	}
+	return res, nil
 }

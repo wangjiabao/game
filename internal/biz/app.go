@@ -180,6 +180,19 @@ type Land struct {
 	SellAmount     float64
 }
 
+type LandInfo struct {
+	ID                uint64
+	Level             uint64
+	OutPutRateMax     float64
+	OutPutRateMin     float64
+	RentOutPutRateMax float64
+	MaxHealth         uint64
+	PerHealth         uint64
+	LimitDateMax      uint64
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
+}
+
 type LandUserUse struct {
 	ID           uint64
 	LandId       uint64
@@ -362,6 +375,7 @@ type UserRepo interface {
 	GetNoticesByUserID(ctx context.Context, userID uint64, b *Pagination) ([]*Notice, error)
 	GetNoticesCountByUserID(ctx context.Context, userID uint64) (int64, error)
 	GetPropsByUserID(ctx context.Context, userID uint64, status []uint64, b *Pagination) ([]*Prop, error)
+	GetPropsByUserIDPropType(ctx context.Context, userID uint64, propType []uint64) ([]*Prop, error)
 	GetPropsByExUserID(ctx context.Context, userID uint64, status []uint64, b *Pagination) ([]*Prop, error)
 	GetStakeGetsByUserID(ctx context.Context, userID uint64, b *Pagination) ([]*StakeGet, error)
 	GetStakeGetPlayRecordsByUserID(ctx context.Context, userID uint64, status uint64, b *Pagination) ([]*StakeGetPlayRecord, error)
@@ -406,6 +420,10 @@ type UserRepo interface {
 	UnRentLand(ctx context.Context, landId uint64, userId uint64) error
 	LandPull(ctx context.Context, landId uint64, userId uint64) error
 	LandPush(ctx context.Context, landId uint64, userId, locationNum uint64) error
+	LandAddOutRate(ctx context.Context, id, landId, userId uint64) error
+	CreateLand(ctx context.Context, lc *Land) (*Land, error)
+	GetLand(ctx context.Context, id, id2, userId uint64) error
+	GetLandInfoByLevels(ctx context.Context) (map[uint64]*LandInfo, error)
 }
 
 // AppUsecase is an app usecase.
@@ -1376,7 +1394,7 @@ func (ac *AppUsecase) UserMyMarketList(ctx context.Context, address string, req 
 		land []*Land
 	)
 	landStatus := []uint64{3, 4, 8}
-	land, err = ac.userRepo.GetLandByExUserID(ctx, user.ID, landStatus, nil)
+	land, err = ac.userRepo.GetLandByUserID(ctx, user.ID, landStatus, nil)
 	if nil != err {
 		return &pb.UserMyMarketListReply{
 			Status: "错误查询",
@@ -2131,6 +2149,7 @@ func (ac *AppUsecase) OpenBox(ctx context.Context, address string, req *pb.OpenB
 
 var rngMutexPlant sync.Mutex
 
+// LandPlayOne 种植
 func (ac *AppUsecase) LandPlayOne(ctx context.Context, address string, req *pb.LandPlayOneRequest) (*pb.LandPlayOneReply, error) {
 	rngMutexPlant.Lock()
 	defer rngMutexPlant.Unlock()
@@ -2276,6 +2295,7 @@ func (ac *AppUsecase) LandPlayOne(ctx context.Context, address string, req *pb.L
 
 var rngMutexPlantTwo sync.Mutex
 
+// LandPlayTwo 收果实
 func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.LandPlayTwoRequest) (*pb.LandPlayTwoReply, error) {
 	rngMutexPlantTwo.Lock()
 	defer rngMutexPlantTwo.Unlock()
@@ -2739,7 +2759,7 @@ func (ac *AppUsecase) Sell(ctx context.Context, address string, req *pb.SellRequ
 			seed, err = ac.userRepo.GetSeedBuyByID(ctx, req.SendBody.Id, 0)
 			if nil != err || nil == seed {
 				return &pb.SellReply{
-					Status: "不存种子",
+					Status: "不存在种子",
 				}, nil
 			}
 
@@ -2764,7 +2784,7 @@ func (ac *AppUsecase) Sell(ctx context.Context, address string, req *pb.SellRequ
 			prop, err = ac.userRepo.GetPropByIDSell(ctx, req.SendBody.Id, 2)
 			if nil != err || nil == prop {
 				return &pb.SellReply{
-					Status: "不存道具",
+					Status: "不存在道具",
 				}, nil
 			}
 
@@ -2789,7 +2809,7 @@ func (ac *AppUsecase) Sell(ctx context.Context, address string, req *pb.SellRequ
 			land, err = ac.userRepo.GetLandByID(ctx, req.SendBody.Id)
 			if nil != err || nil == land {
 				return &pb.SellReply{
-					Status: "不存道具",
+					Status: "不存在土地",
 				}, nil
 			}
 
@@ -2807,7 +2827,13 @@ func (ac *AppUsecase) Sell(ctx context.Context, address string, req *pb.SellRequ
 
 			if 0 != land.Status {
 				return &pb.SellReply{
-					Status: "不符合上架要求",
+					Status: "不符合上架状态",
+				}, nil
+			}
+
+			if 1 != land.Three {
+				return &pb.SellReply{
+					Status: "不可出售土地",
 				}, nil
 			}
 
@@ -2832,7 +2858,7 @@ func (ac *AppUsecase) Sell(ctx context.Context, address string, req *pb.SellRequ
 			seed, err = ac.userRepo.GetSeedBuyByID(ctx, req.SendBody.Id, 4)
 			if nil != err || nil == seed {
 				return &pb.SellReply{
-					Status: "不存种子",
+					Status: "不存在种子",
 				}, nil
 			}
 
@@ -2845,9 +2871,9 @@ func (ac *AppUsecase) Sell(ctx context.Context, address string, req *pb.SellRequ
 			if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 				return ac.userRepo.UnSellSeed(ctx, seed.ID, user.ID)
 			}); nil != err {
-				fmt.Println(err, "sellSeed", user)
+				fmt.Println(err, "unSellSeed", user)
 				return &pb.SellReply{
-					Status: "上架失败",
+					Status: "下架失败",
 				}, nil
 			}
 		} else if 2 == req.SendBody.SellType {
@@ -2857,7 +2883,7 @@ func (ac *AppUsecase) Sell(ctx context.Context, address string, req *pb.SellRequ
 			prop, err = ac.userRepo.GetPropByID(ctx, req.SendBody.Id, 4)
 			if nil != err || nil == prop {
 				return &pb.SellReply{
-					Status: "不存道具",
+					Status: "不存在道具",
 				}, nil
 			}
 
@@ -2870,9 +2896,9 @@ func (ac *AppUsecase) Sell(ctx context.Context, address string, req *pb.SellRequ
 			if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 				return ac.userRepo.UnSellProp(ctx, prop.ID, user.ID)
 			}); nil != err {
-				fmt.Println(err, "sellProp", user)
+				fmt.Println(err, "unSellProp", user)
 				return &pb.SellReply{
-					Status: "上架失败",
+					Status: "下架失败",
 				}, nil
 			}
 		} else if 3 == req.SendBody.SellType {
@@ -2882,7 +2908,7 @@ func (ac *AppUsecase) Sell(ctx context.Context, address string, req *pb.SellRequ
 			land, err = ac.userRepo.GetLandByID(ctx, req.SendBody.Id)
 			if nil != err || nil == land {
 				return &pb.SellReply{
-					Status: "不存道具",
+					Status: "不存在土地",
 				}, nil
 			}
 
@@ -2907,9 +2933,9 @@ func (ac *AppUsecase) Sell(ctx context.Context, address string, req *pb.SellRequ
 			if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 				return ac.userRepo.UnSellLand(ctx, land.ID, user.ID)
 			}); nil != err {
-				fmt.Println(err, "sellProp", user)
+				fmt.Println(err, "unSellLand", user)
 				return &pb.SellReply{
-					Status: "上架失败",
+					Status: "下架失败",
 				}, nil
 			}
 		} else {
@@ -3005,6 +3031,12 @@ func (ac *AppUsecase) RentLand(ctx context.Context, address string, req *pb.Rent
 			}, nil
 		}
 
+		if 1 != land.One {
+			return &pb.RentLandReply{
+				Status: "不允许出租类型",
+			}, nil
+		}
+
 		if land.PerHealth > land.MaxHealth {
 			return &pb.RentLandReply{
 				Status: "肥沃度不足",
@@ -3047,7 +3079,7 @@ func (ac *AppUsecase) RentLand(ctx context.Context, address string, req *pb.Rent
 		}); nil != err {
 			fmt.Println(err, "unRendLand", user)
 			return &pb.RentLandReply{
-				Status: "上架失败",
+				Status: "下架失败",
 			}, nil
 		}
 	} else {
@@ -3250,4 +3282,311 @@ func (ac *AppUsecase) LandPlay(ctx context.Context, address string, req *pb.Land
 	}
 
 	return &pb.LandPlayReply{Status: "ok"}, nil
+}
+
+func (ac *AppUsecase) LandAddOutRate(ctx context.Context, address string, req *pb.LandAddOutRateRequest) (*pb.LandAddOutRateReply, error) {
+	var (
+		user *User
+		//box  *BoxRecord
+		err error
+	)
+
+	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
+	if nil != err || nil == user {
+		return &pb.LandAddOutRateReply{
+			Status: "不存在用户",
+		}, nil
+	}
+
+	var (
+		land *Land
+	)
+	land, err = ac.userRepo.GetLandByID(ctx, req.SendBody.LandId)
+	if nil != err || nil == land {
+		return &pb.LandAddOutRateReply{
+			Status: "不存在土地",
+		}, nil
+	}
+
+	if user.ID != land.UserId {
+		return &pb.LandAddOutRateReply{
+			Status: "不是自己的",
+		}, nil
+	}
+
+	if 1 != land.Status && 0 != land.Status && 3 != land.Status {
+		return &pb.LandAddOutRateReply{
+			Status: "土地不符合培育条件",
+		}, nil
+	}
+
+	// 化肥道具
+	var (
+		prop *Prop
+	)
+	prop, err = ac.userRepo.GetPropByID(ctx, req.SendBody.Id, 1)
+	if nil != err || nil == prop {
+		return &pb.LandAddOutRateReply{
+			Status: "不存道具",
+		}, nil
+	}
+
+	if user.ID == prop.UserId {
+		return &pb.LandAddOutRateReply{
+			Status: "不是自己的道具",
+		}, nil
+	}
+
+	if 11 != prop.PropType {
+		return &pb.LandAddOutRateReply{
+			Status: "不是化肥",
+		}, nil
+	}
+
+	if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+		return ac.userRepo.LandAddOutRate(ctx, prop.ID, land.ID, user.ID)
+	}); nil != err {
+		fmt.Println(err, "LandAddOutRate", user)
+		return &pb.LandAddOutRateReply{
+			Status: "培育失败",
+		}, nil
+	}
+
+	return &pb.LandAddOutRateReply{Status: "ok"}, nil
+}
+
+func (ac *AppUsecase) GetLand(ctx context.Context, address string, req *pb.GetLandRequest) (*pb.GetLandReply, error) {
+	var (
+		user      *User
+		landInfos map[uint64]*LandInfo
+		err       error
+	)
+
+	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
+	if nil != err || nil == user {
+		return &pb.GetLandReply{
+			Status: "不存在用户",
+		}, nil
+	}
+
+	landInfos, err = ac.userRepo.GetLandInfoByLevels(ctx)
+	if nil != err {
+		return &pb.GetLandReply{
+			Status: "信息错误",
+		}, nil
+	}
+
+	if 0 >= len(landInfos) {
+		return &pb.GetLandReply{
+			Status: "配置信息错误",
+		}, nil
+	}
+
+	now := time.Now().Unix()
+	if 1 == req.SendBody.Num {
+
+		var (
+			prop []*Prop
+		)
+		// 11化肥，12水，13手套，14除虫剂，15铲子，16盲盒，17地契
+		propType := []uint64{11, 17}
+		prop, err = ac.userRepo.GetPropsByUserIDPropType(ctx, user.ID, propType)
+		if nil != err {
+			return &pb.GetLandReply{
+				Status: "道具错误",
+			}, nil
+		}
+
+		one := uint64(0)
+		two := make([]uint64, 0)
+		for _, vProp := range prop {
+			if vProp.PropType == 17 {
+				one = vProp.ID
+			}
+			if vProp.PropType == 11 {
+				two = append(two, vProp.ID)
+			}
+		}
+
+		if 0 >= one {
+			return &pb.GetLandReply{
+				Status: "缺少地契",
+			}, nil
+		}
+
+		if 5 > len(two) {
+			return &pb.GetLandReply{
+				Status: "缺少化肥",
+			}, nil
+		}
+
+		tmpLevel := uint64(1)
+		if _, ok := landInfos[tmpLevel]; !ok {
+			return &pb.GetLandReply{
+				Status: "不存在级别土地的配置信息",
+			}, nil
+		}
+
+		rngTmp := rand2.New(rand2.NewSource(time.Now().UnixNano()))
+		outMin := int64(landInfos[tmpLevel].OutPutRateMin)
+		outMax := int64(landInfos[tmpLevel].OutPutRateMax)
+
+		// 计算随机范围
+		tmpNum := outMax - outMin
+		if tmpNum <= 0 {
+			tmpNum = 1 // 避免 Int63n(0) panic
+		}
+
+		// 生成随机数
+		randomNumber := outMin + rngTmp.Int63n(tmpNum)
+
+		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+			_, err = ac.userRepo.CreateLand(ctx, &Land{
+				UserId:     user.ID,
+				Level:      landInfos[tmpLevel].Level,
+				OutPutRate: float64(randomNumber),
+				MaxHealth:  landInfos[tmpLevel].MaxHealth,
+				PerHealth:  landInfos[tmpLevel].PerHealth,
+				LimitDate:  uint64(now) + landInfos[tmpLevel].LimitDateMax*3600*24,
+				Status:     0,
+				One:        1,
+				Two:        1,
+				Three:      1,
+			})
+			if nil != err {
+				return err
+			}
+
+			return nil
+		}); nil != err {
+			fmt.Println(err, "LandAddOutRate", user)
+			return &pb.GetLandReply{
+				Status: "培育失败",
+			}, nil
+		}
+	} else if 2 == req.SendBody.Num {
+		var (
+			land *Land
+		)
+		land, err = ac.userRepo.GetLandByID(ctx, req.SendBody.LandOneId)
+		if nil != err || nil == land {
+			return &pb.GetLandReply{
+				Status: "不存在土地",
+			}, nil
+		}
+
+		if user.ID != land.UserId {
+			return &pb.GetLandReply{
+				Status: "不是自己的",
+			}, nil
+		}
+
+		if 0 != land.Status {
+			return &pb.GetLandReply{
+				Status: "土地不符合合成条件",
+			}, nil
+		}
+
+		if 1 != land.Two {
+			return &pb.GetLandReply{
+				Status: "不可合成土地类型",
+			}, nil
+		}
+
+		var (
+			land2 *Land
+		)
+		land2, err = ac.userRepo.GetLandByID(ctx, req.SendBody.LandTwoId)
+		if nil != err || nil == land2 {
+			return &pb.GetLandReply{
+				Status: "不存在土地",
+			}, nil
+		}
+
+		if user.ID != land2.UserId {
+			return &pb.GetLandReply{
+				Status: "不是自己的",
+			}, nil
+		}
+
+		if 0 != land2.Status {
+			return &pb.GetLandReply{
+				Status: "土地不符合合成条件",
+			}, nil
+		}
+
+		if 1 != land2.Two {
+			return &pb.GetLandReply{
+				Status: "不可合成土地类型",
+			}, nil
+		}
+
+		if land.Level != land2.Level {
+			return &pb.GetLandReply{
+				Status: "土地等级不一致",
+			}, nil
+		}
+
+		if 10 <= land.Level {
+			return &pb.GetLandReply{
+				Status: "土地已到最高级别",
+			}, nil
+		}
+
+		tmpLevel := land.Level + 1
+		if _, ok := landInfos[tmpLevel]; !ok {
+			return &pb.GetLandReply{
+				Status: "不存在级别土地的配置信息",
+			}, nil
+		}
+
+		rngTmp := rand2.New(rand2.NewSource(time.Now().UnixNano()))
+		outMin := int64(landInfos[tmpLevel].OutPutRateMin)
+		outMax := int64(landInfos[tmpLevel].OutPutRateMax)
+
+		// 计算随机范围
+		tmpNum := outMax - outMin
+		if tmpNum <= 0 {
+			tmpNum = 1 // 避免 Int63n(0) panic
+		}
+
+		// 生成随机数
+		randomNumber := outMin + rngTmp.Int63n(tmpNum)
+
+		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+			err = ac.userRepo.GetLand(ctx, land.ID, land2.ID, user.ID)
+			if nil != err {
+				return err
+			}
+
+			_, err = ac.userRepo.CreateLand(ctx, &Land{
+				UserId:     user.ID,
+				Level:      landInfos[tmpLevel].Level,
+				OutPutRate: float64(randomNumber),
+				MaxHealth:  landInfos[tmpLevel].MaxHealth,
+				PerHealth:  landInfos[tmpLevel].PerHealth,
+				LimitDate:  uint64(now) + landInfos[tmpLevel].LimitDateMax*3600*24,
+				Status:     0,
+				One:        1,
+				Two:        1,
+				Three:      1,
+			})
+			if nil != err {
+				return err
+			}
+
+			return nil
+		}); nil != err {
+			fmt.Println(err, "LandAddOutRate", user)
+			return &pb.GetLandReply{
+				Status: "培育失败",
+			}, nil
+		}
+	} else {
+		return &pb.GetLandReply{
+			Status: "参数错误",
+		}, nil
+	}
+
+	return &pb.GetLandReply{Status: "ok"}, nil
 }
