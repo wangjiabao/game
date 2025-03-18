@@ -1311,6 +1311,8 @@ components:
                     type: string
                 landId:
                     type: string
+                landStatus:
+                    type: string
                 landLevel:
                     type: string
                 health:

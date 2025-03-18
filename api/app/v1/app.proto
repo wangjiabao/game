@@ -619,6 +619,7 @@ message UserIndexListReply {
 		uint64 locationNum = 4; // 土地在首页位置，1-9，从上左到右，从上到下
 
 		uint64 landId = 1; // 土地id，如果>0，表示布置了土地
+		uint64 landStatus = 14; // 0闲置,1布置，2表示种植，3和8表示出租，
 		uint64 landLevel = 3; // 布置了土地，土地的等级 1-10 对应10种颜色
 		uint64 health = 11; // 布置了土地，土肥沃度
 		double outRate = 12; // 布置了土地，增产率

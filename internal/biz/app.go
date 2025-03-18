@@ -386,6 +386,7 @@ type UserRepo interface {
 	GetLandByIDTwo(ctx context.Context, landID uint64) (*Land, error)
 	GetLandByUserIdLocationNum(ctx context.Context, userId uint64, locationNum uint64) (*Land, error)
 	Plant(ctx context.Context, status, originStatus, perHealth uint64, landUserUse *LandUserUse) error
+	PlantPlatTwo(ctx context.Context, id, landId uint64, rent bool) error
 	GetSeedBuyByID(ctx context.Context, seedID, status uint64) (*Seed, error)
 	GetPropByID(ctx context.Context, propID, status uint64) (*Prop, error)
 	BuySeed(ctx context.Context, git, getGit float64, userId, userIdGet, seedId uint64) error
@@ -1639,6 +1640,7 @@ func (ac *AppUsecase) UserIndexList(ctx context.Context, address string, req *pb
 				Reward:           rewardTmp,
 				PlantUserAddress: plantUserAddressTmp,
 				RewardStatus:     tmpRewardStatus,
+				LandStatus:       vLand.Status,
 			}
 		} else {
 			resTmp[vLand.LocationNum] = &pb.UserIndexListReply_List{
@@ -1648,6 +1650,7 @@ func (ac *AppUsecase) UserIndexList(ctx context.Context, address string, req *pb
 				Health:           vLand.MaxHealth,
 				OutRate:          vLand.OutPutRate,
 				PerHealth:        vLand.PerHealth,
+				LandStatus:       vLand.Status,
 				LandUseId:        0,
 				SeedId:           0,
 				Start:            0,
@@ -2359,6 +2362,32 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 	}
 
 	// 分红，状态变更
+	if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+		tmpRent := false
+		if landUserUse.UserId != landUserUse.OwnerUserId {
+			tmpRent = true
+		}
+		// 资源释放
+		err = ac.userRepo.PlantPlatTwo(ctx, landUserUse.ID, land.ID, tmpRent)
+		if nil != err {
+			return err
+		}
+		// 奖励
+		if reward > 0 {
+
+			if tmpRent && rentReward > 0 {
+
+			}
+
+		}
+
+		return nil
+	}); nil != err {
+		fmt.Println(err, "openBox", user)
+		return &pb.LandPlayTwoReply{
+			Status: "种植失败",
+		}, nil
+	}
 
 	return &pb.LandPlayTwoReply{
 		Status: "ok",
