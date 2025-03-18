@@ -1914,11 +1914,11 @@ func (u *UserRepo) GetUserBoxRecordById(ctx context.Context, id uint64) (*biz.Bo
 }
 
 // OpenBoxSeed .
-func (u *UserRepo) OpenBoxSeed(ctx context.Context, id uint64, content string, seedInfo *biz.Seed) error {
+func (u *UserRepo) OpenBoxSeed(ctx context.Context, id uint64, content string, seedInfo *biz.Seed) (uint64, error) {
 	res := u.data.DB(ctx).Table("box_record").Where("id=?", id).Where("good_id=?", 0).
 		Updates(map[string]interface{}{"good_id": seedInfo.SeedId, "good_type": 1, "content": content, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil {
-		return errors.New(500, "BuyBox", "config")
+		return 0, errors.New(500, "BuyBox", "config")
 	}
 
 	var seed Seed
@@ -1928,10 +1928,10 @@ func (u *UserRepo) OpenBoxSeed(ctx context.Context, id uint64, content string, s
 	seed.OutOverTime = seedInfo.OutOverTime
 	res = u.data.DB(ctx).Table("seed").Create(&seed)
 	if res.Error != nil {
-		return errors.New(500, "BuyBox", "创建失败")
+		return 0, errors.New(500, "BuyBox", "创建失败")
 	}
 
-	return nil
+	return seed.ID, nil
 }
 
 // OpenBoxProp .
@@ -2152,57 +2152,6 @@ func (u *UserRepo) GetLandByID(ctx context.Context, landID uint64) (*biz.Land, e
 		Three:          land.Three,
 		SellAmount:     land.SellAmount,
 	}, nil
-}
-
-// Plant .
-func (u *UserRepo) Plant(ctx context.Context, status, originStatus, perHealth uint64, landUserUse *biz.LandUserUse) error {
-	res := u.data.DB(ctx).Table("land").Where("id=?", landUserUse.LandId).Where("status=?", originStatus).Where("limit_date>=?", time.Now().Unix()).Where("max_health>=?", perHealth).
-		Updates(map[string]interface{}{
-			"status":     status,
-			"max_health": gorm.Expr("max_health - ?", perHealth),
-			"updated_at": time.Now().Format("2006-01-02 15:04:05"),
-		})
-	if res.Error != nil {
-		return errors.New(500, "plant", "更新记录失败")
-	}
-
-	res = u.data.DB(ctx).Table("seed").Where("id=?", landUserUse.SeedId).Where("status=?", 0).
-		Updates(map[string]interface{}{
-			"status":     1,
-			"updated_at": time.Now().Format("2006-01-02 15:04:05"),
-		})
-	if res.Error != nil {
-		return errors.New(500, "plant", "更新失败")
-	}
-
-	res = u.data.DB(ctx).Table("land_user_use").Create(&LandUserUse{
-		LandId:       landUserUse.LandId,
-		Level:        landUserUse.Level,
-		UserId:       landUserUse.UserId,
-		OwnerUserId:  landUserUse.OwnerUserId,
-		SeedId:       landUserUse.SeedId,
-		SeedTypeId:   landUserUse.SeedTypeId,
-		Status:       landUserUse.Status,
-		BeginTime:    landUserUse.BeginTime,
-		TotalTime:    landUserUse.TotalTime,
-		OverTime:     landUserUse.OverTime,
-		OutMaxNum:    landUserUse.OutMaxNum,
-		OutNum:       landUserUse.OutNum,
-		InsectStatus: landUserUse.InsectStatus,
-		OutSubNum:    landUserUse.OutSubNum,
-		StealNum:     landUserUse.StealNum,
-		StopStatus:   landUserUse.StopStatus,
-		StopTime:     landUserUse.StopTime,
-		SubTime:      landUserUse.SubTime,
-		UseChan:      landUserUse.UseChan,
-		One:          landUserUse.One,
-		Two:          landUserUse.Two,
-	})
-	if res.Error != nil {
-		return errors.New(500, "OpenBox", "创建土地使用记录失败")
-	}
-
-	return nil
 }
 
 // GetPropByIDSell 根据道具 ID 查询单条道具数据
@@ -2442,6 +2391,76 @@ func (u *UserRepo) stakeGit(ctx context.Context, propId uint64, userId uint64, s
 		Updates(map[string]interface{}{"status": 4, "sell_amount": sellAmount, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil {
 		return errors.New(500, "sellLand", "用户信息修改失败")
+	}
+
+	return nil
+}
+
+// Plant .
+func (u *UserRepo) Plant(ctx context.Context, status, originStatus, perHealth uint64, landUserUse *biz.LandUserUse) error {
+	res := u.data.DB(ctx).Table("land").Where("id=?", landUserUse.LandId).Where("status=?", originStatus).Where("limit_date>=?", time.Now().Unix()).Where("max_health>=?", perHealth).
+		Updates(map[string]interface{}{
+			"status":     status,
+			"max_health": gorm.Expr("max_health - ?", perHealth),
+			"updated_at": time.Now().Format("2006-01-02 15:04:05"),
+		})
+	if res.Error != nil {
+		return errors.New(500, "plant", "更新记录失败")
+	}
+
+	res = u.data.DB(ctx).Table("seed").Where("id=?", landUserUse.SeedId).Where("status=?", 0).
+		Updates(map[string]interface{}{
+			"status":     1,
+			"updated_at": time.Now().Format("2006-01-02 15:04:05"),
+		})
+	if res.Error != nil {
+		return errors.New(500, "plant", "更新失败")
+	}
+
+	res = u.data.DB(ctx).Table("land_user_use").Create(&LandUserUse{
+		LandId:       landUserUse.LandId,
+		Level:        landUserUse.Level,
+		UserId:       landUserUse.UserId,
+		OwnerUserId:  landUserUse.OwnerUserId,
+		SeedId:       landUserUse.SeedId,
+		SeedTypeId:   landUserUse.SeedTypeId,
+		Status:       landUserUse.Status,
+		BeginTime:    landUserUse.BeginTime,
+		TotalTime:    landUserUse.TotalTime,
+		OverTime:     landUserUse.OverTime,
+		OutMaxNum:    landUserUse.OutMaxNum,
+		OutNum:       landUserUse.OutNum,
+		InsectStatus: landUserUse.InsectStatus,
+		OutSubNum:    landUserUse.OutSubNum,
+		StealNum:     landUserUse.StealNum,
+		StopStatus:   landUserUse.StopStatus,
+		StopTime:     landUserUse.StopTime,
+		SubTime:      landUserUse.SubTime,
+		UseChan:      landUserUse.UseChan,
+		One:          landUserUse.One,
+		Two:          landUserUse.Two,
+	})
+	if res.Error != nil {
+		return errors.New(500, "OpenBox", "创建土地使用记录失败")
+	}
+
+	return nil
+}
+
+// PlantPlatTwo .
+func (u *UserRepo) PlantPlatTwo(ctx context.Context, id, landId, userId, rentUserId uint64, amount, rentAmount float64) error {
+	if 0 < rentUserId {
+		res := u.data.DB(ctx).Table("land").Where("id=?", landId).Where("status=?", 2).
+			Updates(map[string]interface{}{"status": 1, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+		if res.Error != nil {
+			return errors.New(500, "sellLand", "用户信息修改失败")
+		}
+	} else {
+		res := u.data.DB(ctx).Table("land").Where("id=?", landId).
+			Updates(map[string]interface{}{"status": 1, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+		if res.Error != nil {
+			return errors.New(500, "sellLand", "用户信息修改失败")
+		}
 	}
 
 	return nil

@@ -375,7 +375,7 @@ type UserRepo interface {
 	GetLandUserUseByLandIDsMapUsing(ctx context.Context, userId uint64, landIDs []uint64) (map[uint64]*LandUserUse, error)
 	BuyBox(ctx context.Context, giw float64, originValue, value string, uc *BoxRecord) error
 	GetUserBoxRecordById(ctx context.Context, id uint64) (*BoxRecord, error)
-	OpenBoxSeed(ctx context.Context, id uint64, content string, seedInfo *Seed) error
+	OpenBoxSeed(ctx context.Context, id uint64, content string, seedInfo *Seed) (uint64, error)
 	OpenBoxProp(ctx context.Context, id uint64, content string, propInfo *Prop) (uint64, error)
 	GetAllSeedInfo(ctx context.Context) ([]*SeedInfo, error)
 	GetAllPropInfo(ctx context.Context) ([]*PropInfo, error)
@@ -2050,14 +2050,19 @@ func (ac *AppUsecase) OpenBox(ctx context.Context, address string, req *pb.OpenB
 		randomNumber := outMin + rngTmp.Int63n(tmpNum)
 
 		// 种子
+		boxId := uint64(0)
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-			return ac.userRepo.OpenBoxSeed(ctx, box.ID, "", &Seed{
+			boxId, err = ac.userRepo.OpenBoxSeed(ctx, box.ID, "", &Seed{
 				UserId:       user.ID,
 				SeedId:       result,
 				Name:         seedInfosMap[result].Name,
 				OutOverTime:  seedInfosMap[result].OutOverTime,
 				OutMaxAmount: float64(randomNumber),
 			})
+			if nil != err {
+				return err
+			}
+			return nil
 		}); nil != err {
 			fmt.Println(err, "openBox", user)
 			return &pb.OpenBoxReply{
@@ -2066,6 +2071,7 @@ func (ac *AppUsecase) OpenBox(ctx context.Context, address string, req *pb.OpenB
 		}
 
 		return &pb.OpenBoxReply{
+			Id:       boxId,
 			Status:   "ok",
 			OpenType: 1,
 			Num:      result,
@@ -2228,7 +2234,7 @@ func (ac *AppUsecase) LandPlayOne(ctx context.Context, address string, req *pb.L
 	}
 
 	originStatusTmp := land.Status
-	statusTmp := uint64(1)
+	statusTmp := uint64(2)
 	if 3 == originStatusTmp {
 		statusTmp = 8
 	}
@@ -2265,86 +2271,94 @@ func (ac *AppUsecase) LandPlayOne(ctx context.Context, address string, req *pb.L
 var rngMutexPlantTwo sync.Mutex
 
 func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.LandPlayTwoRequest) (*pb.LandPlayTwoReply, error) {
-	//rngMutexPlantTwo.Lock()
-	//defer rngMutexPlantTwo.Unlock()
-	//
-	//var (
-	//	user *User
-	//	err  error
-	//)
-	//
-	//user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
-	//if nil != err || nil == user {
-	//	return &pb.LandPlayTwoReply{
-	//		Status: "不存在用户",
-	//	}, nil
-	//}
-	//
-	//var (
-	//	landUserUse *LandUserUse
-	//)
-	//landUserUse, err = ac.userRepo.GetLandUserUseByID(ctx, req.SendBody.LandUseId)
-	//if nil != err || nil == landUserUse {
-	//	return &pb.LandPlayTwoReply{
-	//		Status: "不存在信息",
-	//	}, nil
-	//}
-	//
-	//if landUserUse.UserId != user.ID {
-	//	return &pb.LandPlayTwoReply{
-	//		Status: "非种植用户",
-	//	}, nil
-	//}
-	//
-	//if 1 != landUserUse.Status {
-	//	return &pb.LandPlayTwoReply{
-	//		Status: "状态错误",
-	//	}, nil
-	//}
-	//
-	//if 0 != landUserUse.One {
-	//	return &pb.LandPlayTwoReply{
-	//		Status: "停止生长状态",
-	//	}, nil
-	//}
-	//
-	//current := time.Now().Unix()
-	//if uint64(current) < landUserUse.OverTime {
-	//	return &pb.LandPlayTwoReply{
-	//		Status: "种植未结束",
-	//	}, nil
-	//}
-	//
-	//// 已结束
-	//reward := landUserUse.OutMaxNum
-	//now := time.Now().Unix()
-	//// 有虫子 todo 杀虫和浇水更新数量和结束时间
-	//if 0 != landUserUse.Two {
-	//	if uint64(now) > landUserUse.Two {
-	//		tmp := landUserUse.OutMaxNum * 0.01 * float64(uint64(now)-landUserUse.Two) / 300
-	//
-	//		if tmp >= landUserUse.OutMaxNum {
-	//			reward = 0
-	//		} else {
-	//			reward = landUserUse.OutMaxNum - tmp
-	//		}
-	//	}
-	//}
-	//
-	//var (
-	//	land *Land
-	//)
-	//land, err = ac.userRepo.GetLandByIDTwo(ctx, landUserUse.LandId)
-	//if nil != err || nil == land {
-	//	return &pb.LandPlayTwoReply{
-	//		Status: "土地信息错误",
-	//	}, nil
-	//}
-	//
-	//// 租的
-	//if landUserUse.UserId != landUserUse.OwnerUserId {
-	//
-	//}
+	rngMutexPlantTwo.Lock()
+	defer rngMutexPlantTwo.Unlock()
+
+	var (
+		user *User
+		err  error
+	)
+
+	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
+	if nil != err || nil == user {
+		return &pb.LandPlayTwoReply{
+			Status: "不存在用户",
+		}, nil
+	}
+
+	var (
+		landUserUse *LandUserUse
+	)
+	landUserUse, err = ac.userRepo.GetLandUserUseByID(ctx, req.SendBody.LandUseId)
+	if nil != err || nil == landUserUse {
+		return &pb.LandPlayTwoReply{
+			Status: "不存在信息",
+		}, nil
+	}
+
+	if landUserUse.UserId != user.ID {
+		return &pb.LandPlayTwoReply{
+			Status: "非种植用户",
+		}, nil
+	}
+
+	if 1 != landUserUse.Status {
+		return &pb.LandPlayTwoReply{
+			Status: "状态错误",
+		}, nil
+	}
+
+	if 0 != landUserUse.One {
+		return &pb.LandPlayTwoReply{
+			Status: "停止生长状态",
+		}, nil
+	}
+
+	current := time.Now().Unix()
+	if uint64(current) < landUserUse.OverTime {
+		return &pb.LandPlayTwoReply{
+			Status: "种植未结束",
+		}, nil
+	}
+
+	// 已结束
+	reward := landUserUse.OutMaxNum
+	now := time.Now().Unix()
+	// 有虫子 todo 杀虫和浇水更新数量和结束时间 偷的时候注意梳理
+	if 0 != landUserUse.Two {
+		if uint64(now) > landUserUse.Two {
+			tmp := landUserUse.OutMaxNum * 0.01 * float64(uint64(now)-landUserUse.Two) / 300
+
+			if tmp >= landUserUse.OutMaxNum {
+				reward = 0
+			} else {
+				reward = landUserUse.OutMaxNum - tmp
+			}
+		}
+	}
+
+	var (
+		land *Land
+	)
+	land, err = ac.userRepo.GetLandByIDTwo(ctx, landUserUse.LandId)
+	if nil != err || nil == land {
+		return &pb.LandPlayTwoReply{
+			Status: "土地信息错误",
+		}, nil
+	}
+
+	// 租的
+	rentReward := float64(0)
+	if landUserUse.UserId != landUserUse.OwnerUserId {
+		if 0 < reward {
+			rentReward = reward * land.RentOutPutRate
+			if reward > rentReward {
+				reward = reward - rentReward
+			}
+		}
+	}
+
+	// 分红，状态变更
 
 	return &pb.LandPlayTwoReply{
 		Status: "ok",
