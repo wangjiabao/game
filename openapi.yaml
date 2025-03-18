@@ -1126,6 +1126,8 @@ components:
         OpenBoxReply:
             type: object
             properties:
+                id:
+                    type: string
                 status:
                     type: string
                 openType:
@@ -1266,6 +1268,11 @@ components:
                 status:
                     type: string
                 outMax:
+                    type: number
+                    format: double
+                time:
+                    type: string
+                amount:
                     type: number
                     format: double
         UserBoxListReply:
@@ -1544,6 +1551,8 @@ components:
                 outMax:
                     type: number
                     format: double
+                time:
+                    type: string
         UserMyMarketListReply:
             type: object
             properties:
@@ -1569,6 +1578,8 @@ components:
                 outMax:
                     type: number
                     format: double
+                time:
+                    type: string
                 level:
                     type: string
                 status:

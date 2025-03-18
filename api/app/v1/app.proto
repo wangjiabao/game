@@ -468,6 +468,8 @@ message UserBackListReply {
 		uint64 useNum = 3; // 剩余使用次数
 		uint64 status = 4; // 状态：默认1，2，出售中4，左上角显示对应的英文文案，在资源里找对应的图
 		double outMax = 6; // 如果是种子，需要展示的产出数量
+		uint64 time = 7;
+		double amount = 8;
 	}
 }
 
@@ -485,6 +487,7 @@ message UserMarketSeedListReply {
 		uint64 num = 2; // 对应的内容：对应文档种子和道具那列从上到下，1-14，15铲子，16盲盒
 		double amount = 3; // 售价
 		double outMax = 4; // 最大产出
+		uint64 time = 5;
 	}
 }
 
@@ -558,6 +561,7 @@ message UserMyMarketListReply {
 		uint64 num = 2; // 如果是种子和道具，对应的内容：对应文档种子和道具那列从上到下，1-14，15铲子，16盲盒
 		uint64 useNum = 3; // 如果是道具，剩余使用次数
 		double outMax = 6; // 如果是种子，需要展示的产出数量
+		uint64 time = 11;
 
 		uint64 level = 7; // 如果是土地，土地级别
 		uint64 status = 4; // 如果是土地，状态：默认1出租，2出售
@@ -728,6 +732,7 @@ message OpenBoxRequest {
 }
 
 message OpenBoxReply {
+	uint64 id = 10;
 	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
 	uint64 openType = 2; // 开出的道具类型1种子，2道具
 	uint64 num = 3; // 如果是种子和道具，对应的内容：对应文档种子和道具那列从上到下

@@ -1935,11 +1935,11 @@ func (u *UserRepo) OpenBoxSeed(ctx context.Context, id uint64, content string, s
 }
 
 // OpenBoxProp .
-func (u *UserRepo) OpenBoxProp(ctx context.Context, id uint64, content string, propInfo *biz.Prop) error {
+func (u *UserRepo) OpenBoxProp(ctx context.Context, id uint64, content string, propInfo *biz.Prop) (uint64, error) {
 	res := u.data.DB(ctx).Table("box_record").Where("id=?", id).Where("good_id=?", 0).
 		Updates(map[string]interface{}{"good_id": propInfo.PropType, "good_type": 2, "content": content, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil {
-		return errors.New(500, "BuyBox", "config")
+		return 0, errors.New(500, "BuyBox", "config")
 	}
 
 	var prop Prop
@@ -1954,10 +1954,10 @@ func (u *UserRepo) OpenBoxProp(ctx context.Context, id uint64, content string, p
 	prop.FiveOne = propInfo.FiveOne
 	res = u.data.DB(ctx).Table("prop").Create(&prop)
 	if res.Error != nil {
-		return errors.New(500, "BuyBox", "创建失败")
+		return 0, errors.New(500, "BuyBox", "创建失败")
 	}
 
-	return nil
+	return prop.ID, nil
 }
 
 // GetAllSeedInfo 获取所有种子信息
