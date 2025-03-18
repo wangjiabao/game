@@ -1600,8 +1600,7 @@ components:
                     type: number
                     format: double
                 useMax:
-                    type: number
-                    format: double
+                    type: string
         UserMarketRentLandListReply:
             type: object
             properties:
