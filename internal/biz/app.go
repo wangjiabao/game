@@ -1249,11 +1249,22 @@ func (ac *AppUsecase) UserMarketPropList(ctx context.Context, address string, re
 	}
 
 	for _, v := range prop {
+		useNum := uint64(0)
+		if 12 == v.PropType {
+			useNum = uint64(v.ThreeOne) // 水
+		} else if 13 == v.PropType {
+			useNum = uint64(v.FiveOne) // 手套
+		} else if 14 == v.PropType {
+			useNum = uint64(v.FourOne) // 除虫剂
+		} else if 15 == v.PropType {
+			useNum = uint64(v.TwoOne) // 铲子
+		}
+
 		res = append(res, &pb.UserMarketPropListReply_List{
 			Id:     v.ID,
 			Num:    uint64(v.PropType),
 			Amount: v.SellAmount,
-			UseMax: 0,
+			UseMax: useNum,
 		})
 	}
 

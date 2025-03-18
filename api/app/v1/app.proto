@@ -541,7 +541,7 @@ message UserMarketPropListReply {
 		uint64 id = 1; // id 操作时需要使用的参数，显示时#000001，一共6个整数位
 		uint64 num = 2; // 对应的内容：对应文档种子和道具那列从上到下，1-14，15铲子，16盲盒
 		double amount = 3; // 售价
-		double useMax = 4; // 可用次数
+		uint64 useMax = 4; // 可用次数
 	}
 }
 
