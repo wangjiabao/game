@@ -473,9 +473,9 @@ func (ac *AppUsecase) GetExistUserByAddressOrCreate(ctx context.Context, address
 				return nil, errors.New(500, "USER_ERROR", "无效的推荐码1"), "无效的推荐码"
 			}
 
-			if 0 >= rUser.GiwAdd {
-				return nil, errors.New(500, "USER_ERROR", "推荐人未入金"), "推荐人未入金"
-			}
+			//if 0 >= rUser.GiwAdd {
+			//	return nil, errors.New(500, "USER_ERROR", "推荐人未入金"), "推荐人未入金"
+			//}
 
 			// 查询推荐人的相关信息
 			rURecommendUser, err = ac.userRepo.GetUserRecommendByUserId(ctx, rUser.ID)
