@@ -3363,7 +3363,7 @@ func (ac *AppUsecase) LandAddOutRate(ctx context.Context, address string, req *p
 		}, nil
 	}
 
-	if user.ID == prop.UserId {
+	if user.ID != prop.UserId {
 		return &pb.LandAddOutRateReply{
 			Status: "不是自己的道具",
 		}, nil
