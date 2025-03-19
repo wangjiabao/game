@@ -2131,6 +2131,7 @@ func (ac *AppUsecase) OpenBox(ctx context.Context, address string, req *pb.OpenB
 			OpenType: 1,
 			Num:      result,
 			OutMax:   float64(randomNumber),
+			Time:     seedInfosMap[result].OutOverTime,
 		}, nil
 	} else if 11 <= result && result <= 15 {
 		if _, ok := propInfosMap[result]; !ok {
@@ -2164,12 +2165,24 @@ func (ac *AppUsecase) OpenBox(ctx context.Context, address string, req *pb.OpenB
 			}, nil
 		}
 
+		useNum := uint64(0)
+		if 12 == propInfosMap[result].PropType {
+			useNum = propInfosMap[result].ThreeOne // 水
+		} else if 13 == propInfosMap[result].PropType {
+			useNum = propInfosMap[result].FiveOne // 手套
+		} else if 14 == propInfosMap[result].PropType {
+			useNum = propInfosMap[result].FourOne // 除虫剂
+		} else if 15 == propInfosMap[result].PropType {
+			useNum = propInfosMap[result].TwoOne // 铲子
+		}
+
 		return &pb.OpenBoxReply{
 			Id:       boxId,
 			Status:   "ok",
 			OpenType: 2,
 			Num:      result,
 			OutMax:   0,
+			UseNum:   useNum,
 		}, nil
 	} else {
 		return &pb.OpenBoxReply{

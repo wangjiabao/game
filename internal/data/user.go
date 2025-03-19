@@ -2119,7 +2119,7 @@ func (u *UserRepo) UpdateSeedValue(ctx context.Context, scene uint64, newSeed ui
 	err := u.data.DB(ctx).Table("random_seeds").
 		Where("scene = ?", scene).
 		Update("seed_value", newSeed).
-		Update("updated_at", time.Now()).Error
+		Update("updated_at", time.Now().Format("2006-01-02 15:04:05")).Error
 
 	if err != nil {
 		return errors.New(500, "SEED UPDATE ERROR", err.Error())
