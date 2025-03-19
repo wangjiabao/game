@@ -2278,7 +2278,7 @@ func (ac *AppUsecase) LandPlayOne(ctx context.Context, address string, req *pb.L
 	r := rngPlant.Float64() // 生成 0.0 ~ 1.0 之间的随机数
 	if r < 0.05 {
 		one = uint64(randomNumber)
-	} else if r < 0.10 {
+	} else if r < 0.1 {
 		two = uint64(randomNumber)
 	}
 
