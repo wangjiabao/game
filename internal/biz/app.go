@@ -403,11 +403,11 @@ type UserRepo interface {
 	SetGiw(ctx context.Context, address string, giw uint64) error
 	SetGit(ctx context.Context, address string, git uint64) error
 	SetStakeGetTotal(ctx context.Context, amount, balance float64) error
-	SetStakeGetTotalSub(ctx context.Context, amount float64) error
+	SetStakeGetTotalSub(ctx context.Context, amount, balance float64) error
 	SetStakeGet(ctx context.Context, userId uint64, git, amount float64) error
 	SetStakeGetSub(ctx context.Context, userId uint64, git, amount float64) error
 	SetStakeGetPlaySub(ctx context.Context, userId uint64, amount float64) error
-	SetStakeGetPlay(ctx context.Context, userId uint64, amount float64) error
+	SetStakeGetPlay(ctx context.Context, userId uint64, git, amount float64) error
 }
 
 // AppUsecase is an app usecase.
@@ -3722,39 +3722,17 @@ func (ac *AppUsecase) StakeGet(ctx context.Context, address string, req *pb.Stak
 		// 用户最大可提取金额
 		maxWithdraw := stakeGet.StakeRate * valuePerShare
 		if req.SendBody.Amount > uint64(maxWithdraw) {
-			if 0 >= stakeGet.StakeRate {
-				return &pb.StakeGetReply{
-					Status: "可提git不足",
-				}, nil
-			}
+			return &pb.StakeGetReply{
+				Status: "可提git不足",
+			}, nil
 		}
 
 		sharesToRemove := float64(req.SendBody.Amount) / valuePerShare
 
-		var (
-			configs       []*Config
-			stakeOverRate float64
-		)
-
-		tmpGit := float64(req.SendBody.Amount) - float64(req.SendBody.Amount)*stakeOverRate
-
-		// 配置
-		configs, err = ac.userRepo.GetConfigByKeys(ctx,
-			"stake_over_rate",
-		)
-		if nil != err || nil == configs {
-			return &pb.StakeGetReply{
-				Status: "配置错误",
-			}, nil
-		}
-		for _, vConfig := range configs {
-			if "stake_over_rate" == vConfig.KeyName {
-				stakeOverRate, _ = strconv.ParseFloat(vConfig.Value, 10)
-			}
-		}
+		tmpGit := float64(req.SendBody.Amount)
 
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-			err = ac.userRepo.SetStakeGetTotalSub(ctx, sharesToRemove)
+			err = ac.userRepo.SetStakeGetTotalSub(ctx, sharesToRemove, tmpGit)
 			if nil != err {
 				return err
 			}
@@ -3817,13 +3795,35 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 	outcome := rand2.Intn(2)
 
 	if outcome == 0 { // 赢：需要池子中有足够资金支付奖金
+		var (
+			configs       []*Config
+			stakeOverRate float64
+		)
+
+		// 配置
+		configs, err = ac.userRepo.GetConfigByKeys(ctx,
+			"stake_over_rate",
+		)
+		if nil != err || nil == configs {
+			return &pb.StakeGetPlayReply{
+				Status: "配置错误",
+			}, nil
+		}
+		for _, vConfig := range configs {
+			if "stake_over_rate" == vConfig.KeyName {
+				stakeOverRate, _ = strconv.ParseFloat(vConfig.Value, 10)
+			}
+		}
+
 		if uint64(stakeGetTotal.Balance) < req.SendBody.Amount {
 			return &pb.StakeGetPlayReply{
 				Status: "资金池不足",
 			}, nil
 		}
+
+		tmpGit := float64(req.SendBody.Amount) - float64(req.SendBody.Amount)*stakeOverRate
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-			err = ac.userRepo.SetStakeGetPlay(ctx, user.ID, float64(req.SendBody.Amount))
+			err = ac.userRepo.SetStakeGetPlay(ctx, user.ID, tmpGit, float64(req.SendBody.Amount))
 			if nil != err {
 				return err
 			}
@@ -3834,6 +3834,8 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 				Status: "git余额不足",
 			}, nil
 		}
+
+		return &pb.StakeGetPlayReply{Status: "ok", PlayStatus: 1, Amount: tmpGit}, nil
 	} else { // 输：下注金额加入池子
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 			err = ac.userRepo.SetStakeGetPlaySub(ctx, user.ID, float64(req.SendBody.Amount))
@@ -3847,9 +3849,9 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 				Status: "git余额不足",
 			}, nil
 		}
-	}
 
-	return &pb.StakeGetPlayReply{Status: ""}, nil
+		return &pb.StakeGetPlayReply{Status: "ok", PlayStatus: 2}, nil
+	}
 }
 
 func (ac *AppUsecase) SetGiw(ctx context.Context, req *pb.SetGiwRequest) (*pb.SetGiwReply, error) {

@@ -845,6 +845,8 @@ message StakeGetPlayRequest {
 
 message StakeGetPlayReply {
 	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
+	double amount = 2;
+	uint64 playStatus = 3; // 1赢，2输了
 }
 
 message LandPlayRequest {

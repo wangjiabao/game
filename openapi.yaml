@@ -1285,6 +1285,11 @@ components:
             properties:
                 status:
                     type: string
+                amount:
+                    type: number
+                    format: double
+                playStatus:
+                    type: string
         StakeGetPlayRequest_SendBody:
             type: object
             properties:

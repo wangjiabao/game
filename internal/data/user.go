@@ -2740,10 +2740,11 @@ func (u *UserRepo) SetStakeGetTotal(ctx context.Context, amount, balance float64
 }
 
 // SetStakeGetTotalSub .
-func (u *UserRepo) SetStakeGetTotalSub(ctx context.Context, amount float64) error {
+func (u *UserRepo) SetStakeGetTotalSub(ctx context.Context, amount, balance float64) error {
 	res := u.data.DB(ctx).Table("stake_get_total").Where("id=?", 1).
 		Updates(map[string]interface{}{
 			"amount":     gorm.Expr("amount - ?", amount),
+			"balance":    gorm.Expr("balance- ?", balance),
 			"updated_at": time.Now().Format("2006-01-02 15:04:05"),
 		})
 	if res.Error != nil {
@@ -2824,9 +2825,9 @@ func (u *UserRepo) SetStakeGetPlaySub(ctx context.Context, userId uint64, amount
 }
 
 // SetStakeGetPlay .
-func (u *UserRepo) SetStakeGetPlay(ctx context.Context, userId uint64, amount float64) error {
+func (u *UserRepo) SetStakeGetPlay(ctx context.Context, userId uint64, git, amount float64) error {
 	res := u.data.DB(ctx).Table("user").Where("id=?", userId).
-		Updates(map[string]interface{}{"git": gorm.Expr("git + ?", amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+		Updates(map[string]interface{}{"git": gorm.Expr("git + ?", git), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil {
 		return errors.New(500, "SetStakeGetPlaySub", "用户信息修改失败")
 	}
