@@ -2213,7 +2213,7 @@ func (ac *AppUsecase) LandPlayOne(ctx context.Context, address string, req *pb.L
 	} else if land.UserId == user.ID {
 		if 1 != land.Status {
 			return &pb.LandPlayOneReply{
-				Status: "未布置土地",
+				Status: "已出租土地",
 			}, nil
 		}
 	} else {
