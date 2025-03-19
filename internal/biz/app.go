@@ -70,28 +70,12 @@ type Config struct {
 	Value   string
 }
 
-type SkateGit struct {
+type StakeGit struct {
 	ID        uint64
 	UserId    uint64
 	Status    uint64
 	Amount    float64
 	Reward    float64
-	CreatedAt time.Time
-	UpdatedAt time.Time
-}
-
-type SkateGet struct {
-	ID        uint64
-	UserId    uint64
-	Status    uint64
-	SkateRate float64
-	CreatedAt time.Time
-	UpdatedAt time.Time
-}
-
-type SkateGetTotal struct {
-	ID        uint64
-	Amount    float64
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -300,16 +284,7 @@ type StakeGetRecord struct {
 type StakeGetTotal struct {
 	ID        uint64
 	Amount    float64
-	CreatedAt time.Time
-	UpdatedAt time.Time
-}
-
-type StakeGit struct {
-	ID        uint64
-	UserID    uint64
-	Amount    float64
-	Reward    float64
-	Status    int
+	Balance   float64
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -349,16 +324,17 @@ type UserRepo interface {
 	GetUserRecommendByCode(ctx context.Context, code string) ([]*UserRecommend, error)
 	GetUserRecommends(ctx context.Context) ([]*UserRecommend, error)
 	CreateUser(ctx context.Context, uc *User) (*User, error)
-	CreateSkateGit(ctx context.Context, sg *SkateGit) (*SkateGit, error)
+	CreateStakeGet(ctx context.Context, sg *StakeGet) error
+	CreateStakeGit(ctx context.Context, sg *StakeGit) (*StakeGit, error)
 	CreateUserRecommend(ctx context.Context, user *User, recommendUser *UserRecommend) (*UserRecommend, error)
 	GetConfigByKeys(ctx context.Context, keys ...string) ([]*Config, error)
-	GetSkateGitByUserId(ctx context.Context, userId uint64) (*SkateGit, error)
+	GetStakeGitByUserId(ctx context.Context, userId uint64) (*StakeGit, error)
 	GetBoxRecord(ctx context.Context, num uint64) ([]*BoxRecord, error)
 	GetBoxRecordCount(ctx context.Context, num uint64) (int64, error)
 	GetUserBoxRecord(ctx context.Context, userId, num uint64, b *Pagination) ([]*BoxRecord, error)
 	GetUserBoxRecordOpen(ctx context.Context, userId, num uint64, open bool, b *Pagination) ([]*BoxRecord, error)
-	GetSkateGetTotal(ctx context.Context) (*SkateGetTotal, error)
-	GetUserSkateGet(ctx context.Context, userId uint64) (*SkateGet, error)
+	GetStakeGetTotal(ctx context.Context) (*StakeGetTotal, error)
+	GetUserStakeGet(ctx context.Context, userId uint64) (*StakeGet, error)
 	GetTotalStakeRate(ctx context.Context) (float64, error)
 	GetUserRecommendCount(ctx context.Context, code string) (int64, error)
 	GetUserRecommendByCodePage(ctx context.Context, code string, b *Pagination) ([]*UserRecommend, error)
@@ -382,7 +358,6 @@ type UserRepo interface {
 	GetStakeGetPlayRecordsByUserID(ctx context.Context, userID uint64, status uint64, b *Pagination) ([]*StakeGetPlayRecord, error)
 	GetStakeGetPlayRecordCount(ctx context.Context, userID uint64, status uint64) (int64, error)
 	GetStakeGetRecordsByUserID(ctx context.Context, userID int64, b *Pagination) ([]*StakeGetRecord, error)
-	GetStakeGetTotal(ctx context.Context) (*StakeGetTotal, error)
 	GetStakeGitByUserID(ctx context.Context, userID int64) (*StakeGit, error)
 	GetStakeGitRecordsByUserID(ctx context.Context, userID int64, b *Pagination) ([]*StakeGitRecord, error)
 	GetWithdrawRecordsByUserID(ctx context.Context, userID int64, b *Pagination) ([]*Withdraw, error)
@@ -427,6 +402,12 @@ type UserRepo interface {
 	GetLandInfoByLevels(ctx context.Context) (map[uint64]*LandInfo, error)
 	SetGiw(ctx context.Context, address string, giw uint64) error
 	SetGit(ctx context.Context, address string, git uint64) error
+	SetStakeGetTotal(ctx context.Context, amount, balance float64) error
+	SetStakeGetTotalSub(ctx context.Context, amount float64) error
+	SetStakeGet(ctx context.Context, userId uint64, git, amount float64) error
+	SetStakeGetSub(ctx context.Context, userId uint64, git, amount float64) error
+	SetStakeGetPlaySub(ctx context.Context, userId uint64, amount float64) error
+	SetStakeGetPlay(ctx context.Context, userId uint64, amount float64) error
 }
 
 // AppUsecase is an app usecase.
@@ -497,9 +478,9 @@ func (ac *AppUsecase) GetExistUserByAddressOrCreate(ctx context.Context, address
 				return err
 			}
 
-			//_, err = ac.userRepo.CreateSkateGit(ctx, &SkateGit{
-			//	UserId: user.ID,
-			//})
+			err = ac.userRepo.CreateStakeGet(ctx, &StakeGet{
+				UserId: user.ID,
+			})
 			if err != nil {
 				return err
 			}
@@ -521,12 +502,12 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		configs         []*Config
 		bPrice          float64
 		exchangeFeeRate float64
-		rewardSkateRate float64
+		rewardStakeRate float64
 		boxMax          uint64
 		boxAmount       float64
 		boxStart        string
 		boxEnd          string
-		skateOverRate   float64
+		stakeOverRate   float64
 		sellFeeRate     float64
 		withdrawMin     uint64
 		withdrawMax     uint64
@@ -544,13 +525,13 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		"box_num",
 		"b_price",
 		"exchange_fee_rate",
-		"reward_skate_rate",
+		"reward_stake_rate",
 		"box_max",
 		"box_sell_num",
 		"box_start",
 		"box_end",
 		"box_amount",
-		"skate_over_rate",
+		"stake_over_rate",
 		"sell_fee_rate",
 		"withdraw_amount_min",
 		"withdraw_amount_max",
@@ -580,8 +561,8 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		if "exchange_fee_rate" == vConfig.KeyName {
 			exchangeFeeRate, _ = strconv.ParseFloat(vConfig.Value, 10)
 		}
-		if "reward_skate_rate" == vConfig.KeyName {
-			rewardSkateRate, _ = strconv.ParseFloat(vConfig.Value, 10)
+		if "reward_stake_rate" == vConfig.KeyName {
+			rewardStakeRate, _ = strconv.ParseFloat(vConfig.Value, 10)
 		}
 		if "box_start" == vConfig.KeyName {
 			boxStart = vConfig.Value
@@ -595,8 +576,8 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		if "box_max" == vConfig.KeyName {
 			boxMax, _ = strconv.ParseUint(vConfig.Value, 10, 64)
 		}
-		if "skate_over_rate" == vConfig.KeyName {
-			skateOverRate, _ = strconv.ParseFloat(vConfig.Value, 10)
+		if "stake_over_rate" == vConfig.KeyName {
+			stakeOverRate, _ = strconv.ParseFloat(vConfig.Value, 10)
 		}
 		if "sell_fee_rate" == vConfig.KeyName {
 			sellFeeRate, _ = strconv.ParseFloat(vConfig.Value, 10)
@@ -628,17 +609,17 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 	RecommendTotalReward := +RecommendTotalRewardOne + RecommendTotalRewardTwo + RecommendTotalRewardThree
 
 	var (
-		skateGit *SkateGit
+		stakeGit *StakeGit
 	)
-	skateGit, err = ac.userRepo.GetSkateGitByUserId(ctx, user.ID)
+	stakeGit, err = ac.userRepo.GetStakeGitByUserId(ctx, user.ID)
 	if nil != err {
 		return &pb.UserInfoReply{
 			Status: "粮仓错误查询",
 		}, nil
 	}
-	skateGitAmount := float64(0)
-	if nil != skateGit {
-		skateGitAmount = skateGit.Amount
+	stakeGitAmount := float64(0)
+	if nil != stakeGit {
+		stakeGitAmount = stakeGit.Amount
 	}
 
 	if boxNum > 0 {
@@ -656,38 +637,32 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 	}
 
 	var (
-		skateGetAll     float64
-		skateGetTotalMy float64
-		skateGet        *SkateGet
+		stakeGetTotalMy float64
+		stakeGet        *StakeGet
 
-		skateGetTotalAmount float64
-		skateGetTotal       *SkateGetTotal
+		stakeGetTotalAmount float64
+		stakeGetTotal       *StakeGetTotal
 	)
-	//skateGetAll, err = ac.userRepo.GetTotalStakeRate(ctx)
-	//if nil != err {
-	//	return &pb.UserInfoReply{
-	//		Status: "放大器错误查询",
-	//	}, nil
-	//}
 
-	skateGetTotal, err = ac.userRepo.GetSkateGetTotal(ctx)
-	if nil != err || nil == skateGetTotal {
+	stakeGetTotal, err = ac.userRepo.GetStakeGetTotal(ctx)
+	if nil != err || nil == stakeGetTotal {
 		return &pb.UserInfoReply{
 			Status: "我的放大器错误查询",
 		}, nil
 	}
-	skateGetTotalAmount = skateGetTotal.Amount
+	stakeGetTotalAmount = stakeGetTotal.Balance
 
-	skateGet, err = ac.userRepo.GetUserSkateGet(ctx, user.ID)
+	stakeGet, err = ac.userRepo.GetUserStakeGet(ctx, user.ID)
 	if nil != err {
 		return &pb.UserInfoReply{
 			Status: "我的放大器错误查询",
 		}, nil
 	}
-	if nil != skateGet {
-		if 0 < skateGetAll {
-			skateGetTotalMy = skateGetTotalAmount * skateGet.SkateRate / skateGetAll
-		}
+	if nil != stakeGet {
+		// 每份价值
+		valuePerShare := stakeGetTotalAmount / stakeGetTotal.Amount
+		// 用户最大可提取金额
+		stakeGetTotalMy = stakeGet.StakeRate * valuePerShare
 	}
 
 	return &pb.UserInfoReply{
@@ -705,9 +680,9 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		RecommendTotalRewardTwo:   RecommendTotalRewardTwo,
 		RecommendTotalBiwThree:    user.TotalThree,
 		RecommendTotalRewardThree: RecommendTotalRewardThree,
-		MyStakeGit:                skateGitAmount,
-		TodayRewardSkateGit:       skateGitAmount * rewardSkateRate,
-		RewardStakeRate:           rewardSkateRate,
+		MyStakeGit:                stakeGitAmount,
+		TodayRewardSkateGit:       stakeGitAmount * rewardStakeRate,
+		RewardStakeRate:           rewardStakeRate,
 		Box:                       boxMax,
 		BoxSell:                   boxSellNum,
 		Start:                     boxStart,
@@ -715,9 +690,9 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		BoxSellAmount:             boxAmount,
 		ExchangeRate:              bPrice,
 		ExchangeFeeRate:           exchangeFeeRate,
-		StakeGetTotal:             skateGetTotalAmount,
-		MyStakeGetTotal:           skateGetTotalMy,
-		StakeGetOverFeeRate:       skateOverRate,
+		StakeGetTotal:             stakeGetTotalAmount,
+		MyStakeGetTotal:           stakeGetTotalMy,
+		StakeGetOverFeeRate:       stakeOverRate,
 		SellFeeRate:               sellFeeRate,
 		WithdrawMax:               withdrawMax,
 		WithdrawMin:               withdrawMin,
@@ -923,15 +898,15 @@ func (ac *AppUsecase) UserLand(ctx context.Context, address string, req *pb.User
 	}, nil
 }
 
-func (ac *AppUsecase) UserStakeRewardList(ctx context.Context, address string, req *pb.UserStakeRewardListRequest) (*pb.UserStakeRewardListReply, error) {
-	res := make([]*pb.UserStakeRewardListReply_List, 0)
+func (ac *AppUsecase) UserStakeGitRewardList(ctx context.Context, address string, req *pb.UserStakeGitRewardListRequest) (*pb.UserStakeGitRewardListReply, error) {
+	res := make([]*pb.UserStakeGitRewardListReply_List, 0)
 	var (
 		user *User
 		err  error
 	)
 	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
 	if nil != err || nil == user {
-		return &pb.UserStakeRewardListReply{
+		return &pb.UserStakeGitRewardListReply{
 			Status: "不存在用户",
 		}, nil
 	}
@@ -944,7 +919,7 @@ func (ac *AppUsecase) UserStakeRewardList(ctx context.Context, address string, r
 	status := []uint64{3}
 	count, err = ac.userRepo.GetUserRewardPageCount(ctx, user.ID, status)
 	if nil != err {
-		return &pb.UserStakeRewardListReply{
+		return &pb.UserStakeGitRewardListReply{
 			Status: "粮仓查询错误",
 		}, nil
 	}
@@ -954,19 +929,19 @@ func (ac *AppUsecase) UserStakeRewardList(ctx context.Context, address string, r
 		PageSize: 20,
 	})
 	if nil != err {
-		return &pb.UserStakeRewardListReply{
+		return &pb.UserStakeGitRewardListReply{
 			Status: "粮仓查询错误",
 		}, nil
 	}
 
 	for _, v := range reward {
-		res = append(res, &pb.UserStakeRewardListReply_List{
+		res = append(res, &pb.UserStakeGitRewardListReply_List{
 			Amount:    v.Amount,
 			CreatedAt: v.CreatedAt.Add(8 * time.Hour).Format("2006-01-02 15:04:05"),
 		})
 	}
 
-	return &pb.UserStakeRewardListReply{
+	return &pb.UserStakeGitRewardListReply{
 		Status: "ok",
 		Count:  uint64(count),
 		List:   res,
@@ -1504,20 +1479,20 @@ func (ac *AppUsecase) UserNoticeList(ctx context.Context, address string, req *p
 	}, nil
 }
 
-// UserSkateRewardList userSkateRewardList.
-func (ac *AppUsecase) UserSkateRewardList(ctx context.Context, address string, req *pb.UserSkateRewardListRequest) (*pb.UserSkateRewardListReply, error) {
+// UserStakeRewardList userStakeRewardList.
+func (ac *AppUsecase) UserStakeRewardList(ctx context.Context, address string, req *pb.UserStakeRewardListRequest) (*pb.UserStakeRewardListReply, error) {
 	var (
 		user *User
 		err  error
 	)
 	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
 	if nil != err || nil == user {
-		return &pb.UserSkateRewardListReply{
+		return &pb.UserStakeRewardListReply{
 			Status: "不存在用户",
 		}, nil
 	}
 
-	res := make([]*pb.UserSkateRewardListReply_List, 0)
+	res := make([]*pb.UserStakeRewardListReply_List, 0)
 
 	var (
 		stakeGetPlayRecord []*StakeGetPlayRecord
@@ -1526,7 +1501,7 @@ func (ac *AppUsecase) UserSkateRewardList(ctx context.Context, address string, r
 
 	count, err = ac.userRepo.GetStakeGetPlayRecordCount(ctx, user.ID, 0)
 	if nil != err {
-		return &pb.UserSkateRewardListReply{
+		return &pb.UserStakeRewardListReply{
 			Status: "推荐错误查询",
 		}, nil
 	}
@@ -1536,7 +1511,7 @@ func (ac *AppUsecase) UserSkateRewardList(ctx context.Context, address string, r
 		PageSize: 20,
 	})
 	if nil != err {
-		return &pb.UserSkateRewardListReply{
+		return &pb.UserStakeRewardListReply{
 			Status: "错误查询",
 		}, nil
 	}
@@ -1549,7 +1524,7 @@ func (ac *AppUsecase) UserSkateRewardList(ctx context.Context, address string, r
 	usersMap := make(map[uint64]*User)
 	usersMap, err = ac.userRepo.GetUserByUserIds(ctx, userIds)
 	if nil != err {
-		return &pb.UserSkateRewardListReply{
+		return &pb.UserStakeRewardListReply{
 			Status: "错误查询",
 		}, nil
 	}
@@ -1560,7 +1535,7 @@ func (ac *AppUsecase) UserSkateRewardList(ctx context.Context, address string, r
 			addressTmp = usersMap[v.UserId].Address
 		}
 
-		res = append(res, &pb.UserSkateRewardListReply_List{
+		res = append(res, &pb.UserStakeRewardListReply_List{
 			Address: addressTmp,
 			Content: "",
 			Amount:  v.Amount,
@@ -1569,7 +1544,7 @@ func (ac *AppUsecase) UserSkateRewardList(ctx context.Context, address string, r
 		})
 	}
 
-	return &pb.UserSkateRewardListReply{
+	return &pb.UserStakeRewardListReply{
 		Count:  uint64(count),
 		List:   res,
 		Status: "ok",
@@ -1819,18 +1794,11 @@ func (ac *AppUsecase) BuyBox(ctx context.Context, address string, req *pb.BuyBox
 	// 配置
 	configs, err = ac.userRepo.GetConfigByKeys(ctx,
 		"box_num",
-		"b_price",
-		"exchange_fee_rate",
-		"reward_skate_rate",
 		"box_max",
 		"box_sell_num",
 		"box_start",
 		"box_end",
 		"box_amount",
-		"skate_over_rate",
-		"sell_fee_rate",
-		"withdraw_amount_min",
-		"withdraw_amount_max",
 	)
 	if nil != err || nil == configs {
 		return &pb.BuyBoxReply{
@@ -3647,7 +3615,12 @@ func (ac *AppUsecase) GetLand(ctx context.Context, address string, req *pb.GetLa
 	return &pb.GetLandReply{Status: "ok"}, nil
 }
 
-func (ac *AppUsecase) SkateGet(ctx context.Context, address string, req *pb.SkateGetRequest) (*pb.SkateGetReply, error) {
+var stakeAndPlay sync.Mutex
+
+func (ac *AppUsecase) StakeGet(ctx context.Context, address string, req *pb.StakeGetRequest) (*pb.StakeGetReply, error) {
+	stakeAndPlay.Lock()
+	defer stakeAndPlay.Unlock()
+
 	var (
 		user *User
 		err  error
@@ -3655,99 +3628,228 @@ func (ac *AppUsecase) SkateGet(ctx context.Context, address string, req *pb.Skat
 
 	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
 	if nil != err || nil == user {
-		return &pb.SkateGetReply{
+		return &pb.StakeGetReply{
 			Status: "不存在用户",
 		}, nil
 	}
 
+	var (
+		stakeGetTotal *StakeGetTotal
+	)
+	stakeGetTotal, err = ac.userRepo.GetStakeGetTotal(ctx)
+	if nil == stakeGetTotal || nil != err {
+		return &pb.StakeGetReply{
+			Status: "放大器总额错误查询",
+		}, nil
+	}
+
+	var (
+		stakeGet *StakeGet
+	)
+	stakeGet, err = ac.userRepo.GetUserStakeGet(ctx, user.ID)
+	if nil == stakeGet || nil != err {
+		return &pb.StakeGetReply{
+			Status: "我的放大器错误查询",
+		}, nil
+	}
+
+	// 质押
 	if 1 == req.SendBody.Num {
+		if 100 > req.SendBody.Amount {
+			return &pb.StakeGetReply{
+				Status: "git金额要多于100",
+			}, nil
+		}
 
+		if req.SendBody.Amount > uint64(user.Git) {
+			return &pb.StakeGetReply{
+				Status: "git余额不足",
+			}, nil
+		}
+
+		var mintedShares float64
+		tmpAmount := float64(req.SendBody.Amount)
+		if 0 >= stakeGetTotal.Balance || 0 >= stakeGetTotal.Amount {
+			mintedShares = tmpAmount
+		} else {
+			mintedShares = tmpAmount * stakeGetTotal.Amount / stakeGetTotal.Balance
+		}
+		if 0 >= mintedShares {
+			return &pb.StakeGetReply{
+				Status: "份额计算不足",
+			}, nil
+		}
+
+		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+			err = ac.userRepo.SetStakeGetTotal(ctx, mintedShares, tmpAmount)
+			if nil != err {
+				return err
+			}
+
+			err = ac.userRepo.SetStakeGet(ctx, user.ID, tmpAmount, mintedShares)
+			if nil != err {
+				return err
+			}
+			return nil
+		}); nil != err {
+			fmt.Println(err, "GetLand", user)
+			return &pb.StakeGetReply{
+				Status: "git余额不足",
+			}, nil
+		}
 	} else if 2 == req.SendBody.Num {
-		//var (
-		//	configs       []*Config
-		//	skateOverRate float64
-		//)
-		//
-		//// 配置
-		//configs, err = ac.userRepo.GetConfigByKeys(ctx,
-		//	"one_rate", "two_rate", "three_rate",
-		//)
-		//if nil != err || nil == configs {
-		//	return &pb.SkateGetReply{
-		//		Status: "配置错误",
-		//	}, nil
-		//}
-		//
-		//for _, vConfig := range configs {
-		//	if "skate_over_rate" == vConfig.KeyName {
-		//		skateOverRate, _ = strconv.ParseFloat(vConfig.Value, 10)
-		//	}
-		//}
-		//
-		//var (
-		//	skateGetAll     float64
-		//	skateGetTotalMy float64
-		//	skateGet        *SkateGet
-		//
-		//	skateGetTotalAmount float64
-		//	skateGetTotal       *SkateGetTotal
-		//)
-		//skateGetAll, err = ac.userRepo.GetTotalStakeRate(ctx)
-		//if nil != err {
-		//	return &pb.SkateGetReply{
-		//		Status: "放大器错误查询",
-		//	}, nil
-		//}
-		//
-		//skateGetTotal, err = ac.userRepo.GetSkateGetTotal(ctx)
-		//if nil != err || nil == skateGetTotal {
-		//	return &pb.SkateGetReply{
-		//		Status: "我的放大器错误查询",
-		//	}, nil
-		//}
-		//skateGetTotalAmount = skateGetTotal.Amount
-		//if skateGetTotalAmount <= 0 {
-		//	return &pb.SkateGetReply{
-		//		Status: "池子余额不足",
-		//	}, nil
-		//}
-		//
-		//skateGet, err = ac.userRepo.GetUserSkateGet(ctx, user.ID)
-		//if nil != err {
-		//	return &pb.SkateGetReply{
-		//		Status: "我的放大器错误查询",
-		//	}, nil
-		//}
-		//if nil != skateGet {
-		//	if 0 < skateGetAll {
-		//		skateGetTotalMy = skateGetTotalAmount * skateGet.SkateRate / skateGetAll
-		//	}
-		//}
-		//
-		//if skateGetTotalMy <= 0 {
-		//	return &pb.SkateGetReply{
-		//		Status: "池子余额不足",
-		//	}, nil
-		//}
-		//
-		//skateGetTotalMy = skateGetTotalMy - skateGetTotalMy*skateOverRate
-		//if skateGetTotalMy <= 0 {
-		//	return &pb.SkateGetReply{
-		//		Status: "池子余额不足",
-		//	}, nil
-		//}
-		//
-		//// 提现
 
+		if 0 >= stakeGetTotal.Balance || 0 >= stakeGetTotal.Amount {
+			return &pb.StakeGetReply{
+				Status: "池子为空",
+			}, nil
+		}
+
+		if 100 > req.SendBody.Amount {
+			return &pb.StakeGetReply{
+				Status: "git最小提现100",
+			}, nil
+		}
+
+		if 0 >= stakeGet.StakeRate {
+			return &pb.StakeGetReply{
+				Status: "用户无可提git",
+			}, nil
+		}
+
+		// 每份价值
+		valuePerShare := stakeGetTotal.Balance / stakeGetTotal.Amount
+		// 用户最大可提取金额
+		maxWithdraw := stakeGet.StakeRate * valuePerShare
+		if req.SendBody.Amount > uint64(maxWithdraw) {
+			if 0 >= stakeGet.StakeRate {
+				return &pb.StakeGetReply{
+					Status: "可提git不足",
+				}, nil
+			}
+		}
+
+		sharesToRemove := float64(req.SendBody.Amount) / valuePerShare
+
+		var (
+			configs       []*Config
+			stakeOverRate float64
+		)
+
+		tmpGit := float64(req.SendBody.Amount) - float64(req.SendBody.Amount)*stakeOverRate
+
+		// 配置
+		configs, err = ac.userRepo.GetConfigByKeys(ctx,
+			"stake_over_rate",
+		)
+		if nil != err || nil == configs {
+			return &pb.StakeGetReply{
+				Status: "配置错误",
+			}, nil
+		}
+		for _, vConfig := range configs {
+			if "stake_over_rate" == vConfig.KeyName {
+				stakeOverRate, _ = strconv.ParseFloat(vConfig.Value, 10)
+			}
+		}
+
+		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+			err = ac.userRepo.SetStakeGetTotalSub(ctx, sharesToRemove)
+			if nil != err {
+				return err
+			}
+
+			err = ac.userRepo.SetStakeGetSub(ctx, user.ID, tmpGit, sharesToRemove)
+			if nil != err {
+				return err
+			}
+			return nil
+		}); nil != err {
+			fmt.Println(err, "GetLand", user)
+			return &pb.StakeGetReply{
+				Status: "git余额不足",
+			}, nil
+		}
 	} else {
-		return &pb.SkateGetReply{
+		return &pb.StakeGetReply{
 			Status: "错误参数",
 		}, nil
 	}
 
-	return &pb.SkateGetReply{
+	return &pb.StakeGetReply{
 		Status: "ok",
 	}, nil
+}
+
+func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.StakeGetPlayRequest) (*pb.StakeGetPlayReply, error) {
+	stakeAndPlay.Lock()
+	defer stakeAndPlay.Unlock()
+
+	var (
+		user *User
+		err  error
+	)
+
+	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
+	if nil != err || nil == user {
+		return &pb.StakeGetPlayReply{
+			Status: "不存在用户",
+		}, nil
+	}
+
+	if req.SendBody.Amount > uint64(user.Git) {
+		return &pb.StakeGetPlayReply{
+			Status: "git余额不足",
+		}, nil
+	}
+
+	var (
+		stakeGetTotal *StakeGetTotal
+	)
+	stakeGetTotal, err = ac.userRepo.GetStakeGetTotal(ctx)
+	if nil == stakeGetTotal || nil != err {
+		return &pb.StakeGetPlayReply{
+			Status: "放大器总额错误查询",
+		}, nil
+	}
+
+	rand2.New(rand2.NewSource(time.Now().UnixNano()))
+	outcome := rand2.Intn(2)
+
+	if outcome == 0 { // 赢：需要池子中有足够资金支付奖金
+		if uint64(stakeGetTotal.Balance) < req.SendBody.Amount {
+			return &pb.StakeGetPlayReply{
+				Status: "资金池不足",
+			}, nil
+		}
+		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+			err = ac.userRepo.SetStakeGetPlay(ctx, user.ID, float64(req.SendBody.Amount))
+			if nil != err {
+				return err
+			}
+			return nil
+		}); nil != err {
+			fmt.Println(err, "GetLand", user)
+			return &pb.StakeGetPlayReply{
+				Status: "git余额不足",
+			}, nil
+		}
+	} else { // 输：下注金额加入池子
+		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+			err = ac.userRepo.SetStakeGetPlaySub(ctx, user.ID, float64(req.SendBody.Amount))
+			if nil != err {
+				return err
+			}
+			return nil
+		}); nil != err {
+			fmt.Println(err, "GetLand", user)
+			return &pb.StakeGetPlayReply{
+				Status: "git余额不足",
+			}, nil
+		}
+	}
+
+	return &pb.StakeGetPlayReply{Status: ""}, nil
 }
 
 func (ac *AppUsecase) SetGiw(ctx context.Context, req *pb.SetGiwRequest) (*pb.SetGiwReply, error) {

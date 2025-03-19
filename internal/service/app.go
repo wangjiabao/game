@@ -644,8 +644,8 @@ func (a *AppService) UserNoticeList(ctx context.Context, req *pb.UserNoticeListR
 	return a.ac.UserNoticeList(ctx, address, req)
 }
 
-// UserSkateRewardList userSkateRewardList.
-func (a *AppService) UserSkateRewardList(ctx context.Context, req *pb.UserSkateRewardListRequest) (*pb.UserSkateRewardListReply, error) {
+// UserStakeGitRewardList UserStakeGitRewardList.
+func (a *AppService) UserStakeGitRewardList(ctx context.Context, req *pb.UserStakeGitRewardListRequest) (*pb.UserStakeGitRewardListReply, error) {
 	// 在上下文 context 中取出 claims 对象
 	var (
 		address string
@@ -653,7 +653,7 @@ func (a *AppService) UserSkateRewardList(ctx context.Context, req *pb.UserSkateR
 	if claims, ok := jwt.FromContext(ctx); ok {
 		c := claims.(jwt2.MapClaims)
 		if c["Address"] == nil {
-			return &pb.UserSkateRewardListReply{Status: "无效token"}, nil
+			return &pb.UserStakeGitRewardListReply{Status: "无效token"}, nil
 		}
 
 		address = c["Address"].(string)
@@ -665,17 +665,17 @@ func (a *AppService) UserSkateRewardList(ctx context.Context, req *pb.UserSkateR
 		)
 		res, err = addressCheck(address)
 		if nil != err {
-			return &pb.UserSkateRewardListReply{Status: "无效token"}, nil
+			return &pb.UserStakeGitRewardListReply{Status: "无效token"}, nil
 		}
 
 		if !res {
-			return &pb.UserSkateRewardListReply{Status: "无效token"}, nil
+			return &pb.UserStakeGitRewardListReply{Status: "无效token"}, nil
 		}
 	} else {
-		return &pb.UserSkateRewardListReply{Status: "无效token"}, nil
+		return &pb.UserStakeGitRewardListReply{Status: "无效token"}, nil
 	}
 
-	return a.ac.UserSkateRewardList(ctx, address, req)
+	return a.ac.UserStakeGitRewardList(ctx, address, req)
 }
 
 // UserIndexList UserIndexList.
@@ -1230,7 +1230,7 @@ func (a *AppService) GetLand(ctx context.Context, req *pb.GetLandRequest) (*pb.G
 	return a.ac.GetLand(ctx, address, req)
 }
 
-func (a *AppService) SkateGet(ctx context.Context, req *pb.SkateGetRequest) (*pb.SkateGetReply, error) {
+func (a *AppService) StakeGet(ctx context.Context, req *pb.StakeGetRequest) (*pb.StakeGetReply, error) {
 	// 在上下文 context 中取出 claims 对象
 	var (
 		address string
@@ -1238,7 +1238,7 @@ func (a *AppService) SkateGet(ctx context.Context, req *pb.SkateGetRequest) (*pb
 	if claims, ok := jwt.FromContext(ctx); ok {
 		c := claims.(jwt2.MapClaims)
 		if c["Address"] == nil {
-			return &pb.SkateGetReply{Status: "无效token"}, nil
+			return &pb.StakeGetReply{Status: "无效token"}, nil
 		}
 
 		address = c["Address"].(string)
@@ -1250,14 +1250,14 @@ func (a *AppService) SkateGet(ctx context.Context, req *pb.SkateGetRequest) (*pb
 		)
 		res, err = addressCheck(address)
 		if nil != err {
-			return &pb.SkateGetReply{Status: "无效token"}, nil
+			return &pb.StakeGetReply{Status: "无效token"}, nil
 		}
 
 		if !res {
-			return &pb.SkateGetReply{Status: "无效token"}, nil
+			return &pb.StakeGetReply{Status: "无效token"}, nil
 		}
 	} else {
-		return &pb.SkateGetReply{Status: "无效token"}, nil
+		return &pb.StakeGetReply{Status: "无效token"}, nil
 	}
 
 	var (
@@ -1266,12 +1266,56 @@ func (a *AppService) SkateGet(ctx context.Context, req *pb.SkateGetRequest) (*pb
 	)
 	res, addressFromSign = verifySig(req.SendBody.Sign, []byte(address))
 	if !res || addressFromSign != address {
-		return &pb.SkateGetReply{
+		return &pb.StakeGetReply{
 			Status: "地址签名错误",
 		}, nil
 	}
 
-	return a.ac.SkateGet(ctx, address, req)
+	return a.ac.StakeGet(ctx, address, req)
+}
+
+func (a *AppService) StakeGetPlay(ctx context.Context, req *pb.StakeGetPlayRequest) (*pb.StakeGetPlayReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		address string
+	)
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["Address"] == nil {
+			return &pb.StakeGetPlayReply{Status: "无效token"}, nil
+		}
+
+		address = c["Address"].(string)
+
+		// 验证
+		var (
+			res bool
+			err error
+		)
+		res, err = addressCheck(address)
+		if nil != err {
+			return &pb.StakeGetPlayReply{Status: "无效token"}, nil
+		}
+
+		if !res {
+			return &pb.StakeGetPlayReply{Status: "无效token"}, nil
+		}
+	} else {
+		return &pb.StakeGetPlayReply{Status: "无效token"}, nil
+	}
+
+	var (
+		res             bool
+		addressFromSign string
+	)
+	res, addressFromSign = verifySig(req.SendBody.Sign, []byte(address))
+	if !res || addressFromSign != address {
+		return &pb.StakeGetPlayReply{
+			Status: "地址签名错误",
+		}, nil
+	}
+
+	return a.ac.StakeGetPlay(ctx, address, req)
 }
 
 func (a *AppService) SetGiw(ctx context.Context, req *pb.SetGiwRequest) (*pb.SetGiwReply, error) {

@@ -51,9 +51,9 @@ service App {
 	};
 
 	// 粮仓列表
-	rpc UserStakeRewardList (UserStakeRewardListRequest) returns (UserStakeRewardListReply) {
+	rpc UserStakeGitRewardList (UserStakeGitRewardListRequest) returns (UserStakeGitRewardListReply) {
 		option (google.api.http) = {
-			get: "/api/app_server/user_stake_reward_list"
+			get: "/api/app_server/user_stake_git_reward_list"
 		};
 	};
 
@@ -114,7 +114,7 @@ service App {
 	};
 
 	// 果实放大器 获奖记录
-	rpc UserSkateRewardList (UserSkateRewardListRequest) returns (UserSkateRewardListReply) {
+	rpc UserStakeRewardList (UserStakeRewardListRequest) returns (UserStakeRewardListReply) {
 		option (google.api.http) = {
 			get: "/api/app_server/user_skate_reward_list"
 		};
@@ -215,7 +215,7 @@ service App {
 	};
 
 	// 放大器质押解压
-	rpc SkateGet (SkateGetRequest) returns (SkateGetReply) {
+	rpc StakeGet (StakeGetRequest) returns (StakeGetReply) {
 		option (google.api.http) = {
 			post: "/api/app_server/skate_get"
 			body: "send_body"
@@ -223,7 +223,7 @@ service App {
 	};
 
 	//  放大器游戏
-	rpc SkateGetPlay (SkateGetPlayRequest) returns (SkateGetPlayReply) {
+	rpc StakeGetPlay (StakeGetPlayRequest) returns (StakeGetPlayReply) {
 		option (google.api.http) = {
 			post: "/api/app_server/skate_get_play"
 			body: "send_body"
@@ -440,11 +440,11 @@ message UserLandReply {
 	}
 }
 
-message UserStakeRewardListRequest {
+message UserStakeGitRewardListRequest {
 	uint64 page = 1; // 页数
 }
 
-message UserStakeRewardListReply {
+message UserStakeGitRewardListReply {
 	string status = 1; // 状态为字符串"ok"时接口正常，其他情况忽略，弹出显示该字段文案即可
 
 	uint64 count = 2; // 总个数，每页20个
@@ -606,11 +606,11 @@ message UserNoticeListReply {
 	}
 }
 
-message UserSkateRewardListRequest {
+message UserStakeRewardListRequest {
 	uint64 page = 1; // 页数
 }
 
-message UserSkateRewardListReply {
+message UserStakeRewardListReply {
 	string status = 1; // 状态为字符串"ok"时接口正常，其他情况忽略，弹出显示该字段文案即可
 
 	uint64 count = 2; // 总个数，每页20个
@@ -820,7 +820,7 @@ message LandAddOutRateReply {
 	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
 }
 
-message SkateGetRequest {
+message StakeGetRequest {
 	message SendBody{
 		uint64 num = 1; // 质押1，解压2
 		uint64 amount = 3; // 数量
@@ -830,11 +830,11 @@ message SkateGetRequest {
 	SendBody send_body = 1;
 }
 
-message SkateGetReply {
+message StakeGetReply {
 	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
 }
 
-message SkateGetPlayRequest {
+message StakeGetPlayRequest {
 	message SendBody{
 		uint64 amount = 1; // 数量
 		string sign = 2; // 签名
@@ -843,7 +843,7 @@ message SkateGetPlayRequest {
 	SendBody send_body = 1;
 }
 
-message SkateGetPlayReply {
+message StakeGetPlayReply {
 	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
 }
 

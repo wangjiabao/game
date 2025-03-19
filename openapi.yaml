@@ -491,12 +491,12 @@ paths:
             tags:
                 - App
             description: 放大器质押解压
-            operationId: App_SkateGet
+            operationId: App_StakeGet
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/SkateGetRequest_SendBody'
+                            $ref: '#/components/schemas/StakeGetRequest_SendBody'
                 required: true
             responses:
                 "200":
@@ -504,7 +504,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/SkateGetReply'
+                                $ref: '#/components/schemas/StakeGetReply'
                 default:
                     description: Default error response
                     content:
@@ -516,12 +516,12 @@ paths:
             tags:
                 - App
             description: 放大器游戏
-            operationId: App_SkateGetPlay
+            operationId: App_StakeGetPlay
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/SkateGetPlayRequest_SendBody'
+                            $ref: '#/components/schemas/StakeGetPlayRequest_SendBody'
                 required: true
             responses:
                 "200":
@@ -529,7 +529,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/SkateGetPlayReply'
+                                $ref: '#/components/schemas/StakeGetPlayReply'
                 default:
                     description: Default error response
                     content:
@@ -928,30 +928,6 @@ paths:
             tags:
                 - App
             description: 果实放大器 获奖记录
-            operationId: App_UserSkateRewardList
-            parameters:
-                - name: page
-                  in: query
-                  schema:
-                    type: string
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/UserSkateRewardListReply'
-                default:
-                    description: Default error response
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/Status'
-    /api/app_server/user_stake_reward_list:
-        get:
-            tags:
-                - App
-            description: 粮仓列表
             operationId: App_UserStakeRewardList
             parameters:
                 - name: page
@@ -965,6 +941,30 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/UserStakeRewardListReply'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /api/app_server/user_stake_git_reward_list:
+        get:
+            tags:
+                - App
+            description: 粮仓列表
+            operationId: App_UserStakeGitRewardList
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UserStakeGitRewardListReply'
                 default:
                     description: Default error response
                     content:
@@ -1280,24 +1280,24 @@ components:
             properties:
                 status:
                     type: string
-        SkateGetPlayReply:
+        StakeGetPlayReply:
             type: object
             properties:
                 status:
                     type: string
-        SkateGetPlayRequest_SendBody:
+        StakeGetPlayRequest_SendBody:
             type: object
             properties:
                 amount:
                     type: string
                 sign:
                     type: string
-        SkateGetReply:
+        StakeGetReply:
             type: object
             properties:
                 status:
                     type: string
-        SkateGetRequest_SendBody:
+        StakeGetRequest_SendBody:
             type: object
             properties:
                 num:
@@ -1769,7 +1769,7 @@ components:
                     type: string
                 createdAt:
                     type: string
-        UserSkateRewardListReply:
+        UserStakeGitRewardListReply:
             type: object
             properties:
                 status:
@@ -1779,21 +1779,14 @@ components:
                 list:
                     type: array
                     items:
-                        $ref: '#/components/schemas/UserSkateRewardListReply_List'
-        UserSkateRewardListReply_List:
+                        $ref: '#/components/schemas/UserStakeGitRewardListReply_List'
+        UserStakeGitRewardListReply_List:
             type: object
             properties:
-                address:
-                    type: string
-                content:
-                    type: string
                 amount:
                     type: number
                     format: double
-                reward:
-                    type: number
-                    format: double
-                status:
+                createdAt:
                     type: string
         UserStakeRewardListReply:
             type: object
@@ -1809,10 +1802,17 @@ components:
         UserStakeRewardListReply_List:
             type: object
             properties:
+                address:
+                    type: string
+                content:
+                    type: string
                 amount:
                     type: number
                     format: double
-                createdAt:
+                reward:
+                    type: number
+                    format: double
+                status:
                     type: string
         WithdrawReply:
             type: object
