@@ -678,6 +678,40 @@ func (a *AppService) UserStakeGitRewardList(ctx context.Context, req *pb.UserSta
 	return a.ac.UserStakeGitRewardList(ctx, address, req)
 }
 
+// UserStakeGitStakeList UserStakeGitStakeList.
+func (a *AppService) UserStakeGitStakeList(ctx context.Context, req *pb.UserStakeGitStakeListRequest) (*pb.UserStakeGitStakeListReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		address string
+	)
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["Address"] == nil {
+			return &pb.UserStakeGitStakeListReply{Status: "无效token"}, nil
+		}
+
+		address = c["Address"].(string)
+
+		// 验证
+		var (
+			res bool
+			err error
+		)
+		res, err = addressCheck(address)
+		if nil != err {
+			return &pb.UserStakeGitStakeListReply{Status: "无效token"}, nil
+		}
+
+		if !res {
+			return &pb.UserStakeGitStakeListReply{Status: "无效token"}, nil
+		}
+	} else {
+		return &pb.UserStakeGitStakeListReply{Status: "无效token"}, nil
+	}
+
+	return a.ac.UserStakeGitStakeList(ctx, address, req)
+}
+
 // UserIndexList UserIndexList.
 func (a *AppService) UserIndexList(ctx context.Context, req *pb.UserIndexListRequest) (*pb.UserIndexListReply, error) {
 	// 在上下文 context 中取出 claims 对象

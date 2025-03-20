@@ -931,6 +931,43 @@ func (ac *AppUsecase) UserLand(ctx context.Context, address string, req *pb.User
 	}, nil
 }
 
+func (ac *AppUsecase) UserStakeGitStakeList(ctx context.Context, address string, req *pb.UserStakeGitStakeListRequest) (*pb.UserStakeGitStakeListReply, error) {
+	res := make([]*pb.UserStakeGitStakeListReply_List, 0)
+	var (
+		user *User
+		err  error
+	)
+	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
+	if nil != err || nil == user {
+		return &pb.UserStakeGitStakeListReply{
+			Status: "不存在用户",
+		}, nil
+	}
+
+	var (
+		stakeGitRecord []*StakeGitRecord
+	)
+	stakeGitRecord, err = ac.userRepo.GetStakeGitRecordsByUserID(ctx, user.ID, nil)
+	if nil != err {
+		return &pb.UserStakeGitStakeListReply{
+			Status: "粮仓错误查询",
+		}, nil
+	}
+
+	for _, v := range stakeGitRecord {
+		res = append(res, &pb.UserStakeGitStakeListReply_List{
+			Stake:     v.Amount,
+			CreatedAt: v.CreatedAt.Add(8 * time.Hour).Format("2006-01-02 15:04:05"),
+		})
+	}
+
+	return &pb.UserStakeGitStakeListReply{
+		Status: "ok",
+		Count:  0,
+		List:   res,
+	}, err
+}
+
 func (ac *AppUsecase) UserStakeGitRewardList(ctx context.Context, address string, req *pb.UserStakeGitRewardListRequest) (*pb.UserStakeGitRewardListReply, error) {
 	res := make([]*pb.UserStakeGitRewardListReply_List, 0)
 	var (
