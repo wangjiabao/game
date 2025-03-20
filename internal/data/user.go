@@ -2653,6 +2653,46 @@ func (u *UserRepo) PlantPlatSix(ctx context.Context, id, propId, propStatus, pro
 	return nil
 }
 
+// PlantPlatSeven .
+func (u *UserRepo) PlantPlatSeven(ctx context.Context, outMax, amount float64, subTime, lastTime, id, propId, propStatus, propNum, userId uint64) error {
+	updateColums := map[string]interface{}{
+		"sub_time":    subTime,
+		"out_max_num": outMax,
+		"updated_at":  time.Now().Format("2006-01-02 15:04:05"),
+	}
+
+	res := u.data.DB(ctx).Table("land_user_use").Where("id=?", id).Where("status=?", 1).Where("sub_time=?", lastTime).
+		Updates(updateColums)
+	if res.Error != nil {
+		return errors.New(500, "PlantPlatFive", "用户信息修改失败")
+	}
+
+	res = u.data.DB(ctx).Table("prop").Where("id=?", propId).
+		Updates(map[string]interface{}{"status": propStatus, "five_one": propNum, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "PlantPlatFive", "用户信息修改失败")
+	}
+
+	res = u.data.DB(ctx).Table("user").Where("id=?", userId).
+		Updates(map[string]interface{}{"git": gorm.Expr("git + ?", amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "PlantPlatFive", "用户信息修改失败")
+	}
+
+	var reward Reward
+
+	reward.reason = 13
+	reward.UserId = userId
+	reward.Amount = amount
+	reward.Two = id
+	res = u.data.DB(ctx).Table("reward").Create(&reward)
+	if res.Error != nil {
+		return errors.New(500, "PlantPlatTwoTwo", "用户信息修改失败")
+	}
+
+	return nil
+}
+
 // PlantPlatTwoTwo .
 func (u *UserRepo) PlantPlatTwoTwo(ctx context.Context, id, userId, rentUserId uint64, amount, rentAmount float64) error {
 	if amount > 0 {

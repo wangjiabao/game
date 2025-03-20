@@ -383,6 +383,7 @@ type UserRepo interface {
 	PlantPlatFour(ctx context.Context, outMax float64, id, propId, propStatus, propNum uint64) error
 	PlantPlatFive(ctx context.Context, overTime, id, propId, propStatus, propNum uint64) error
 	PlantPlatSix(ctx context.Context, id, propId, propStatus, propNum, landId uint64) error
+	PlantPlatSeven(ctx context.Context, outMax, amount float64, subTime, lastTime, id, propId, propStatus, propNum, userId uint64) error
 	PlantPlatTwoTwo(ctx context.Context, id, userId, rentUserId uint64, amount, rentAmount float64) error
 	PlantPlatTwoTwoL(ctx context.Context, id, userId, lowUserId, num uint64, amount float64) error
 	GetSeedBuyByID(ctx context.Context, seedID, status uint64) (*Seed, error)
@@ -3293,12 +3294,122 @@ func (ac *AppUsecase) LandPlaySeven(ctx context.Context, address string, req *pb
 	}
 
 	var (
+		prop *Prop
+	)
+
+	// 11化肥，12水，13手套，14除虫剂，15铲子，16盲盒，17地契
+	prop, err = ac.userRepo.GetPropByIDTwo(ctx, req.SendBody.Id)
+	if nil != err || nil == prop {
+		return &pb.LandPlaySevenReply{
+			Status: "不存在道具",
+		}, nil
+	}
+
+	if 13 != prop.PropType {
+		return &pb.LandPlaySevenReply{
+			Status: "无效道具",
+		}, nil
+
+	}
+
+	if 2 < prop.Status {
+		return &pb.LandPlaySevenReply{
+			Status: "无效道具",
+		}, nil
+	}
+
+	if 0 >= prop.FiveOne {
+		return &pb.LandPlaySevenReply{
+			Status: "无效道具",
+		}, nil
+	}
+
+	if user.ID != prop.UserId {
+		return &pb.LandPlaySevenReply{
+			Status: "不是自己的",
+		}, nil
+	}
+
+	var (
 		landUserUse *LandUserUse
 	)
 	landUserUse, err = ac.userRepo.GetLandUserUseByID(ctx, req.SendBody.LandUseId)
 	if nil != err || nil == landUserUse {
 		return &pb.LandPlaySevenReply{
 			Status: "不存在信息",
+		}, nil
+	}
+
+	if landUserUse.OwnerUserId == user.ID {
+		return &pb.LandPlaySevenReply{
+			Status: "土地用户不能使用手套",
+		}, nil
+	}
+
+	if landUserUse.UserId == user.ID {
+		return &pb.LandPlaySevenReply{
+			Status: "种植用户不能使用手套",
+		}, nil
+	}
+
+	if 1 != landUserUse.Status {
+		return &pb.LandPlaySevenReply{
+			Status: "状态错误",
+		}, nil
+	}
+
+	current := time.Now().Unix()
+	if uint64(current) < landUserUse.OverTime {
+		return &pb.LandPlaySevenReply{
+			Status: "还未成熟",
+		}, nil
+	}
+
+	if 0 < landUserUse.One {
+		return &pb.LandPlaySevenReply{
+			Status: "缺水暂停中",
+		}, nil
+	}
+
+	if 0 < landUserUse.Two {
+		return &pb.LandPlaySevenReply{
+			Status: "虫蛀减产中",
+		}, nil
+	}
+
+	lastTime := landUserUse.SubTime
+	if 0 < lastTime {
+		if uint64(current)-600 <= lastTime {
+			return &pb.LandPlaySevenReply{
+				Status: "偷盗过于频繁",
+			}, nil
+		}
+	}
+
+	tmpAmount := landUserUse.OutMaxNum * 0.1
+	tmpOutMax := float64(0)
+	if tmpAmount >= landUserUse.OutMaxNum {
+		tmpOutMax = 0
+	} else {
+		tmpOutMax = landUserUse.OutMaxNum - tmpAmount
+	}
+
+	one := uint64(0)
+	if 1 <= prop.FiveOne {
+		one = uint64(prop.FiveOne - 1)
+	}
+
+	two := uint64(2)
+	if 0 >= one {
+		two = 3
+	}
+
+	if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+		return ac.userRepo.PlantPlatSeven(ctx, tmpOutMax, tmpAmount, uint64(current), lastTime, landUserUse.ID, prop.ID, two, one, user.ID)
+	}); nil != err {
+		fmt.Println(err, "LandPlaySeven", user)
+		return &pb.LandPlaySevenReply{
+			Status: "偷取失败",
 		}, nil
 	}
 
