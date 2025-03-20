@@ -1866,6 +1866,8 @@ components:
         UserStakeGitStakeListReply_List:
             type: object
             properties:
+                id:
+                    type: string
                 stake:
                     type: number
                     format: double

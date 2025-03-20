@@ -916,7 +916,7 @@ func (ac *AppUsecase) UserLand(ctx context.Context, address string, req *pb.User
 			Level:     v.Level,
 			Health:    v.MaxHealth,
 			Status:    statusTmp,
-			OutRate:   v.OutPutRate,
+			OutRate:   v.OutPutRate * 100,
 			PerHealth: v.PerHealth,
 			One:       v.One,
 			Two:       v.Two,
@@ -956,6 +956,7 @@ func (ac *AppUsecase) UserStakeGitStakeList(ctx context.Context, address string,
 
 	for _, v := range stakeGitRecord {
 		res = append(res, &pb.UserStakeGitStakeListReply_List{
+			Id:        v.ID,
 			Stake:     v.Amount,
 			CreatedAt: v.CreatedAt.Add(8 * time.Hour).Format("2006-01-02 15:04:05"),
 		})

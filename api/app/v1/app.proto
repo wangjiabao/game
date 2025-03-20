@@ -472,6 +472,7 @@ message UserStakeGitStakeListReply {
 	uint64 count = 2; // 总个数，每页20个
 	repeated List list = 3;
 	message List {
+		uint64 id = 1;
 		double stake = 2; // 质押金额
 		double reward = 3; // 累加收益
 		string createdAt = 4; // 日期
