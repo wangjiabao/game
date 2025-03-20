@@ -26,6 +26,7 @@ const (
 	App_UserRecommendL_FullMethodName         = "/api.app.v1.App/UserRecommendL"
 	App_UserLand_FullMethodName               = "/api.app.v1.App/UserLand"
 	App_UserStakeGitRewardList_FullMethodName = "/api.app.v1.App/UserStakeGitRewardList"
+	App_UserStakeGitStakeList_FullMethodName  = "/api.app.v1.App/UserStakeGitStakeList"
 	App_UserBoxList_FullMethodName            = "/api.app.v1.App/UserBoxList"
 	App_UserBackList_FullMethodName           = "/api.app.v1.App/UserBackList"
 	App_UserMarketSeedList_FullMethodName     = "/api.app.v1.App/UserMarketSeedList"
@@ -78,6 +79,8 @@ type AppClient interface {
 	UserLand(ctx context.Context, in *UserLandRequest, opts ...grpc.CallOption) (*UserLandReply, error)
 	// 粮仓列表
 	UserStakeGitRewardList(ctx context.Context, in *UserStakeGitRewardListRequest, opts ...grpc.CallOption) (*UserStakeGitRewardListReply, error)
+	// 粮仓列表
+	UserStakeGitStakeList(ctx context.Context, in *UserStakeGitStakeListRequest, opts ...grpc.CallOption) (*UserStakeGitStakeListReply, error)
 	// 盲盒列表
 	UserBoxList(ctx context.Context, in *UserBoxListRequest, opts ...grpc.CallOption) (*UserBoxListReply, error)
 	// 仓库
@@ -210,6 +213,15 @@ func (c *appClient) UserLand(ctx context.Context, in *UserLandRequest, opts ...g
 func (c *appClient) UserStakeGitRewardList(ctx context.Context, in *UserStakeGitRewardListRequest, opts ...grpc.CallOption) (*UserStakeGitRewardListReply, error) {
 	out := new(UserStakeGitRewardListReply)
 	err := c.cc.Invoke(ctx, App_UserStakeGitRewardList_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *appClient) UserStakeGitStakeList(ctx context.Context, in *UserStakeGitStakeListRequest, opts ...grpc.CallOption) (*UserStakeGitStakeListReply, error) {
+	out := new(UserStakeGitStakeListReply)
+	err := c.cc.Invoke(ctx, App_UserStakeGitStakeList_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -538,6 +550,8 @@ type AppServer interface {
 	UserLand(context.Context, *UserLandRequest) (*UserLandReply, error)
 	// 粮仓列表
 	UserStakeGitRewardList(context.Context, *UserStakeGitRewardListRequest) (*UserStakeGitRewardListReply, error)
+	// 粮仓列表
+	UserStakeGitStakeList(context.Context, *UserStakeGitStakeListRequest) (*UserStakeGitStakeListReply, error)
 	// 盲盒列表
 	UserBoxList(context.Context, *UserBoxListRequest) (*UserBoxListReply, error)
 	// 仓库
@@ -630,6 +644,9 @@ func (UnimplementedAppServer) UserLand(context.Context, *UserLandRequest) (*User
 }
 func (UnimplementedAppServer) UserStakeGitRewardList(context.Context, *UserStakeGitRewardListRequest) (*UserStakeGitRewardListReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UserStakeGitRewardList not implemented")
+}
+func (UnimplementedAppServer) UserStakeGitStakeList(context.Context, *UserStakeGitStakeListRequest) (*UserStakeGitStakeListReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserStakeGitStakeList not implemented")
 }
 func (UnimplementedAppServer) UserBoxList(context.Context, *UserBoxListRequest) (*UserBoxListReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UserBoxList not implemented")
@@ -868,6 +885,24 @@ func _App_UserStakeGitRewardList_Handler(srv interface{}, ctx context.Context, d
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AppServer).UserStakeGitRewardList(ctx, req.(*UserStakeGitRewardListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _App_UserStakeGitStakeList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserStakeGitStakeListRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AppServer).UserStakeGitStakeList(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: App_UserStakeGitStakeList_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppServer).UserStakeGitStakeList(ctx, req.(*UserStakeGitStakeListRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1518,6 +1553,10 @@ var App_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UserStakeGitRewardList",
 			Handler:    _App_UserStakeGitRewardList_Handler,
+		},
+		{
+			MethodName: "UserStakeGitStakeList",
+			Handler:    _App_UserStakeGitStakeList_Handler,
 		},
 		{
 			MethodName: "UserBoxList",

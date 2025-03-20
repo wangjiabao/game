@@ -222,7 +222,7 @@ type StakeGetTotal struct {
 
 type StakeGit struct {
 	ID        uint64    `gorm:"primarykey;type:int"`
-	UserID    uint64    `gorm:"type:int;not null;comment:用户id"`
+	UserId    uint64    `gorm:"type:int;not null;comment:用户id"`
 	Amount    float64   `gorm:"type:decimal(65,18);not null;default:0.0;comment:质押金额"`
 	Reward    float64   `gorm:"type:decimal(65,18);not null;default:0.0;comment:收益总数"`
 	Status    uint64    `gorm:"type:int;not null;default:0;comment:状态：1质押，0解压"`
@@ -232,7 +232,7 @@ type StakeGit struct {
 
 type StakeGitRecord struct {
 	ID        uint64    `gorm:"primarykey;type:int"`
-	UserID    uint64    `gorm:"type:int;not null;comment:用户id"`
+	UserId    uint64    `gorm:"type:int;not null;comment:用户id"`
 	Amount    float64   `gorm:"type:decimal(65,18);not null;default:0.0;comment:金额"`
 	StakeType int       `gorm:"type:int;not null;default:0;comment:操作类型：1质押，2解压"`
 	CreatedAt time.Time `gorm:"type:datetime;not null"`
@@ -241,7 +241,7 @@ type StakeGitRecord struct {
 
 type Withdraw struct {
 	ID        uint64    `gorm:"primarykey;type:int;comment:主键"`
-	UserID    uint64    `gorm:"type:int;not null;comment:用户id"`
+	UserId    uint64    `gorm:"type:int;not null;comment:用户id"`
 	Amount    uint64    `gorm:"type:bigint(20);not null;comment:金额"`
 	RelAmount uint64    `gorm:"type:bigint(20);not null;comment:实际提现金额"`
 	Status    string    `gorm:"type:varchar(45);not null;default:'default';comment:状态"`
@@ -549,24 +549,16 @@ func (u *UserRepo) CreateUser(ctx context.Context, uc *biz.User) (*biz.User, err
 }
 
 // CreateStakeGit 创建 StakeGit 记录
-func (u *UserRepo) CreateStakeGit(ctx context.Context, sg *biz.StakeGit) (*biz.StakeGit, error) {
+func (u *UserRepo) CreateStakeGit(ctx context.Context, sg *biz.StakeGit) error {
 	var stakeGit StakeGit
-	stakeGit.UserID = sg.UserId
+	stakeGit.UserId = sg.UserId
 
 	res := u.data.DB(ctx).Table("stake_git").Create(&stakeGit)
 	if res.Error != nil {
-		return nil, errors.New(500, "CREATE_SKATEGIT_ERROR", "StakeGit 记录创建失败")
+		return errors.New(500, "CREATE_SKATEGIT_ERROR", "StakeGit 记录创建失败")
 	}
 
-	return &biz.StakeGit{
-		ID:        stakeGit.ID,
-		UserId:    stakeGit.UserID,
-		Status:    stakeGit.Status,
-		Amount:    stakeGit.Amount,
-		Reward:    stakeGit.Reward,
-		CreatedAt: stakeGit.CreatedAt,
-		UpdatedAt: stakeGit.UpdatedAt,
-	}, nil
+	return nil
 }
 
 // CreateUserRecommend .
@@ -634,7 +626,7 @@ func (u *UserRepo) GetStakeGitByUserId(ctx context.Context, userId uint64) (*biz
 
 	return &biz.StakeGit{
 		ID:        stakeGit.ID,
-		UserId:    stakeGit.UserID,
+		UserId:    stakeGit.UserId,
 		Status:    stakeGit.Status,
 		Amount:    stakeGit.Amount,
 		Reward:    stakeGit.Reward,
@@ -1695,7 +1687,7 @@ func (u *UserRepo) GetStakeGitByUserID(ctx context.Context, userID int64) (*biz.
 
 	return &biz.StakeGit{
 		ID:        stake.ID,
-		UserId:    stake.UserID,
+		UserId:    stake.UserId,
 		Amount:    stake.Amount,
 		Reward:    stake.Reward,
 		Status:    stake.Status,
@@ -1712,6 +1704,7 @@ func (u *UserRepo) GetStakeGitRecordsByUserID(ctx context.Context, userID int64,
 	res := make([]*biz.StakeGitRecord, 0)
 	instance := u.data.DB(ctx).Table("stake_git_record").
 		Where("user_id = ?", userID).
+		Where("stake_type=?", 1).
 		Order("id desc")
 
 	if nil != b {
@@ -1728,7 +1721,7 @@ func (u *UserRepo) GetStakeGitRecordsByUserID(ctx context.Context, userID int64,
 	for _, record := range records {
 		res = append(res, &biz.StakeGitRecord{
 			ID:        record.ID,
-			UserID:    record.UserID,
+			UserId:    record.UserId,
 			Amount:    record.Amount,
 			StakeType: record.StakeType,
 			CreatedAt: record.CreatedAt,
@@ -1737,6 +1730,34 @@ func (u *UserRepo) GetStakeGitRecordsByUserID(ctx context.Context, userID int64,
 	}
 
 	return res, nil
+}
+
+func (u *UserRepo) GetStakeGitRecordsByID(ctx context.Context, id, userId uint64) (*biz.StakeGitRecord, error) {
+	var (
+		record StakeGitRecord
+	)
+
+	instance := u.data.DB(ctx).Table("stake_git_record").
+		Where("id = ?", id).
+		Where("user_id = ?", userId).
+		Where("stake_type=?", 1).
+		Order("id desc")
+
+	if err := instance.First(&record).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, errors.New(500, "STAKE GIT RECORD ERROR", err.Error())
+	}
+
+	return &biz.StakeGitRecord{
+		ID:        record.ID,
+		UserId:    record.UserId,
+		Amount:    record.Amount,
+		StakeType: record.StakeType,
+		CreatedAt: record.CreatedAt,
+		UpdatedAt: record.UpdatedAt,
+	}, nil
 }
 
 func (u *UserRepo) GetWithdrawRecordsByUserID(ctx context.Context, userID int64, b *biz.Pagination) ([]*biz.Withdraw, error) {
@@ -1763,7 +1784,7 @@ func (u *UserRepo) GetWithdrawRecordsByUserID(ctx context.Context, userID int64,
 	for _, record := range records {
 		res = append(res, &biz.Withdraw{
 			ID:        record.ID,
-			UserID:    record.UserID,
+			UserID:    record.UserId,
 			Amount:    record.Amount,
 			RelAmount: record.RelAmount,
 			Status:    record.Status,
@@ -2754,9 +2775,47 @@ func (u *UserRepo) SetStakeGetTotalSub(ctx context.Context, amount, balance floa
 	return nil
 }
 
+// SetStakeGit .
+func (u *UserRepo) SetStakeGit(ctx context.Context, userId uint64, amount float64) error {
+	res := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("git>=?", amount).
+		Updates(map[string]interface{}{"git": gorm.Expr("git - ?", amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "SetStakeGet", "用户信息修改失败")
+	}
+
+	var stakeRecord StakeGitRecord
+
+	stakeRecord.Amount = amount
+	stakeRecord.UserId = userId
+	stakeRecord.StakeType = 1
+
+	res = u.data.DB(ctx).Table("stake_git_record").Create(&stakeRecord)
+	if res.Error != nil {
+		return errors.New(500, "SetStakeGetPlaySub", "创建质押记录失败")
+	}
+
+	return nil
+}
+
+// SetUnStakeGit .
+func (u *UserRepo) SetUnStakeGit(ctx context.Context, id, userId uint64, amount float64) error {
+	res := u.data.DB(ctx).Table("user").Where("id=?", userId).
+		Updates(map[string]interface{}{"git": gorm.Expr("git + ?", amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "SetUnStakeGet", "用户信息修改失败")
+	}
+	res = u.data.DB(ctx).Table("stake_git_record").Where("id=?", id).
+		Updates(map[string]interface{}{"stake_type": 2, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "SetUnStakeGet", "用户信息修改失败")
+	}
+
+	return nil
+}
+
 // SetStakeGet .
 func (u *UserRepo) SetStakeGet(ctx context.Context, userId uint64, git, amount float64) error {
-	res := u.data.DB(ctx).Table("user").Where("id=?", userId).
+	res := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("git>=?", amount).
 		Updates(map[string]interface{}{"git": gorm.Expr("git - ?", git), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil {
 		return errors.New(500, "SetStakeGet", "用户信息修改失败")
@@ -2796,7 +2855,7 @@ func (u *UserRepo) SetStakeGetSub(ctx context.Context, userId uint64, git, amoun
 
 // SetStakeGetPlaySub .
 func (u *UserRepo) SetStakeGetPlaySub(ctx context.Context, userId uint64, amount float64) error {
-	res := u.data.DB(ctx).Table("user").Where("id=?", userId).
+	res := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("git>=?", amount).
 		Updates(map[string]interface{}{"git": gorm.Expr("git - ?", amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil {
 		return errors.New(500, "SetStakeGetPlaySub", "用户信息修改失败")

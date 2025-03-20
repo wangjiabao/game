@@ -291,7 +291,7 @@ type StakeGetTotal struct {
 
 type StakeGitRecord struct {
 	ID        uint64
-	UserID    uint64
+	UserId    uint64
 	Amount    float64
 	StakeType int
 	CreatedAt time.Time
@@ -325,7 +325,7 @@ type UserRepo interface {
 	GetUserRecommends(ctx context.Context) ([]*UserRecommend, error)
 	CreateUser(ctx context.Context, uc *User) (*User, error)
 	CreateStakeGet(ctx context.Context, sg *StakeGet) error
-	CreateStakeGit(ctx context.Context, sg *StakeGit) (*StakeGit, error)
+	CreateStakeGit(ctx context.Context, sg *StakeGit) error
 	CreateUserRecommend(ctx context.Context, user *User, recommendUser *UserRecommend) (*UserRecommend, error)
 	GetConfigByKeys(ctx context.Context, keys ...string) ([]*Config, error)
 	GetStakeGitByUserId(ctx context.Context, userId uint64) (*StakeGit, error)
@@ -360,6 +360,7 @@ type UserRepo interface {
 	GetStakeGetRecordsByUserID(ctx context.Context, userID int64, b *Pagination) ([]*StakeGetRecord, error)
 	GetStakeGitByUserID(ctx context.Context, userID int64) (*StakeGit, error)
 	GetStakeGitRecordsByUserID(ctx context.Context, userID int64, b *Pagination) ([]*StakeGitRecord, error)
+	GetStakeGitRecordsByID(ctx context.Context, id, userId uint64) (*StakeGitRecord, error)
 	GetWithdrawRecordsByUserID(ctx context.Context, userID int64, b *Pagination) ([]*Withdraw, error)
 	GetUserOrderCount(ctx context.Context) (int64, error)
 	GetUserOrder(ctx context.Context, b *Pagination) ([]*User, error)
@@ -408,6 +409,8 @@ type UserRepo interface {
 	SetStakeGetSub(ctx context.Context, userId uint64, git, amount float64) error
 	SetStakeGetPlaySub(ctx context.Context, userId uint64, amount float64) error
 	SetStakeGetPlay(ctx context.Context, userId uint64, git, amount float64) error
+	SetStakeGit(ctx context.Context, userId uint64, amount float64) error
+	SetUnStakeGit(ctx context.Context, id, userId uint64, amount float64) error
 }
 
 // AppUsecase is an app usecase.
@@ -484,6 +487,13 @@ func (ac *AppUsecase) GetExistUserByAddressOrCreate(ctx context.Context, address
 			if err != nil {
 				return err
 			}
+
+			//err = ac.userRepo.CreateStakeGit(ctx, &StakeGit{
+			//	UserId: user.ID,
+			//})
+			//if err != nil {
+			//	return err
+			//}
 
 			return nil
 		}); err != nil {
@@ -637,7 +647,7 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 	}
 
 	var (
-		stakeGetTotalMy float64
+		stakeGetTotalMy = float64(0)
 		stakeGet        *StakeGet
 
 		stakeGetTotalAmount float64
@@ -1183,10 +1193,12 @@ func (ac *AppUsecase) UserMarketLandList(ctx context.Context, address string, re
 
 	for _, vLand := range land {
 		res = append(res, &pb.UserMarketLandListReply_List{
-			Id:        vLand.ID,
-			Level:     vLand.Level,
-			MaxHealth: vLand.MaxHealth,
-			Amount:    vLand.SellAmount,
+			Id:         vLand.ID,
+			Level:      vLand.Level,
+			MaxHealth:  vLand.MaxHealth,
+			Amount:     vLand.SellAmount,
+			PerHealth:  vLand.PerHealth,
+			OutPutRate: uint64(vLand.OutPutRate) * 100,
 		})
 	}
 
@@ -1418,6 +1430,8 @@ func (ac *AppUsecase) UserMyMarketList(ctx context.Context, address string, req 
 			MaxHealth:  vLand.MaxHealth,
 			Amount:     vLand.SellAmount,
 			RentAmount: vLand.RentOutPutRate,
+			PerHealth:  vLand.PerHealth,
+			OutPutRate: uint64(vLand.OutPutRate) * 100,
 		})
 	}
 
@@ -2988,9 +3002,51 @@ func (ac *AppUsecase) StakeGit(ctx context.Context, address string, req *pb.Stak
 	}
 
 	if 1 == req.SendBody.Num {
+		if 100 > req.SendBody.Amount {
+			return &pb.StakeGitReply{
+				Status: "git金额要多于100",
+			}, nil
+		}
 
+		if req.SendBody.Amount > uint64(user.Git) {
+			return &pb.StakeGitReply{
+				Status: "git余额不足",
+			}, nil
+		}
+
+		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+			err = ac.userRepo.SetStakeGit(ctx, user.ID, float64(req.SendBody.Amount))
+			if nil != err {
+				return err
+			}
+			return nil
+		}); nil != err {
+			return &pb.StakeGitReply{
+				Status: "stakeGit失败",
+			}, nil
+		}
 	} else if 2 == req.SendBody.Num {
+		var (
+			record *StakeGitRecord
+		)
+		record, err = ac.userRepo.GetStakeGitRecordsByID(ctx, req.SendBody.Id, user.ID) // 查询用户
+		if nil != err || nil == record {
+			return &pb.StakeGitReply{
+				Status: "不存在记录",
+			}, nil
+		}
 
+		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+			err = ac.userRepo.SetUnStakeGit(ctx, record.ID, user.ID, record.Amount)
+			if nil != err {
+				return err
+			}
+			return nil
+		}); nil != err {
+			return &pb.StakeGitReply{
+				Status: "stakeGit失败",
+			}, nil
+		}
 	} else {
 		return &pb.StakeGitReply{
 			Status: "错误参数",
@@ -3483,7 +3539,6 @@ func (ac *AppUsecase) GetLand(ctx context.Context, address string, req *pb.GetLa
 
 			return nil
 		}); nil != err {
-			fmt.Println(err, "GetLand", user)
 			return &pb.GetLandReply{
 				Status: "培育失败",
 			}, nil
@@ -3601,7 +3656,6 @@ func (ac *AppUsecase) GetLand(ctx context.Context, address string, req *pb.GetLa
 
 			return nil
 		}); nil != err {
-			fmt.Println(err, "GetLand", user)
 			return &pb.GetLandReply{
 				Status: "培育失败",
 			}, nil
@@ -3692,7 +3746,6 @@ func (ac *AppUsecase) StakeGet(ctx context.Context, address string, req *pb.Stak
 			}
 			return nil
 		}); nil != err {
-			fmt.Println(err, "GetLand", user)
 			return &pb.StakeGetReply{
 				Status: "git余额不足",
 			}, nil
@@ -3743,7 +3796,6 @@ func (ac *AppUsecase) StakeGet(ctx context.Context, address string, req *pb.Stak
 			}
 			return nil
 		}); nil != err {
-			fmt.Println(err, "GetLand", user)
 			return &pb.StakeGetReply{
 				Status: "git余额不足",
 			}, nil
@@ -3781,6 +3833,12 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 		}, nil
 	}
 
+	if 100 > req.SendBody.Amount {
+		return &pb.StakeGetPlayReply{
+			Status: "最少100",
+		}, nil
+	}
+
 	var (
 		stakeGetTotal *StakeGetTotal
 	)
@@ -3788,6 +3846,18 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 	if nil == stakeGetTotal || nil != err {
 		return &pb.StakeGetPlayReply{
 			Status: "放大器总额错误查询",
+		}, nil
+	}
+
+	if 0 == uint64(stakeGetTotal.Balance) {
+		return &pb.StakeGetPlayReply{
+			Status: "资金池不足",
+		}, nil
+	}
+
+	if uint64(stakeGetTotal.Balance) < req.SendBody.Amount {
+		return &pb.StakeGetPlayReply{
+			Status: "资金池不足",
 		}, nil
 	}
 
@@ -3815,12 +3885,6 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 			}
 		}
 
-		if uint64(stakeGetTotal.Balance) < req.SendBody.Amount {
-			return &pb.StakeGetPlayReply{
-				Status: "资金池不足",
-			}, nil
-		}
-
 		tmpGit := float64(req.SendBody.Amount) - float64(req.SendBody.Amount)*stakeOverRate
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 			err = ac.userRepo.SetStakeGetPlay(ctx, user.ID, tmpGit, float64(req.SendBody.Amount))
@@ -3829,7 +3893,6 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 			}
 			return nil
 		}); nil != err {
-			fmt.Println(err, "GetLand", user)
 			return &pb.StakeGetPlayReply{
 				Status: "git余额不足",
 			}, nil
@@ -3844,7 +3907,6 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 			}
 			return nil
 		}); nil != err {
-			fmt.Println(err, "GetLand", user)
 			return &pb.StakeGetPlayReply{
 				Status: "git余额不足",
 			}, nil

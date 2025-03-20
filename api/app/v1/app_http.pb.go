@@ -58,6 +58,7 @@ const OperationAppUserOrderList = "/api.app.v1.App/UserOrderList"
 const OperationAppUserRecommend = "/api.app.v1.App/UserRecommend"
 const OperationAppUserRecommendL = "/api.app.v1.App/UserRecommendL"
 const OperationAppUserStakeGitRewardList = "/api.app.v1.App/UserStakeGitRewardList"
+const OperationAppUserStakeGitStakeList = "/api.app.v1.App/UserStakeGitStakeList"
 const OperationAppUserStakeRewardList = "/api.app.v1.App/UserStakeRewardList"
 const OperationAppWithdraw = "/api.app.v1.App/Withdraw"
 
@@ -135,6 +136,8 @@ type AppHTTPServer interface {
 	UserRecommendL(context.Context, *UserRecommendLRequest) (*UserRecommendLReply, error)
 	// UserStakeGitRewardList 粮仓列表
 	UserStakeGitRewardList(context.Context, *UserStakeGitRewardListRequest) (*UserStakeGitRewardListReply, error)
+	// UserStakeGitStakeList 粮仓列表
+	UserStakeGitStakeList(context.Context, *UserStakeGitStakeListRequest) (*UserStakeGitStakeListReply, error)
 	// UserStakeRewardList 果实放大器 获奖记录
 	UserStakeRewardList(context.Context, *UserStakeRewardListRequest) (*UserStakeRewardListReply, error)
 	// Withdraw 提现
@@ -150,6 +153,7 @@ func RegisterAppHTTPServer(s *http.Server, srv AppHTTPServer) {
 	r.GET("/api/app_server/user_recommend_l", _App_UserRecommendL0_HTTP_Handler(srv))
 	r.GET("/api/app_server/user_land", _App_UserLand0_HTTP_Handler(srv))
 	r.GET("/api/app_server/user_stake_git_reward_list", _App_UserStakeGitRewardList0_HTTP_Handler(srv))
+	r.GET("/api/app_server/user_stake_git_stake_list", _App_UserStakeGitStakeList0_HTTP_Handler(srv))
 	r.GET("/api/app_server/user_box_list", _App_UserBoxList0_HTTP_Handler(srv))
 	r.GET("/api/app_server/user_back_list", _App_UserBackList0_HTTP_Handler(srv))
 	r.GET("/api/app_server/user_market_seed_list", _App_UserMarketSeedList0_HTTP_Handler(srv))
@@ -318,6 +322,25 @@ func _App_UserStakeGitRewardList0_HTTP_Handler(srv AppHTTPServer) func(ctx http.
 			return err
 		}
 		reply := out.(*UserStakeGitRewardListReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _App_UserStakeGitStakeList0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in UserStakeGitStakeListRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAppUserStakeGitStakeList)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.UserStakeGitStakeList(ctx, req.(*UserStakeGitStakeListRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*UserStakeGitStakeListReply)
 		return ctx.Result(200, reply)
 	}
 }
@@ -1068,6 +1091,7 @@ type AppHTTPClient interface {
 	UserRecommend(ctx context.Context, req *UserRecommendRequest, opts ...http.CallOption) (rsp *UserRecommendReply, err error)
 	UserRecommendL(ctx context.Context, req *UserRecommendLRequest, opts ...http.CallOption) (rsp *UserRecommendLReply, err error)
 	UserStakeGitRewardList(ctx context.Context, req *UserStakeGitRewardListRequest, opts ...http.CallOption) (rsp *UserStakeGitRewardListReply, err error)
+	UserStakeGitStakeList(ctx context.Context, req *UserStakeGitStakeListRequest, opts ...http.CallOption) (rsp *UserStakeGitStakeListReply, err error)
 	UserStakeRewardList(ctx context.Context, req *UserStakeRewardListRequest, opts ...http.CallOption) (rsp *UserStakeRewardListReply, err error)
 	Withdraw(ctx context.Context, req *WithdrawRequest, opts ...http.CallOption) (rsp *WithdrawReply, err error)
 }
@@ -1579,6 +1603,19 @@ func (c *AppHTTPClientImpl) UserStakeGitRewardList(ctx context.Context, in *User
 	pattern := "/api/app_server/user_stake_git_reward_list"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationAppUserStakeGitRewardList))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, err
+}
+
+func (c *AppHTTPClientImpl) UserStakeGitStakeList(ctx context.Context, in *UserStakeGitStakeListRequest, opts ...http.CallOption) (*UserStakeGitStakeListReply, error) {
+	var out UserStakeGitStakeListReply
+	pattern := "/api/app_server/user_stake_git_stake_list"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationAppUserStakeGitStakeList))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {

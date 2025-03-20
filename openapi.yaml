@@ -996,6 +996,30 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Status'
+    /api/app_server/user_stake_git_stake_list:
+        get:
+            tags:
+                - App
+            description: 粮仓列表
+            operationId: App_UserStakeGitStakeList
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UserStakeGitStakeListReply'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
     /api/app_server/withdraw:
         post:
             tags:
@@ -1348,6 +1372,8 @@ components:
                     type: string
                 amount:
                     type: string
+                id:
+                    type: string
                 sign:
                     type: string
         Status:
@@ -1608,6 +1634,10 @@ components:
                 amount:
                     type: number
                     format: double
+                perHealth:
+                    type: string
+                outPutRate:
+                    type: string
         UserMarketPropListReply:
             type: object
             properties:
@@ -1715,6 +1745,10 @@ components:
                     type: string
                 maxHealth:
                     type: string
+                perHealth:
+                    type: string
+                outPutRate:
+                    type: string
                 amount:
                     type: number
                     format: double
@@ -1814,6 +1848,28 @@ components:
             type: object
             properties:
                 amount:
+                    type: number
+                    format: double
+                createdAt:
+                    type: string
+        UserStakeGitStakeListReply:
+            type: object
+            properties:
+                status:
+                    type: string
+                count:
+                    type: string
+                list:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/UserStakeGitStakeListReply_List'
+        UserStakeGitStakeListReply_List:
+            type: object
+            properties:
+                stake:
+                    type: number
+                    format: double
+                reward:
                     type: number
                     format: double
                 createdAt:

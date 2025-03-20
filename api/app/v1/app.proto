@@ -57,6 +57,13 @@ service App {
 		};
 	};
 
+	// 粮仓列表
+	rpc UserStakeGitStakeList (UserStakeGitStakeListRequest) returns (UserStakeGitStakeListReply) {
+		option (google.api.http) = {
+			get: "/api/app_server/user_stake_git_stake_list"
+		};
+	};
+
 	// 盲盒列表
 	rpc UserBoxList (UserBoxListRequest) returns (UserBoxListReply) {
 		option (google.api.http) = {
@@ -455,6 +462,22 @@ message UserStakeGitRewardListReply {
 	}
 }
 
+message UserStakeGitStakeListRequest {
+	uint64 page = 1; // 页数
+}
+
+message UserStakeGitStakeListReply {
+	string status = 1; // 状态为字符串"ok"时接口正常，其他情况忽略，弹出显示该字段文案即可
+
+	uint64 count = 2; // 总个数，每页20个
+	repeated List list = 3;
+	message List {
+		double stake = 2; // 质押金额
+		double reward = 3; // 累加收益
+		string createdAt = 4; // 日期
+	}
+}
+
 message UserBoxListRequest {
 	uint64 page = 1; // 页数
 }
@@ -524,6 +547,8 @@ message UserMarketLandListReply {
 		uint64 level = 2; // 等级 对应的内容：对应文档土地颜色那列从上到下，对应图片资源
 	  uint64 maxHealth = 4; // 肥沃度
 		double amount = 3; // 售价
+		uint64 perHealth = 5; // 每次消耗肥沃度
+		uint64 outPutRate = 6; // 增产率
 	}
 }
 
@@ -584,6 +609,8 @@ message UserMyMarketListReply {
 		uint64 level = 7; // 如果是土地，土地级别
 		uint64 status = 4; // 如果是土地，状态：默认1出租，2出售
 		uint64 maxHealth = 9; // 如果是土地， 肥沃度
+		uint64 perHealth = 12; // 如果是土地， 每次消耗肥沃度
+		uint64 outPutRate = 13; // 如果是土地，增产率
 
 		double amount = 8; // 售价
 
@@ -717,7 +744,8 @@ message GetLandReply {
 message StakeGitRequest {
 	message SendBody{
 		uint64 num = 1; // 质押1，解压2
-		uint64 amount = 3; // 数量
+		uint64 amount = 4;
+		uint64 id = 3; // 解压时需要，质押记录的id
 		string sign = 2; // 签名
 	}
 
