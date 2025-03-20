@@ -379,11 +379,13 @@ type UserRepo interface {
 	GetLandByUserIdLocationNum(ctx context.Context, userId uint64, locationNum uint64) (*Land, error)
 	Plant(ctx context.Context, status, originStatus, perHealth uint64, landUserUse *LandUserUse) error
 	PlantPlatTwo(ctx context.Context, id, landId uint64, rent bool) error
-	PlantPlatThree(ctx context.Context, id, overTime uint64, one, two bool) error
+	PlantPlatThree(ctx context.Context, id, overTime, propId uint64, one, two bool) error
+	PlantPlatFour(ctx context.Context, outMax float64, id, propId, propStatus, propNum uint64) error
 	PlantPlatTwoTwo(ctx context.Context, id, userId, rentUserId uint64, amount, rentAmount float64) error
 	PlantPlatTwoTwoL(ctx context.Context, id, userId, lowUserId, num uint64, amount float64) error
 	GetSeedBuyByID(ctx context.Context, seedID, status uint64) (*Seed, error)
 	GetPropByID(ctx context.Context, propID, status uint64) (*Prop, error)
+	GetPropByIDTwo(ctx context.Context, propID uint64) (*Prop, error)
 	BuySeed(ctx context.Context, git, getGit float64, userId, userIdGet, seedId uint64) error
 	BuyLand(ctx context.Context, git, getGit float64, userId, userIdGet, landId uint64) error
 	BuyProp(ctx context.Context, git, getGit float64, userId, userIdGet, propId uint64) error
@@ -2747,11 +2749,11 @@ func (ac *AppUsecase) LandPlayThree(ctx context.Context, address string, req *pb
 	}
 
 	if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-		return ac.userRepo.PlantPlatThree(ctx, user.ID, overTime, one, two)
+		return ac.userRepo.PlantPlatThree(ctx, landUserUse.ID, overTime, prop.ID, one, two)
 	}); nil != err {
 		fmt.Println(err, "buySeed", user)
 		return &pb.LandPlayThreeReply{
-			Status: "施肥",
+			Status: "施肥失败",
 		}, nil
 	}
 
@@ -2775,12 +2777,96 @@ func (ac *AppUsecase) LandPlayFour(ctx context.Context, address string, req *pb.
 	}
 
 	var (
+		prop *Prop
+	)
+
+	// 11化肥，12水，13手套，14除虫剂，15铲子，16盲盒，17地契
+	prop, err = ac.userRepo.GetPropByIDTwo(ctx, req.SendBody.Id)
+	if nil != err || nil == prop {
+		return &pb.LandPlayFourReply{
+			Status: "不存在道具",
+		}, nil
+	}
+
+	if 14 != prop.PropType {
+		return &pb.LandPlayFourReply{
+			Status: "无效道具",
+		}, nil
+
+	}
+
+	if 2 < prop.Status {
+		return &pb.LandPlayFourReply{
+			Status: "无效道具",
+		}, nil
+	}
+
+	if 0 >= prop.FourOne {
+		return &pb.LandPlayFourReply{
+			Status: "无效道具",
+		}, nil
+	}
+
+	if user.ID == prop.UserId {
+		return &pb.LandPlayFourReply{
+			Status: "不是自己的",
+		}, nil
+	}
+
+	var (
 		landUserUse *LandUserUse
 	)
 	landUserUse, err = ac.userRepo.GetLandUserUseByID(ctx, req.SendBody.LandUseId)
 	if nil != err || nil == landUserUse {
 		return &pb.LandPlayFourReply{
 			Status: "不存在信息",
+		}, nil
+	}
+
+	if landUserUse.UserId != user.ID {
+		return &pb.LandPlayFourReply{
+			Status: "非种植用户",
+		}, nil
+	}
+
+	if 1 != landUserUse.Status {
+		return &pb.LandPlayFourReply{
+			Status: "状态错误",
+		}, nil
+	}
+
+	current := time.Now().Unix()
+	if 0 >= landUserUse.Two {
+		return &pb.LandPlayFourReply{
+			Status: "无需杀虫",
+		}, nil
+	}
+
+	// 剩余最大产出
+	rewardTmp := float64(0)
+	if uint64(current) > landUserUse.Two {
+		tmp := landUserUse.OutMaxNum * 0.01 * float64(uint64(uint64(current)-landUserUse.Two)/300)
+		if tmp < landUserUse.OutMaxNum {
+			rewardTmp = landUserUse.OutMaxNum - tmp
+		}
+	}
+
+	one := uint64(0)
+	if 1 <= prop.FourOne {
+		one = uint64(prop.FourOne - 1)
+	}
+
+	two := uint64(2)
+	if 0 >= one {
+		two = 3
+	}
+
+	if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+		return ac.userRepo.PlantPlatFour(ctx, rewardTmp, landUserUse.ID, prop.ID, two, one)
+	}); nil != err {
+		fmt.Println(err, "buySeed", user)
+		return &pb.LandPlayFourReply{
+			Status: "杀虫失败",
 		}, nil
 	}
 
