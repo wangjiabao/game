@@ -6,6 +6,31 @@ info:
     title: App API
     version: 0.0.1
 paths:
+    /api/app_server/buy:
+        post:
+            tags:
+                - App
+            description: 购买道具
+            operationId: App_Buy
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/BuyRequest_SendBody'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/BuyReply'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
     /api/app_server/buy_box:
         post:
             tags:
@@ -384,13 +409,13 @@ paths:
         post:
             tags:
                 - App
-            description: 购买道具
-            operationId: App_Buy
+            description: 出售道具下架道具
+            operationId: App_Sell
             requestBody:
                 content:
                     application/json:
                         schema:
-                            $ref: '#/components/schemas/BuyRequest_SendBody'
+                            $ref: '#/components/schemas/SellRequest_SendBody'
                 required: true
             responses:
                 "200":
@@ -398,7 +423,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/BuyReply'
+                                $ref: '#/components/schemas/SellReply'
                 default:
                     description: Default error response
                     content:
