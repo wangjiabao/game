@@ -2570,7 +2570,7 @@ func (u *UserRepo) PlantPlatThree(ctx context.Context, id, overTime, propId uint
 		return errors.New(500, "PlantPlatThree", "用户信息修改失败")
 	}
 
-	res = u.data.DB(ctx).Table("prop").Where("id=?", propId).
+	res = u.data.DB(ctx).Table("prop").Where("id=?", propId).Where("status=?", 1).
 		Updates(map[string]interface{}{"status": 3, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil {
 		return errors.New(500, "PlantPlatThree", "用户信息修改失败")
@@ -2587,7 +2587,7 @@ func (u *UserRepo) PlantPlatFour(ctx context.Context, outMax float64, id, propId
 		"updated_at":  time.Now().Format("2006-01-02 15:04:05"),
 	}
 
-	res := u.data.DB(ctx).Table("land_user_use").Where("id=?", id).Where("status=?", 1).
+	res := u.data.DB(ctx).Table("land_user_use").Where("id=?", id).Where("status=?", 1).Where("two>?", 0).
 		Updates(updateColums)
 	if res.Error != nil {
 		return errors.New(500, "PlantPlatFour", "用户信息修改失败")
@@ -2597,6 +2597,57 @@ func (u *UserRepo) PlantPlatFour(ctx context.Context, outMax float64, id, propId
 		Updates(map[string]interface{}{"status": propStatus, "four_one": propNum, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil {
 		return errors.New(500, "PlantPlatFour", "用户信息修改失败")
+	}
+
+	return nil
+}
+
+// PlantPlatFive .
+func (u *UserRepo) PlantPlatFive(ctx context.Context, overTime, id, propId, propStatus, propNum uint64) error {
+	updateColums := map[string]interface{}{
+		"over_time":  overTime,
+		"one":        0,
+		"updated_at": time.Now().Format("2006-01-02 15:04:05"),
+	}
+
+	res := u.data.DB(ctx).Table("land_user_use").Where("id=?", id).Where("status=?", 1).Where("one>?", 0).
+		Updates(updateColums)
+	if res.Error != nil {
+		return errors.New(500, "PlantPlatFive", "用户信息修改失败")
+	}
+
+	res = u.data.DB(ctx).Table("prop").Where("id=?", propId).
+		Updates(map[string]interface{}{"status": propStatus, "three_one": propNum, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "PlantPlatFive", "用户信息修改失败")
+	}
+
+	return nil
+}
+
+// PlantPlatSix .
+func (u *UserRepo) PlantPlatSix(ctx context.Context, id, propId, propStatus, propNum, landId uint64) error {
+	res := u.data.DB(ctx).Table("land").Where("id=?", landId).Where("status=?", 8).
+		Updates(map[string]interface{}{"status": 3, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "sellLand", "用户信息修改失败")
+	}
+
+	updateColums := map[string]interface{}{
+		"status":     2,
+		"updated_at": time.Now().Format("2006-01-02 15:04:05"),
+	}
+
+	res = u.data.DB(ctx).Table("land_user_use").Where("id=?", id).Where("status=?", 1).
+		Updates(updateColums)
+	if res.Error != nil {
+		return errors.New(500, "PlantPlatSix", "用户信息修改失败")
+	}
+
+	res = u.data.DB(ctx).Table("prop").Where("id=?", propId).
+		Updates(map[string]interface{}{"status": propStatus, "two_one": propNum, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "PlantPlatSix", "用户信息修改失败")
 	}
 
 	return nil
