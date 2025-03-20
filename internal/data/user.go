@@ -2518,6 +2518,30 @@ func (u *UserRepo) PlantPlatTwo(ctx context.Context, id, landId uint64, rent boo
 	return nil
 }
 
+// PlantPlatThree .
+func (u *UserRepo) PlantPlatThree(ctx context.Context, id, overTime uint64, one, two bool) error {
+	updateColums := map[string]interface{}{
+		"over_time":  overTime,
+		"updated_at": time.Now().Format("2006-01-02 15:04:05"),
+	}
+
+	if one {
+		updateColums["one"] = uint64(0)
+	}
+
+	if two {
+		updateColums["two"] = uint64(0)
+	}
+
+	res := u.data.DB(ctx).Table("land_user_use").Where("id=?", id).Where("status=?", 1).
+		Updates(updateColums)
+	if res.Error != nil {
+		return errors.New(500, "sellLand", "用户信息修改失败")
+	}
+
+	return nil
+}
+
 // PlantPlatTwoTwo .
 func (u *UserRepo) PlantPlatTwoTwo(ctx context.Context, id, userId, rentUserId uint64, amount, rentAmount float64) error {
 	if amount > 0 {
@@ -2922,6 +2946,39 @@ func (u *UserRepo) CreateStakeGet(ctx context.Context, sg *biz.StakeGet) error {
 	res := u.data.DB(ctx).Table("stake_get").Create(&stakeGet)
 	if res.Error != nil {
 		return errors.New(500, "CREATE_STAKE_GET_ERROR", "创建质押记录失败")
+	}
+
+	return nil
+}
+
+// Exchange .
+func (u *UserRepo) Exchange(ctx context.Context, userId uint64, git, giw float64) error {
+	res := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("git>=?", git).
+		Updates(map[string]interface{}{"git": gorm.Expr("git - ?", git), "giw": gorm.Expr("giw + ?", giw), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "SetStakeGet", "用户信息修改失败")
+	}
+
+	return nil
+}
+
+// Withdraw .
+func (u *UserRepo) Withdraw(ctx context.Context, userId uint64, giw float64) error {
+	res := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("giw>=?", giw).
+		Updates(map[string]interface{}{"giw": gorm.Expr("giw - ?", giw), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "SetStakeGet", "用户信息修改失败")
+	}
+
+	var withdraw Withdraw
+
+	withdraw.UserId = userId
+	withdraw.Amount = uint64(giw)
+	withdraw.RelAmount = uint64(giw)
+	withdraw.Status = "rewarded"
+	res = u.data.DB(ctx).Table("withdraw").Create(&withdraw)
+	if res.Error != nil {
+		return errors.New(500, "CREATE_STAKE_GET_ERROR", "创建提现记录失败")
 	}
 
 	return nil

@@ -379,6 +379,7 @@ type UserRepo interface {
 	GetLandByUserIdLocationNum(ctx context.Context, userId uint64, locationNum uint64) (*Land, error)
 	Plant(ctx context.Context, status, originStatus, perHealth uint64, landUserUse *LandUserUse) error
 	PlantPlatTwo(ctx context.Context, id, landId uint64, rent bool) error
+	PlantPlatThree(ctx context.Context, id, overTime uint64, one, two bool) error
 	PlantPlatTwoTwo(ctx context.Context, id, userId, rentUserId uint64, amount, rentAmount float64) error
 	PlantPlatTwoTwoL(ctx context.Context, id, userId, lowUserId, num uint64, amount float64) error
 	GetSeedBuyByID(ctx context.Context, seedID, status uint64) (*Seed, error)
@@ -411,6 +412,8 @@ type UserRepo interface {
 	SetStakeGetPlay(ctx context.Context, userId uint64, git, amount float64) error
 	SetStakeGit(ctx context.Context, userId uint64, amount float64) error
 	SetUnStakeGit(ctx context.Context, id, userId uint64, amount float64) error
+	Exchange(ctx context.Context, userId uint64, git, giw float64) error
+	Withdraw(ctx context.Context, userId uint64, giw float64) error
 }
 
 // AppUsecase is an app usecase.
@@ -1695,10 +1698,15 @@ func (ac *AppUsecase) UserIndexList(ctx context.Context, address string, req *pb
 			rewardTmp := float64(0)
 			statusTmp := uint64(1)
 			if 0 != landUserUse[vLand.ID].One {
-				statusTmp = 3
+				if landUserUse[vLand.ID].One <= uint64(now) {
+					statusTmp = 3
+				}
 
 			} else if 0 != landUserUse[vLand.ID].Two {
-				statusTmp = 2
+				if landUserUse[vLand.ID].Two <= uint64(now) {
+					statusTmp = 2
+				}
+
 				// 有虫子但是已经结束
 				if landUserUse[vLand.ID].OverTime <= uint64(now) {
 					if uint64(now) > landUserUse[vLand.ID].Two {
@@ -2461,16 +2469,16 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 		}, nil
 	}
 
-	if 0 != landUserUse.One {
-		return &pb.LandPlayTwoReply{
-			Status: "停止生长状态",
-		}, nil
-	}
-
 	current := time.Now().Unix()
 	if uint64(current) < landUserUse.OverTime {
 		return &pb.LandPlayTwoReply{
 			Status: "种植未结束",
+		}, nil
+	}
+
+	if 0 != landUserUse.One {
+		return &pb.LandPlayTwoReply{
+			Status: "停止生长状态",
 		}, nil
 	}
 
@@ -2640,6 +2648,230 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 	}
 
 	return &pb.LandPlayTwoReply{
+		Status: "ok",
+	}, nil
+}
+
+// LandPlayThree 施肥
+func (ac *AppUsecase) LandPlayThree(ctx context.Context, address string, req *pb.LandPlayThreeRequest) (*pb.LandPlayThreeReply, error) {
+	var (
+		user *User
+		err  error
+	)
+
+	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
+	if nil != err || nil == user {
+		return &pb.LandPlayThreeReply{
+			Status: "不存在用户",
+		}, nil
+	}
+
+	var (
+		prop *Prop
+	)
+	prop, err = ac.userRepo.GetPropByID(ctx, req.SendBody.Id, 1)
+	if nil != err || nil == prop {
+		return &pb.LandPlayThreeReply{
+			Status: "不存道具",
+		}, nil
+	}
+
+	if user.ID == prop.UserId {
+		return &pb.LandPlayThreeReply{
+			Status: "不是自己的",
+		}, nil
+	}
+
+	if 11 != prop.PropType {
+		return &pb.LandPlayThreeReply{
+			Status: "不是化肥",
+		}, nil
+	}
+
+	var (
+		landUserUse *LandUserUse
+	)
+	landUserUse, err = ac.userRepo.GetLandUserUseByID(ctx, req.SendBody.LandUseId)
+	if nil != err || nil == landUserUse {
+		return &pb.LandPlayThreeReply{
+			Status: "不存在信息",
+		}, nil
+	}
+
+	if landUserUse.UserId != user.ID {
+		return &pb.LandPlayThreeReply{
+			Status: "非种植用户",
+		}, nil
+	}
+
+	if 1 != landUserUse.Status {
+		return &pb.LandPlayThreeReply{
+			Status: "状态错误",
+		}, nil
+	}
+
+	current := time.Now().Unix()
+	if 0 != landUserUse.One && uint64(current) >= landUserUse.One {
+		return &pb.LandPlayThreeReply{
+			Status: "停止生长状态",
+		}, nil
+	}
+
+	if 0 != landUserUse.Two && uint64(current) >= landUserUse.Two {
+		return &pb.LandPlayThreeReply{
+			Status: "生虫状态",
+		}, nil
+	}
+
+	if uint64(current) >= landUserUse.OverTime {
+		return &pb.LandPlayThreeReply{
+			Status: "种植已经结束了",
+		}, nil
+	}
+
+	if landUserUse.OverTime < uint64(prop.OneTwo) {
+		return &pb.LandPlayThreeReply{
+			Status: "道具配置错误",
+		}, nil
+	}
+
+	overTime := landUserUse.OverTime - uint64(prop.OneTwo)
+	one := false
+	if overTime <= landUserUse.One {
+		one = true
+	}
+
+	two := false
+	if overTime <= landUserUse.Two {
+		two = true
+	}
+
+	if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+		return ac.userRepo.PlantPlatThree(ctx, user.ID, overTime, one, two)
+	}); nil != err {
+		fmt.Println(err, "buySeed", user)
+		return &pb.LandPlayThreeReply{
+			Status: "施肥",
+		}, nil
+	}
+
+	return &pb.LandPlayThreeReply{
+		Status: "ok",
+	}, nil
+}
+
+// LandPlayFour 杀虫
+func (ac *AppUsecase) LandPlayFour(ctx context.Context, address string, req *pb.LandPlayFourRequest) (*pb.LandPlayFourReply, error) {
+	var (
+		user *User
+		err  error
+	)
+
+	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
+	if nil != err || nil == user {
+		return &pb.LandPlayFourReply{
+			Status: "不存在用户",
+		}, nil
+	}
+
+	var (
+		landUserUse *LandUserUse
+	)
+	landUserUse, err = ac.userRepo.GetLandUserUseByID(ctx, req.SendBody.LandUseId)
+	if nil != err || nil == landUserUse {
+		return &pb.LandPlayFourReply{
+			Status: "不存在信息",
+		}, nil
+	}
+
+	return &pb.LandPlayFourReply{
+		Status: "ok",
+	}, nil
+}
+
+// LandPlayFive 浇水
+func (ac *AppUsecase) LandPlayFive(ctx context.Context, address string, req *pb.LandPlayFiveRequest) (*pb.LandPlayFiveReply, error) {
+	var (
+		user *User
+		err  error
+	)
+
+	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
+	if nil != err || nil == user {
+		return &pb.LandPlayFiveReply{
+			Status: "不存在用户",
+		}, nil
+	}
+
+	var (
+		landUserUse *LandUserUse
+	)
+	landUserUse, err = ac.userRepo.GetLandUserUseByID(ctx, req.SendBody.LandUseId)
+	if nil != err || nil == landUserUse {
+		return &pb.LandPlayFiveReply{
+			Status: "不存在信息",
+		}, nil
+	}
+
+	return &pb.LandPlayFiveReply{
+		Status: "ok",
+	}, nil
+}
+
+// LandPlaySix 铲子
+func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.LandPlaySixRequest) (*pb.LandPlaySixReply, error) {
+	var (
+		user *User
+		err  error
+	)
+
+	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
+	if nil != err || nil == user {
+		return &pb.LandPlaySixReply{
+			Status: "不存在用户",
+		}, nil
+	}
+
+	var (
+		landUserUse *LandUserUse
+	)
+	landUserUse, err = ac.userRepo.GetLandUserUseByID(ctx, req.SendBody.LandUseId)
+	if nil != err || nil == landUserUse {
+		return &pb.LandPlaySixReply{
+			Status: "不存在信息",
+		}, nil
+	}
+
+	return &pb.LandPlaySixReply{
+		Status: "ok",
+	}, nil
+}
+
+// LandPlaySeven 手套
+func (ac *AppUsecase) LandPlaySeven(ctx context.Context, address string, req *pb.LandPlaySevenRequest) (*pb.LandPlaySevenReply, error) {
+	var (
+		user *User
+		err  error
+	)
+
+	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
+	if nil != err || nil == user {
+		return &pb.LandPlaySevenReply{
+			Status: "不存在用户",
+		}, nil
+	}
+
+	var (
+		landUserUse *LandUserUse
+	)
+	landUserUse, err = ac.userRepo.GetLandUserUseByID(ctx, req.SendBody.LandUseId)
+	if nil != err || nil == landUserUse {
+		return &pb.LandPlaySevenReply{
+			Status: "不存在信息",
+		}, nil
+	}
+
+	return &pb.LandPlaySevenReply{
 		Status: "ok",
 	}, nil
 }
@@ -3983,6 +4215,139 @@ func (ac *AppUsecase) SetGiw(ctx context.Context, req *pb.SetGiwRequest) (*pb.Se
 
 func (ac *AppUsecase) SetGit(ctx context.Context, req *pb.SetGitRequest) (*pb.SetGitReply, error) {
 	return &pb.SetGitReply{Status: "ok"}, ac.userRepo.SetGit(ctx, req.Address, req.Git)
+}
+
+func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.ExchangeRequest) (*pb.ExchangeReply, error) {
+	var (
+		user *User
+		err  error
+	)
+
+	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
+	if nil != err || nil == user {
+		return &pb.ExchangeReply{
+			Status: "不存在用户",
+		}, nil
+	}
+
+	if req.SendBody.Amount > uint64(user.Git) {
+		return &pb.ExchangeReply{
+			Status: "git余额不足",
+		}, nil
+	}
+
+	if 100 > req.SendBody.Amount {
+		return &pb.ExchangeReply{
+			Status: "最少100",
+		}, nil
+	}
+
+	var (
+		configs []*Config
+		rate    float64
+	)
+
+	// 配置
+	configs, err = ac.userRepo.GetConfigByKeys(ctx,
+		"exchange_fee_rate",
+	)
+	if nil != err || nil == configs {
+		return &pb.ExchangeReply{
+			Status: "配置错误",
+		}, nil
+	}
+	for _, vConfig := range configs {
+		if "exchange_fee_rate" == vConfig.KeyName {
+			rate, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+	}
+
+	giw := float64(req.SendBody.Amount) - float64(req.SendBody.Amount)*rate
+	if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+		err = ac.userRepo.Exchange(ctx, user.ID, float64(req.SendBody.Amount), giw)
+		if nil != err {
+			return err
+		}
+		return nil
+	}); nil != err {
+		return &pb.ExchangeReply{
+			Status: "兑换错误",
+		}, nil
+	}
+
+	return &pb.ExchangeReply{
+		Status: "ok",
+	}, nil
+}
+
+func (ac *AppUsecase) Withdraw(ctx context.Context, address string, req *pb.WithdrawRequest) (*pb.WithdrawReply, error) {
+	var (
+		user        *User
+		configs     []*Config
+		err         error
+		withdrawMin uint64
+		withdrawMax uint64
+	)
+
+	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
+	if nil != err || nil == user {
+		return &pb.WithdrawReply{
+			Status: "不存在用户",
+		}, nil
+	}
+
+	// 配置
+	configs, err = ac.userRepo.GetConfigByKeys(ctx,
+		"withdraw_amount_min",
+		"withdraw_amount_max",
+	)
+	if nil != err || nil == configs {
+		return &pb.WithdrawReply{
+			Status: "配置错误",
+		}, nil
+	}
+	for _, vConfig := range configs {
+		if "withdraw_amount_min" == vConfig.KeyName {
+			withdrawMin, _ = strconv.ParseUint(vConfig.Value, 10, 64)
+		}
+		if "withdraw_amount_max" == vConfig.KeyName {
+			withdrawMax, _ = strconv.ParseUint(vConfig.Value, 10, 64)
+		}
+	}
+
+	if req.SendBody.Amount > uint64(user.Giw) {
+		return &pb.WithdrawReply{
+			Status: "giw余额不足",
+		}, nil
+	}
+
+	if withdrawMin > req.SendBody.Amount {
+		return &pb.WithdrawReply{
+			Status: "低于最小值",
+		}, nil
+	}
+
+	if withdrawMax < req.SendBody.Amount {
+		return &pb.WithdrawReply{
+			Status: "高于最大值",
+		}, nil
+	}
+
+	if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+		err = ac.userRepo.Withdraw(ctx, user.ID, float64(req.SendBody.Amount))
+		if nil != err {
+			return err
+		}
+		return nil
+	}); nil != err {
+		return &pb.WithdrawReply{
+			Status: "兑换错误",
+		}, nil
+	}
+
+	return &pb.WithdrawReply{
+		Status: "ok",
+	}, nil
 }
 
 func (ac *AppUsecase) SetLand(ctx context.Context, req *pb.SetLandRequest) (*pb.SetLandReply, error) {
