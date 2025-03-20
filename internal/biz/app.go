@@ -359,7 +359,7 @@ type UserRepo interface {
 	GetStakeGetPlayRecordCount(ctx context.Context, userID uint64, status uint64) (int64, error)
 	GetStakeGetRecordsByUserID(ctx context.Context, userID int64, b *Pagination) ([]*StakeGetRecord, error)
 	GetStakeGitByUserID(ctx context.Context, userID int64) (*StakeGit, error)
-	GetStakeGitRecordsByUserID(ctx context.Context, userID int64, b *Pagination) ([]*StakeGitRecord, error)
+	GetStakeGitRecordsByUserID(ctx context.Context, userID uint64, b *Pagination) ([]*StakeGitRecord, error)
 	GetStakeGitRecordsByID(ctx context.Context, id, userId uint64) (*StakeGitRecord, error)
 	GetWithdrawRecordsByUserID(ctx context.Context, userID int64, b *Pagination) ([]*Withdraw, error)
 	GetUserOrderCount(ctx context.Context) (int64, error)
@@ -619,19 +619,40 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 	RecommendTotalReward := +RecommendTotalRewardOne + RecommendTotalRewardTwo + RecommendTotalRewardThree
 
 	var (
-		stakeGit *StakeGit
+		stakeGitRecord []*StakeGitRecord
 	)
-	stakeGit, err = ac.userRepo.GetStakeGitByUserId(ctx, user.ID)
+	stakeGitRecord, err = ac.userRepo.GetStakeGitRecordsByUserID(ctx, user.ID, nil)
 	if nil != err {
 		return &pb.UserInfoReply{
 			Status: "粮仓错误查询",
 		}, nil
 	}
 	stakeGitAmount := float64(0)
-	if nil != stakeGit {
-		stakeGitAmount = stakeGit.Amount
+	stakeGitAmountToday := float64(0)
+
+	// 获取中国时区（Asia/Shanghai）
+	locShanghai, err := time.LoadLocation("Asia/Shanghai")
+	if err != nil {
+		return &pb.UserInfoReply{
+			Status: "时区查询",
+		}, nil
+	}
+	// 获取当前时间（假设服务器时间是 UTC）
+	nowUTC := time.Now()
+	// 转换当前时间为中国时区
+	nowInShanghai := nowUTC.In(locShanghai)
+	for _, v := range stakeGitRecord {
+		// 转换用户注册时间到中国时区
+		userRegisterInShanghai := v.CreatedAt.In(locShanghai)
+		// 计算用户注册当天在中国时区的 24:00（即第二天 00:00:00）
+		nextMidnight := time.Date(userRegisterInShanghai.Year(), userRegisterInShanghai.Month(), userRegisterInShanghai.Day()+1, 0, 0, 0, 0, locShanghai)
+		// 判断是否超过注册当天的 24:00
+		if nowInShanghai.After(nextMidnight) {
+			stakeGitAmountToday += v.Amount
+		}
 	}
 
+	todayStakeGitAmount := stakeGitAmountToday * rewardStakeRate
 	if boxNum > 0 {
 		//var (
 		//	countBox int64
@@ -669,10 +690,12 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		}, nil
 	}
 	if nil != stakeGet {
-		// 每份价值
-		valuePerShare := stakeGetTotalAmount / stakeGetTotal.Amount
-		// 用户最大可提取金额
-		stakeGetTotalMy = stakeGet.StakeRate * valuePerShare
+		if 0 < stakeGetTotal.Amount {
+			// 每份价值
+			valuePerShare := stakeGetTotalAmount / stakeGetTotal.Amount
+			// 用户最大可提取金额
+			stakeGetTotalMy = stakeGet.StakeRate * valuePerShare
+		}
 	}
 
 	return &pb.UserInfoReply{
@@ -691,7 +714,7 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		RecommendTotalBiwThree:    user.TotalThree,
 		RecommendTotalRewardThree: RecommendTotalRewardThree,
 		MyStakeGit:                stakeGitAmount,
-		TodayRewardSkateGit:       stakeGitAmount * rewardStakeRate,
+		TodayRewardSkateGit:       todayStakeGitAmount,
 		RewardStakeRate:           rewardStakeRate,
 		Box:                       boxMax,
 		BoxSell:                   boxSellNum,

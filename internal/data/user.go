@@ -1696,7 +1696,7 @@ func (u *UserRepo) GetStakeGitByUserID(ctx context.Context, userID int64) (*biz.
 	}, nil
 }
 
-func (u *UserRepo) GetStakeGitRecordsByUserID(ctx context.Context, userID int64, b *biz.Pagination) ([]*biz.StakeGitRecord, error) {
+func (u *UserRepo) GetStakeGitRecordsByUserID(ctx context.Context, userID uint64, b *biz.Pagination) ([]*biz.StakeGitRecord, error) {
 	var (
 		records []*StakeGitRecord
 	)
