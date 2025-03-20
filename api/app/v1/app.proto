@@ -193,7 +193,7 @@ service App {
 	//  购买道具
 	rpc Buy (BuyRequest) returns (BuyReply) {
 		option (google.api.http) = {
-			post: "/api/app_server/sell"
+			post: "/api/app_server/buy"
 			body: "send_body"
 		};
 	};
