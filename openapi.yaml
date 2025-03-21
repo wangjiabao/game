@@ -1689,6 +1689,8 @@ components:
                 outPutRate:
                     type: number
                     format: double
+                perHealth:
+                    type: string
         UserMarketSeedListReply:
             type: object
             properties:

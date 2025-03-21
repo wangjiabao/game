@@ -587,6 +587,7 @@ message UserMarketRentLandListReply {
 		double rentAmount = 4; // 出租收益
 		string address = 5;
 		double outPutRate = 6;
+		uint64 perHealth = 7;
 	}
 }
 

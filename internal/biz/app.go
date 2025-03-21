@@ -1383,6 +1383,7 @@ func (ac *AppUsecase) UserMarketRentLandList(ctx context.Context, address string
 			RentAmount: vLand.RentOutPutRate,
 			Address:    addressTmp,
 			OutPutRate: vLand.OutPutRate,
+			PerHealth:  vLand.PerHealth,
 		})
 	}
 
