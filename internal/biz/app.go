@@ -308,12 +308,32 @@ type Withdraw struct {
 	UpdatedAt time.Time
 }
 
+type BuyLand struct {
+	ID        uint64
+	Amount    float64
+	Status    uint64
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	AmountTwo float64
+	Limit     uint64
+}
+
 type RandomSeed struct {
 	ID        uint64
 	Scene     uint64
 	SeedValue uint64
 	UpdatedAt time.Time
 	CreatedAt time.Time
+}
+
+type BuyLandRecord struct {
+	ID        uint64
+	BuyLandID uint64
+	Amount    float64
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	Status    uint64
+	UserID    uint64
 }
 
 type UserRepo interface {
@@ -419,6 +439,9 @@ type UserRepo interface {
 	SetUnStakeGit(ctx context.Context, id, userId uint64, amount float64) error
 	Exchange(ctx context.Context, userId uint64, git, giw float64) error
 	Withdraw(ctx context.Context, userId uint64, giw float64) error
+	GetAllBuyLandRecords(ctx context.Context, id uint64) ([]*BuyLandRecord, error)
+	GetBuyLandById(ctx context.Context) (*BuyLand, error)
+	CreateBuyLandRecord(ctx context.Context, limit uint64, bl *BuyLandRecord) error
 }
 
 // AppUsecase is an app usecase.

@@ -135,6 +135,26 @@ type LandUserUse struct {
 	Two          uint64    `gorm:"type:int;not null;"`
 }
 
+type BuyLand struct {
+	ID        uint64    `gorm:"primarykey;type:int"`
+	Amount    float64   `gorm:"type:decimal(65,20);not null;default:0.0"`
+	Status    uint64    `gorm:"type:int;not null;default:1;"`
+	CreatedAt time.Time `gorm:"type:datetime;default:null"`
+	UpdatedAt time.Time `gorm:"type:datetime;default:null"`
+	AmountTwo float64   `gorm:"type:decimal(65,20);not null;default:0.0"`
+	Limit     uint64    `gorm:"not null;default:0"`
+}
+
+type BuyLandRecord struct {
+	ID        uint64    `gorm:"primarykey;type:int"`
+	BuyLandID uint64    `gorm:"type:int;not null;"`
+	Amount    float64   `gorm:"type:decimal(65,20);not null;default:0.0"`
+	CreatedAt time.Time `gorm:"type:datetime;default:null"`
+	UpdatedAt time.Time `gorm:"type:datetime;default:null"`
+	Status    uint64    `gorm:"type:int;not null;default:1;"`
+	UserID    uint64    `gorm:"type:int;not null;"`
+}
+
 type ExchangeRecord struct {
 	ID        uint64    `gorm:"primarykey;type:int"`
 	UserId    int64     `gorm:"type:int;not null;comment:用户ID"`
@@ -3135,4 +3155,78 @@ func (u *UserRepo) Withdraw(ctx context.Context, userId uint64, giw float64) err
 	}
 
 	return nil
+}
+
+// GetBuyLandById 获取指定 ID 的 BuyLand 记录
+func (u *UserRepo) GetBuyLandById(ctx context.Context) (*biz.BuyLand, error) {
+	var buyLand *BuyLand
+	if err := u.data.DB(ctx).Where("status=?", 1).Order("id desc").Table("buy_land").First(&buyLand).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+
+		return nil, errors.New(500, "BUY LAND ERROR", err.Error())
+	}
+
+	return &biz.BuyLand{
+		ID:        buyLand.ID,
+		Amount:    buyLand.Amount,
+		Status:    buyLand.Status,
+		CreatedAt: buyLand.CreatedAt,
+		UpdatedAt: buyLand.UpdatedAt,
+		AmountTwo: buyLand.AmountTwo,
+		Limit:     buyLand.Limit,
+	}, nil
+}
+
+func (u *UserRepo) CreateBuyLandRecord(ctx context.Context, limit uint64, bl *biz.BuyLandRecord) error {
+	res := u.data.DB(ctx).Table("buy_land").Where("id=?", bl.BuyLandID).
+		Updates(map[string]interface{}{
+			"limit":      limit,
+			"updated_at": time.Now().Format("2006-01-02 15:04:05"),
+		})
+	if res.Error != nil {
+		return errors.New(500, "SetStakeGetPlaySub", "用户信息修改失败")
+	}
+
+	var buyLandRecord BuyLandRecord
+	buyLandRecord.BuyLandID = bl.BuyLandID
+	buyLandRecord.UserID = bl.UserID
+	buyLandRecord.Amount = bl.Amount
+	buyLandRecord.Status = bl.Status
+
+	res = u.data.DB(ctx).Table("buy_land_record").Create(&buyLandRecord)
+	if res.Error != nil {
+		return errors.New(500, "CREATE BUY LAND RECORD ERROR", "创建拍卖记录失败")
+	}
+
+	return nil
+}
+
+// GetAllBuyLandRecords 获取所有买地记录
+func (u *UserRepo) GetAllBuyLandRecords(ctx context.Context, id uint64) ([]*biz.BuyLandRecord, error) {
+	var records []*BuyLandRecord
+
+	res := make([]*biz.BuyLandRecord, 0)
+	if err := u.data.DB(ctx).Table("buy_land_record").Where("buy_land_id", id).Order("amount desc").Find(&records).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return res, nil
+		}
+
+		return nil, errors.New(500, "BUY LAND RECORD ERROR", err.Error())
+	}
+
+	for _, record := range records {
+		res = append(res, &biz.BuyLandRecord{
+			ID:        record.ID,
+			BuyLandID: record.BuyLandID,
+			Amount:    record.Amount,
+			CreatedAt: record.CreatedAt,
+			UpdatedAt: record.UpdatedAt,
+			Status:    record.Status,
+			UserID:    record.UserID,
+		})
+	}
+
+	return res, nil
 }
