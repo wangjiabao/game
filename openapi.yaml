@@ -1206,6 +1206,9 @@ components:
             properties:
                 status:
                     type: string
+                amount:
+                    type: number
+                    format: double
         LandPlaySevenRequest_SendBody:
             type: object
             properties:

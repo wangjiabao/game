@@ -3418,6 +3418,7 @@ func (ac *AppUsecase) LandPlaySeven(ctx context.Context, address string, req *pb
 
 	return &pb.LandPlaySevenReply{
 		Status: "ok",
+		Amount: tmpAmount,
 	}, nil
 }
 

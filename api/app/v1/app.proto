@@ -993,6 +993,7 @@ message LandPlaySevenRequest {
 
 message LandPlaySevenReply {
 	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
+	double amount = 2;
 }
 
 message SetGiwRequest {
