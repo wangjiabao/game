@@ -619,7 +619,7 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 	RecommendTotalRewardOne := user.RewardOne + user.RewardTwo + user.RewardThree
 	RecommendTotalRewardTwo := user.RewardTwoOne + user.RewardTwoTwo + user.RewardTwoThree
 	RecommendTotalRewardThree := user.RewardThreeOne + user.RewardThreeTwo + user.RewardThreeThree
-	RecommendTotalReward := +RecommendTotalRewardOne + RecommendTotalRewardTwo + RecommendTotalRewardThree
+	RecommendTotalReward := RecommendTotalRewardOne + RecommendTotalRewardTwo + RecommendTotalRewardThree
 
 	var (
 		stakeGitRecord []*StakeGitRecord
@@ -645,6 +645,7 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 	// 转换当前时间为中国时区
 	nowInShanghai := nowUTC.In(locShanghai)
 	for _, v := range stakeGitRecord {
+		stakeGitAmount += v.Amount
 		// 转换用户注册时间到中国时区
 		userRegisterInShanghai := v.CreatedAt.In(locShanghai)
 		// 计算用户注册当天在中国时区的 24:00（即第二天 00:00:00）
