@@ -2263,6 +2263,37 @@ func (u *UserRepo) GetPropByID(ctx context.Context, propID, status uint64) (*biz
 	}, nil
 }
 
+// GetPropByIDTwo 根据道具 ID 查询单条道具数据
+func (u *UserRepo) GetPropByIDTwo(ctx context.Context, propID uint64) (*biz.Prop, error) {
+	var prop Prop
+
+	if err := u.data.DB(ctx).Table("prop").
+		Where("id = ?", propID).
+		First(&prop).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil // 返回 nil 代表未找到
+		}
+		return nil, errors.New(500, "PROP ERROR", err.Error())
+	}
+
+	return &biz.Prop{
+		ID:         prop.ID,
+		UserId:     prop.UserId,
+		Status:     prop.Status,
+		PropType:   prop.PropType,
+		OneOne:     prop.OneOne,
+		OneTwo:     prop.OneTwo,
+		TwoOne:     prop.TwoOne,
+		TwoTwo:     prop.TwoTwo,
+		ThreeOne:   prop.ThreeOne,
+		FourOne:    prop.FourOne,
+		FiveOne:    prop.FiveOne,
+		SellAmount: prop.SellAmount,
+		CreatedAt:  prop.CreatedAt,
+		UpdatedAt:  prop.UpdatedAt,
+	}, nil
+}
+
 // BuySeed .
 func (u *UserRepo) BuySeed(ctx context.Context, git, getGit float64, userId, userIdGet, seedId uint64) error {
 	res := u.data.DB(ctx).Table("user").Where("id=?", userIdGet).Where("git>=?", git).
@@ -2519,7 +2550,7 @@ func (u *UserRepo) PlantPlatTwo(ctx context.Context, id, landId uint64, rent boo
 }
 
 // PlantPlatThree .
-func (u *UserRepo) PlantPlatThree(ctx context.Context, id, overTime uint64, one, two bool) error {
+func (u *UserRepo) PlantPlatThree(ctx context.Context, id, overTime, propId uint64, one, two bool) error {
 	updateColums := map[string]interface{}{
 		"over_time":  overTime,
 		"updated_at": time.Now().Format("2006-01-02 15:04:05"),
@@ -2536,7 +2567,127 @@ func (u *UserRepo) PlantPlatThree(ctx context.Context, id, overTime uint64, one,
 	res := u.data.DB(ctx).Table("land_user_use").Where("id=?", id).Where("status=?", 1).
 		Updates(updateColums)
 	if res.Error != nil {
+		return errors.New(500, "PlantPlatThree", "用户信息修改失败")
+	}
+
+	res = u.data.DB(ctx).Table("prop").Where("id=?", propId).Where("status=?", 1).
+		Updates(map[string]interface{}{"status": 3, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "PlantPlatThree", "用户信息修改失败")
+	}
+
+	return nil
+}
+
+// PlantPlatFour .
+func (u *UserRepo) PlantPlatFour(ctx context.Context, outMax float64, id, propId, propStatus, propNum uint64) error {
+	updateColums := map[string]interface{}{
+		"out_max_num": outMax,
+		"two":         0,
+		"updated_at":  time.Now().Format("2006-01-02 15:04:05"),
+	}
+
+	res := u.data.DB(ctx).Table("land_user_use").Where("id=?", id).Where("status=?", 1).Where("two>?", 0).
+		Updates(updateColums)
+	if res.Error != nil {
+		return errors.New(500, "PlantPlatFour", "用户信息修改失败")
+	}
+
+	res = u.data.DB(ctx).Table("prop").Where("id=?", propId).
+		Updates(map[string]interface{}{"status": propStatus, "four_one": propNum, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "PlantPlatFour", "用户信息修改失败")
+	}
+
+	return nil
+}
+
+// PlantPlatFive .
+func (u *UserRepo) PlantPlatFive(ctx context.Context, overTime, id, propId, propStatus, propNum uint64) error {
+	updateColums := map[string]interface{}{
+		"over_time":  overTime,
+		"one":        0,
+		"updated_at": time.Now().Format("2006-01-02 15:04:05"),
+	}
+
+	res := u.data.DB(ctx).Table("land_user_use").Where("id=?", id).Where("status=?", 1).Where("one>?", 0).
+		Updates(updateColums)
+	if res.Error != nil {
+		return errors.New(500, "PlantPlatFive", "用户信息修改失败")
+	}
+
+	res = u.data.DB(ctx).Table("prop").Where("id=?", propId).
+		Updates(map[string]interface{}{"status": propStatus, "three_one": propNum, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "PlantPlatFive", "用户信息修改失败")
+	}
+
+	return nil
+}
+
+// PlantPlatSix .
+func (u *UserRepo) PlantPlatSix(ctx context.Context, id, propId, propStatus, propNum, landId uint64) error {
+	res := u.data.DB(ctx).Table("land").Where("id=?", landId).Where("status=?", 8).
+		Updates(map[string]interface{}{"status": 3, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
 		return errors.New(500, "sellLand", "用户信息修改失败")
+	}
+
+	updateColums := map[string]interface{}{
+		"status":     2,
+		"updated_at": time.Now().Format("2006-01-02 15:04:05"),
+	}
+
+	res = u.data.DB(ctx).Table("land_user_use").Where("id=?", id).Where("status=?", 1).
+		Updates(updateColums)
+	if res.Error != nil {
+		return errors.New(500, "PlantPlatSix", "用户信息修改失败")
+	}
+
+	res = u.data.DB(ctx).Table("prop").Where("id=?", propId).
+		Updates(map[string]interface{}{"status": propStatus, "two_one": propNum, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "PlantPlatSix", "用户信息修改失败")
+	}
+
+	return nil
+}
+
+// PlantPlatSeven .
+func (u *UserRepo) PlantPlatSeven(ctx context.Context, outMax, amount float64, subTime, lastTime, id, propId, propStatus, propNum, userId uint64) error {
+	updateColums := map[string]interface{}{
+		"sub_time":    subTime,
+		"out_max_num": outMax,
+		"updated_at":  time.Now().Format("2006-01-02 15:04:05"),
+	}
+
+	res := u.data.DB(ctx).Table("land_user_use").Where("id=?", id).Where("status=?", 1).Where("sub_time=?", lastTime).
+		Updates(updateColums)
+	if res.Error != nil {
+		return errors.New(500, "PlantPlatFive", "用户信息修改失败")
+	}
+
+	res = u.data.DB(ctx).Table("prop").Where("id=?", propId).
+		Updates(map[string]interface{}{"status": propStatus, "five_one": propNum, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "PlantPlatFive", "用户信息修改失败")
+	}
+
+	res = u.data.DB(ctx).Table("user").Where("id=?", userId).
+		Updates(map[string]interface{}{"git": gorm.Expr("git + ?", amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "PlantPlatFive", "用户信息修改失败")
+	}
+
+	var reward Reward
+
+	reward.reason = 13
+	reward.UserId = userId
+	reward.Amount = amount
+	reward.Two = id
+	res = u.data.DB(ctx).Table("reward").Create(&reward)
+	if res.Error != nil {
+		return errors.New(500, "PlantPlatTwoTwo", "用户信息修改失败")
 	}
 
 	return nil

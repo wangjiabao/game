@@ -379,11 +379,16 @@ type UserRepo interface {
 	GetLandByUserIdLocationNum(ctx context.Context, userId uint64, locationNum uint64) (*Land, error)
 	Plant(ctx context.Context, status, originStatus, perHealth uint64, landUserUse *LandUserUse) error
 	PlantPlatTwo(ctx context.Context, id, landId uint64, rent bool) error
-	PlantPlatThree(ctx context.Context, id, overTime uint64, one, two bool) error
+	PlantPlatThree(ctx context.Context, id, overTime, propId uint64, one, two bool) error
+	PlantPlatFour(ctx context.Context, outMax float64, id, propId, propStatus, propNum uint64) error
+	PlantPlatFive(ctx context.Context, overTime, id, propId, propStatus, propNum uint64) error
+	PlantPlatSix(ctx context.Context, id, propId, propStatus, propNum, landId uint64) error
+	PlantPlatSeven(ctx context.Context, outMax, amount float64, subTime, lastTime, id, propId, propStatus, propNum, userId uint64) error
 	PlantPlatTwoTwo(ctx context.Context, id, userId, rentUserId uint64, amount, rentAmount float64) error
 	PlantPlatTwoTwoL(ctx context.Context, id, userId, lowUserId, num uint64, amount float64) error
 	GetSeedBuyByID(ctx context.Context, seedID, status uint64) (*Seed, error)
 	GetPropByID(ctx context.Context, propID, status uint64) (*Prop, error)
+	GetPropByIDTwo(ctx context.Context, propID uint64) (*Prop, error)
 	BuySeed(ctx context.Context, git, getGit float64, userId, userIdGet, seedId uint64) error
 	BuyLand(ctx context.Context, git, getGit float64, userId, userIdGet, landId uint64) error
 	BuyProp(ctx context.Context, git, getGit float64, userId, userIdGet, propId uint64) error
@@ -2545,7 +2550,7 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 		var (
 			userRecommendRent *UserRecommend
 		)
-		userRecommendRent, err = ac.userRepo.GetUserRecommendByUserId(ctx, landUserUse.UserId)
+		userRecommendRent, err = ac.userRepo.GetUserRecommendByUserId(ctx, landUserUse.OwnerUserId)
 		if nil == userRecommendRent || nil != err {
 			return &pb.LandPlayTwoReply{
 				Status: "查询推荐错误",
@@ -2677,7 +2682,7 @@ func (ac *AppUsecase) LandPlayThree(ctx context.Context, address string, req *pb
 		}, nil
 	}
 
-	if user.ID == prop.UserId {
+	if user.ID != prop.UserId {
 		return &pb.LandPlayThreeReply{
 			Status: "不是自己的",
 		}, nil
@@ -2748,11 +2753,11 @@ func (ac *AppUsecase) LandPlayThree(ctx context.Context, address string, req *pb
 	}
 
 	if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-		return ac.userRepo.PlantPlatThree(ctx, user.ID, overTime, one, two)
+		return ac.userRepo.PlantPlatThree(ctx, landUserUse.ID, overTime, prop.ID, one, two)
 	}); nil != err {
-		fmt.Println(err, "buySeed", user)
+		fmt.Println(err, "LandPlayThree", user)
 		return &pb.LandPlayThreeReply{
-			Status: "施肥",
+			Status: "施肥失败",
 		}, nil
 	}
 
@@ -2776,12 +2781,102 @@ func (ac *AppUsecase) LandPlayFour(ctx context.Context, address string, req *pb.
 	}
 
 	var (
+		prop *Prop
+	)
+
+	// 11化肥，12水，13手套，14除虫剂，15铲子，16盲盒，17地契
+	prop, err = ac.userRepo.GetPropByIDTwo(ctx, req.SendBody.Id)
+	if nil != err || nil == prop {
+		return &pb.LandPlayFourReply{
+			Status: "不存在道具",
+		}, nil
+	}
+
+	if 14 != prop.PropType {
+		return &pb.LandPlayFourReply{
+			Status: "无效道具",
+		}, nil
+
+	}
+
+	if 2 < prop.Status {
+		return &pb.LandPlayFourReply{
+			Status: "无效道具",
+		}, nil
+	}
+
+	if 0 >= prop.FourOne {
+		return &pb.LandPlayFourReply{
+			Status: "无效道具",
+		}, nil
+	}
+
+	if user.ID != prop.UserId {
+		return &pb.LandPlayFourReply{
+			Status: "不是自己的",
+		}, nil
+	}
+
+	var (
 		landUserUse *LandUserUse
 	)
 	landUserUse, err = ac.userRepo.GetLandUserUseByID(ctx, req.SendBody.LandUseId)
 	if nil != err || nil == landUserUse {
 		return &pb.LandPlayFourReply{
 			Status: "不存在信息",
+		}, nil
+	}
+
+	if landUserUse.UserId != user.ID {
+		return &pb.LandPlayFourReply{
+			Status: "非种植用户",
+		}, nil
+	}
+
+	if 1 != landUserUse.Status {
+		return &pb.LandPlayFourReply{
+			Status: "状态错误",
+		}, nil
+	}
+
+	current := time.Now().Unix()
+	if 0 >= landUserUse.Two {
+		return &pb.LandPlayFourReply{
+			Status: "无需杀虫",
+		}, nil
+	}
+
+	if uint64(current) < landUserUse.Two {
+		return &pb.LandPlayFourReply{
+			Status: "无需杀虫",
+		}, nil
+	}
+
+	// 剩余最大产出
+	rewardTmp := float64(0)
+	if uint64(current) > landUserUse.Two {
+		tmp := landUserUse.OutMaxNum * 0.01 * float64(uint64(uint64(current)-landUserUse.Two)/300)
+		if tmp < landUserUse.OutMaxNum {
+			rewardTmp = landUserUse.OutMaxNum - tmp
+		}
+	}
+
+	one := uint64(0)
+	if 1 <= prop.FourOne {
+		one = uint64(prop.FourOne - 1)
+	}
+
+	two := uint64(2)
+	if 0 >= one {
+		two = 3
+	}
+
+	if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+		return ac.userRepo.PlantPlatFour(ctx, rewardTmp, landUserUse.ID, prop.ID, two, one)
+	}); nil != err {
+		fmt.Println(err, "LandPlayFour", user)
+		return &pb.LandPlayFourReply{
+			Status: "杀虫失败",
 		}, nil
 	}
 
@@ -2805,12 +2900,95 @@ func (ac *AppUsecase) LandPlayFive(ctx context.Context, address string, req *pb.
 	}
 
 	var (
+		prop *Prop
+	)
+
+	// 11化肥，12水，13手套，14除虫剂，15铲子，16盲盒，17地契
+	prop, err = ac.userRepo.GetPropByIDTwo(ctx, req.SendBody.Id)
+	if nil != err || nil == prop {
+		return &pb.LandPlayFiveReply{
+			Status: "不存在道具",
+		}, nil
+	}
+
+	if 12 != prop.PropType {
+		return &pb.LandPlayFiveReply{
+			Status: "无效道具",
+		}, nil
+
+	}
+
+	if 2 < prop.Status {
+		return &pb.LandPlayFiveReply{
+			Status: "无效道具",
+		}, nil
+	}
+
+	if 0 >= prop.ThreeOne {
+		return &pb.LandPlayFiveReply{
+			Status: "无效道具",
+		}, nil
+	}
+
+	if user.ID != prop.UserId {
+		return &pb.LandPlayFiveReply{
+			Status: "不是自己的",
+		}, nil
+	}
+
+	var (
 		landUserUse *LandUserUse
 	)
 	landUserUse, err = ac.userRepo.GetLandUserUseByID(ctx, req.SendBody.LandUseId)
 	if nil != err || nil == landUserUse {
 		return &pb.LandPlayFiveReply{
 			Status: "不存在信息",
+		}, nil
+	}
+
+	if landUserUse.UserId != user.ID {
+		return &pb.LandPlayFiveReply{
+			Status: "非种植用户",
+		}, nil
+	}
+
+	if 1 != landUserUse.Status {
+		return &pb.LandPlayFiveReply{
+			Status: "状态错误",
+		}, nil
+	}
+
+	current := time.Now().Unix()
+	if 0 >= landUserUse.One {
+		return &pb.LandPlayFiveReply{
+			Status: "无需浇水",
+		}, nil
+	}
+
+	if uint64(current) < landUserUse.One {
+		return &pb.LandPlayFiveReply{
+			Status: "无需浇水",
+		}, nil
+	}
+
+	tmpOverTime := landUserUse.OverTime + uint64(current) - landUserUse.One
+
+	one := uint64(0)
+	if 1 <= prop.ThreeOne {
+		one = uint64(prop.ThreeOne - 1)
+	}
+
+	two := uint64(2)
+	if 0 >= one {
+		two = 3
+	}
+
+	if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+		return ac.userRepo.PlantPlatFive(ctx, tmpOverTime, landUserUse.ID, prop.ID, two, one)
+	}); nil != err {
+		fmt.Println(err, "LandPlayFive", user)
+		return &pb.LandPlayFiveReply{
+			Status: "浇水失败",
 		}, nil
 	}
 
@@ -2834,12 +3012,266 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 	}
 
 	var (
+		prop *Prop
+	)
+
+	// 11化肥，12水，13手套，14除虫剂，15铲子，16盲盒，17地契
+	prop, err = ac.userRepo.GetPropByIDTwo(ctx, req.SendBody.Id)
+	if nil != err || nil == prop {
+		return &pb.LandPlaySixReply{
+			Status: "不存在道具",
+		}, nil
+	}
+
+	if 15 != prop.PropType {
+		return &pb.LandPlaySixReply{
+			Status: "无效道具",
+		}, nil
+
+	}
+
+	if 2 < prop.Status {
+		return &pb.LandPlaySixReply{
+			Status: "无效道具",
+		}, nil
+	}
+
+	if 0 >= prop.TwoOne {
+		return &pb.LandPlaySixReply{
+			Status: "无效道具",
+		}, nil
+	}
+
+	if user.ID != prop.UserId {
+		return &pb.LandPlaySixReply{
+			Status: "不是自己的",
+		}, nil
+	}
+
+	var (
 		landUserUse *LandUserUse
 	)
 	landUserUse, err = ac.userRepo.GetLandUserUseByID(ctx, req.SendBody.LandUseId)
 	if nil != err || nil == landUserUse {
 		return &pb.LandPlaySixReply{
 			Status: "不存在信息",
+		}, nil
+	}
+
+	if landUserUse.OwnerUserId != user.ID {
+		return &pb.LandPlaySixReply{
+			Status: "非土地用户",
+		}, nil
+	}
+
+	if landUserUse.UserId == user.ID {
+		return &pb.LandPlaySixReply{
+			Status: "非出租土地",
+		}, nil
+	}
+
+	if 1 != landUserUse.Status {
+		return &pb.LandPlaySixReply{
+			Status: "状态错误",
+		}, nil
+	}
+
+	current := time.Now().Unix()
+	if uint64(current) < landUserUse.OverTime {
+		return &pb.LandPlaySixReply{
+			Status: "还未成熟",
+		}, nil
+	}
+
+	one := uint64(0)
+	if 1 <= prop.TwoOne {
+		one = uint64(prop.TwoOne - 1)
+	}
+
+	two := uint64(2)
+	if 0 >= one {
+		two = 3
+	}
+
+	tmpOverMax := float64(0)
+	if landUserUse.OutMaxNum > landUserUse.OutMaxNum*prop.TwoTwo {
+		tmpOverMax = landUserUse.OutMaxNum - landUserUse.OutMaxNum*prop.TwoTwo
+	}
+	tmpOverMaxTwo := landUserUse.OutMaxNum * prop.TwoTwo
+
+	if 0 < landUserUse.One {
+		tmpOverMax = 0
+		tmpOverMaxTwo = 0
+	} else if 0 < landUserUse.Two {
+		// 剩余最大产出
+		rewardTmp := float64(0)
+		if uint64(current) > landUserUse.Two {
+			tmp := landUserUse.OutMaxNum * 0.01 * float64(uint64(uint64(current)-landUserUse.Two)/300)
+			if tmp < landUserUse.OutMaxNum {
+				rewardTmp = landUserUse.OutMaxNum - tmp
+			}
+		}
+
+		if 0 >= rewardTmp {
+			tmpOverMax = 0
+			tmpOverMaxTwo = 0
+		} else {
+			if rewardTmp > rewardTmp*prop.TwoTwo {
+				tmpOverMax = rewardTmp - rewardTmp*prop.TwoTwo
+			}
+			tmpOverMaxTwo = rewardTmp * prop.TwoTwo
+		}
+	}
+
+	// 推荐
+	var (
+		userRecommend *UserRecommend
+	)
+	tmpRecommendUserIds := make([]string, 0)
+	userRecommend, err = ac.userRepo.GetUserRecommendByUserId(ctx, landUserUse.UserId)
+	if nil == userRecommend || nil != err {
+		return &pb.LandPlaySixReply{
+			Status: "查询推荐错误",
+		}, nil
+	}
+	if "" != userRecommend.RecommendCode {
+		tmpRecommendUserIds = strings.Split(userRecommend.RecommendCode, "D")
+	}
+
+	// 收租推荐
+	tmpRecommendUserIdsRent := make([]string, 0)
+	if landUserUse.UserId != landUserUse.OwnerUserId {
+		var (
+			userRecommendRent *UserRecommend
+		)
+		userRecommendRent, err = ac.userRepo.GetUserRecommendByUserId(ctx, landUserUse.OwnerUserId)
+		if nil == userRecommendRent || nil != err {
+			return &pb.LandPlaySixReply{
+				Status: "查询推荐错误",
+			}, nil
+		}
+		if "" != userRecommendRent.RecommendCode {
+			tmpRecommendUserIdsRent = strings.Split(userRecommendRent.RecommendCode, "D")
+		}
+	}
+
+	// 配置
+	var (
+		configs   []*Config
+		oneRate   float64
+		twoRate   float64
+		threeRate float64
+	)
+	configs, err = ac.userRepo.GetConfigByKeys(ctx,
+		"one_rate", "two_rate", "three_rate",
+	)
+	if nil != err || nil == configs {
+		return &pb.LandPlaySixReply{
+			Status: "配置错误",
+		}, nil
+	}
+
+	for _, vConfig := range configs {
+		if "one_rate" == vConfig.KeyName {
+			oneRate, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+
+		if "two_rate" == vConfig.KeyName {
+			twoRate, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+
+		if "three_rate" == vConfig.KeyName {
+			threeRate, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+	}
+
+	if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+		err = ac.userRepo.PlantPlatSix(ctx, landUserUse.ID, prop.ID, two, one, landUserUse.LandId)
+		if nil != err {
+			return err
+		}
+
+		// 奖励
+		err = ac.userRepo.PlantPlatTwoTwo(ctx, landUserUse.ID, landUserUse.UserId, landUserUse.OwnerUserId, tmpOverMax, tmpOverMaxTwo)
+		if nil != err {
+			return err
+		}
+
+		// l1-l3，奖励发放
+		if tmpOverMax > 0 {
+			tmpI := 1
+			for i := len(tmpRecommendUserIds) - 1; i >= 0; i-- {
+				if 4 <= tmpI {
+					break
+				}
+				tmpI++
+
+				tmpUserId, _ := strconv.ParseInt(tmpRecommendUserIds[i], 10, 64) // 最后一位是直推人
+				if 0 >= tmpUserId {
+					continue
+				}
+				tmpReward := float64(0)
+
+				tmpNum := uint64(4)
+				tmpReward = tmpOverMax * oneRate
+				if 2 == tmpI {
+					tmpReward = tmpOverMax * twoRate
+					tmpNum = 7
+				} else if 3 == tmpI {
+					tmpReward = tmpOverMax * threeRate
+					tmpNum = 10
+				} else {
+					break
+				}
+
+				// 奖励
+				err = ac.userRepo.PlantPlatTwoTwoL(ctx, landUserUse.ID, uint64(tmpUserId), landUserUse.UserId, tmpNum, tmpReward)
+				if nil != err {
+					return err
+				}
+			}
+		}
+
+		// l1-l3，奖励发放
+		if tmpOverMaxTwo > 0 {
+			tmpI := 1
+			for i := len(tmpRecommendUserIdsRent) - 1; i >= 0; i-- {
+				if 4 <= tmpI {
+					break
+				}
+				tmpI++
+
+				tmpUserId, _ := strconv.ParseInt(tmpRecommendUserIdsRent[i], 10, 64) // 最后一位是直推人
+				if 0 >= tmpUserId {
+					continue
+				}
+				tmpReward := float64(0)
+
+				tmpNum := uint64(5)
+				tmpReward = tmpOverMaxTwo * oneRate
+				if 2 == tmpI {
+					tmpReward = tmpOverMaxTwo * twoRate
+					tmpNum = 8
+				} else if 3 == tmpI {
+					tmpReward = tmpOverMaxTwo * threeRate
+					tmpNum = 11
+				} else {
+					break
+				}
+
+				// 奖励
+				err = ac.userRepo.PlantPlatTwoTwoL(ctx, landUserUse.ID, uint64(tmpUserId), landUserUse.OwnerUserId, tmpNum, tmpReward)
+				if nil != err {
+					return err
+				}
+			}
+		}
+
+		return nil
+	}); nil != err {
+		fmt.Println(err, "LandPlaySix", user)
+		return &pb.LandPlaySixReply{
+			Status: "铲除土地失败",
 		}, nil
 	}
 
@@ -2863,12 +3295,122 @@ func (ac *AppUsecase) LandPlaySeven(ctx context.Context, address string, req *pb
 	}
 
 	var (
+		prop *Prop
+	)
+
+	// 11化肥，12水，13手套，14除虫剂，15铲子，16盲盒，17地契
+	prop, err = ac.userRepo.GetPropByIDTwo(ctx, req.SendBody.Id)
+	if nil != err || nil == prop {
+		return &pb.LandPlaySevenReply{
+			Status: "不存在道具",
+		}, nil
+	}
+
+	if 13 != prop.PropType {
+		return &pb.LandPlaySevenReply{
+			Status: "无效道具",
+		}, nil
+
+	}
+
+	if 2 < prop.Status {
+		return &pb.LandPlaySevenReply{
+			Status: "无效道具",
+		}, nil
+	}
+
+	if 0 >= prop.FiveOne {
+		return &pb.LandPlaySevenReply{
+			Status: "无效道具",
+		}, nil
+	}
+
+	if user.ID != prop.UserId {
+		return &pb.LandPlaySevenReply{
+			Status: "不是自己的",
+		}, nil
+	}
+
+	var (
 		landUserUse *LandUserUse
 	)
 	landUserUse, err = ac.userRepo.GetLandUserUseByID(ctx, req.SendBody.LandUseId)
 	if nil != err || nil == landUserUse {
 		return &pb.LandPlaySevenReply{
 			Status: "不存在信息",
+		}, nil
+	}
+
+	if landUserUse.OwnerUserId == user.ID {
+		return &pb.LandPlaySevenReply{
+			Status: "土地用户不能使用手套",
+		}, nil
+	}
+
+	if landUserUse.UserId == user.ID {
+		return &pb.LandPlaySevenReply{
+			Status: "种植用户不能使用手套",
+		}, nil
+	}
+
+	if 1 != landUserUse.Status {
+		return &pb.LandPlaySevenReply{
+			Status: "状态错误",
+		}, nil
+	}
+
+	current := time.Now().Unix()
+	if uint64(current) < landUserUse.OverTime {
+		return &pb.LandPlaySevenReply{
+			Status: "还未成熟",
+		}, nil
+	}
+
+	if 0 < landUserUse.One {
+		return &pb.LandPlaySevenReply{
+			Status: "缺水暂停中",
+		}, nil
+	}
+
+	if 0 < landUserUse.Two {
+		return &pb.LandPlaySevenReply{
+			Status: "虫蛀减产中",
+		}, nil
+	}
+
+	lastTime := landUserUse.SubTime
+	if 0 < lastTime {
+		if uint64(current)-600 <= lastTime {
+			return &pb.LandPlaySevenReply{
+				Status: "偷盗过于频繁",
+			}, nil
+		}
+	}
+
+	tmpAmount := landUserUse.OutMaxNum * 0.1
+	tmpOutMax := float64(0)
+	if tmpAmount >= landUserUse.OutMaxNum {
+		tmpOutMax = 0
+	} else {
+		tmpOutMax = landUserUse.OutMaxNum - tmpAmount
+	}
+
+	one := uint64(0)
+	if 1 <= prop.FiveOne {
+		one = uint64(prop.FiveOne - 1)
+	}
+
+	two := uint64(2)
+	if 0 >= one {
+		two = 3
+	}
+
+	if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+		return ac.userRepo.PlantPlatSeven(ctx, tmpOutMax, tmpAmount, uint64(current), lastTime, landUserUse.ID, prop.ID, two, one, user.ID)
+	}); nil != err {
+		fmt.Println(err, "LandPlaySeven", user)
+		return &pb.LandPlaySevenReply{
+			Status: "偷取失败",
 		}, nil
 	}
 
