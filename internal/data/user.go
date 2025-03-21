@@ -3079,7 +3079,7 @@ func (u *UserRepo) SetStakeGetPlay(ctx context.Context, userId uint64, git, amou
 	var stakeRecord StakeGetPlayRecord
 
 	stakeRecord.Amount = amount
-	stakeRecord.Reward = amount
+	stakeRecord.Reward = git
 	stakeRecord.UserId = userId
 	stakeRecord.Status = 1
 
