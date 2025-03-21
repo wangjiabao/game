@@ -586,6 +586,7 @@ message UserMarketRentLandListReply {
 		uint64 maxHealth = 3; // 肥沃度
 		double rentAmount = 4; // 出租收益
 		string address = 5;
+		double outPutRate = 6;
 	}
 }
 

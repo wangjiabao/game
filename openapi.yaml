@@ -1686,6 +1686,9 @@ components:
                     format: double
                 address:
                     type: string
+                outPutRate:
+                    type: number
+                    format: double
         UserMarketSeedListReply:
             type: object
             properties:
