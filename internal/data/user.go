@@ -65,7 +65,7 @@ type BoxRecord struct {
 type Reward struct {
 	ID        uint64    `gorm:"primarykey;type:int"`
 	UserId    uint64    `gorm:"type:int;not null"`
-	reason    uint64    `gorm:"type:int;not null"`
+	Reason    uint64    `gorm:"type:int;not null"`
 	One       uint64    `gorm:"type:int;not null"`
 	Two       uint64    `gorm:"type:int;not null"`
 	Three     float64   `gorm:"type:decimal(65,20);not null"`
@@ -2681,7 +2681,7 @@ func (u *UserRepo) PlantPlatSeven(ctx context.Context, outMax, amount float64, s
 
 	var reward Reward
 
-	reward.reason = 13
+	reward.Reason = 13
 	reward.UserId = userId
 	reward.Amount = amount
 	reward.Two = id
@@ -2704,7 +2704,7 @@ func (u *UserRepo) PlantPlatTwoTwo(ctx context.Context, id, userId, rentUserId u
 
 		var reward Reward
 
-		reward.reason = 1
+		reward.Reason = 1
 		reward.UserId = userId
 		reward.Amount = amount
 		reward.Two = id
@@ -2724,7 +2724,7 @@ func (u *UserRepo) PlantPlatTwoTwo(ctx context.Context, id, userId, rentUserId u
 
 		var reward Reward
 
-		reward.reason = 2
+		reward.Reason = 2
 		reward.UserId = rentUserId
 		reward.Amount = rentAmount
 		reward.Two = id
@@ -2780,7 +2780,7 @@ func (u *UserRepo) PlantPlatTwoTwoL(ctx context.Context, id, userId, lowUserId, 
 
 		var reward Reward
 
-		reward.reason = num
+		reward.Reason = num
 		reward.UserId = userId
 		reward.Amount = amount
 		reward.One = lowUserId
