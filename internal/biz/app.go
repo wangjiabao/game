@@ -316,6 +316,7 @@ type BuyLand struct {
 	UpdatedAt time.Time
 	AmountTwo float64
 	Limit     uint64
+	Level     uint64
 }
 
 type RandomSeed struct {
@@ -442,6 +443,7 @@ type UserRepo interface {
 	GetAllBuyLandRecords(ctx context.Context, id uint64) ([]*BuyLandRecord, error)
 	GetBuyLandById(ctx context.Context) (*BuyLand, error)
 	CreateBuyLandRecord(ctx context.Context, limit uint64, bl *BuyLandRecord) error
+	CreateBuyLandRecordOne(ctx context.Context, bl *BuyLandRecord) error
 }
 
 // AppUsecase is an app usecase.
@@ -4996,6 +4998,239 @@ func (ac *AppUsecase) SetLand(ctx context.Context, req *pb.SetLandRequest) (*pb.
 	}
 
 	return &pb.SetLandReply{
+		Status: "ok",
+	}, nil
+}
+
+func (ac *AppUsecase) GetBuyLand(ctx context.Context, addreses string, req *pb.GetBuyLandRequest) (*pb.GetBuyLandReply, error) {
+	var (
+		user          *User
+		err           error
+		landBuy       *BuyLand
+		landRecord    []*BuyLandRecord
+		newLandRecord *BuyLandRecord
+	)
+
+	user, err = ac.userRepo.GetUserByAddress(ctx, addreses)
+	if nil != err {
+		return &pb.GetBuyLandReply{Status: "地址不存在用户"}, nil
+	}
+	if nil == user {
+		return &pb.GetBuyLandReply{Status: "地址不存在用户"}, nil
+	}
+
+	landBuy, err = ac.userRepo.GetBuyLandById(ctx)
+	if nil != err {
+		return &pb.GetBuyLandReply{Status: "不存在拍卖信息"}, nil
+	}
+
+	now := time.Now().Unix()
+	if nil == landBuy || uint64(now) >= landBuy.Limit {
+		return &pb.GetBuyLandReply{
+			Status:    "ok",
+			Amount:    0,
+			AmountOne: 0,
+			Limit:     uint64(now),
+		}, nil
+	}
+
+	landRecord, err = ac.userRepo.GetAllBuyLandRecords(ctx, landBuy.ID)
+	if nil != err {
+		return &pb.GetBuyLandReply{Status: "记录错误"}, nil
+	}
+
+	if 1 <= len(landRecord) {
+		newLandRecord = landRecord[0]
+		return &pb.GetBuyLandReply{
+			Status:    "ok",
+			Amount:    newLandRecord.Amount,
+			AmountOne: landBuy.AmountTwo,
+			Limit:     landBuy.Limit,
+		}, nil
+	} else {
+		return &pb.GetBuyLandReply{
+			Status:    "ok",
+			Amount:    landBuy.Amount,
+			AmountOne: landBuy.AmountTwo,
+			Limit:     landBuy.Limit,
+		}, nil
+	}
+}
+
+func (ac *AppUsecase) BuyLandRecord(ctx context.Context, addreses string, req *pb.BuyLandRecordRequest) (*pb.BuyLandRecordReply, error) {
+	var (
+		user       *User
+		err        error
+		landBuy    *BuyLand
+		landRecord []*BuyLandRecord
+	)
+
+	res := make([]*pb.BuyLandRecordReply_List, 0)
+	user, err = ac.userRepo.GetUserByAddress(ctx, addreses)
+	if nil != err {
+		return &pb.BuyLandRecordReply{Status: "地址不存在用户"}, nil
+	}
+	if nil == user {
+		return &pb.BuyLandRecordReply{Status: "地址不存在用户"}, nil
+	}
+
+	landBuy, err = ac.userRepo.GetBuyLandById(ctx)
+	if nil != err {
+		return &pb.BuyLandRecordReply{Status: "不存在拍卖信息"}, nil
+	}
+
+	now := time.Now().Unix()
+	if nil == landBuy || uint64(now) >= landBuy.Limit {
+		return &pb.BuyLandRecordReply{Status: "ok", List: res}, nil
+	}
+
+	landRecord, err = ac.userRepo.GetAllBuyLandRecords(ctx, landBuy.ID)
+	if nil != err {
+		return &pb.BuyLandRecordReply{Status: "记录错误"}, nil
+	}
+
+	if 0 == len(landRecord) {
+		return &pb.BuyLandRecordReply{Status: "ok", List: res}, nil
+	}
+
+	userIds := make([]uint64, 0)
+	for _, v := range landRecord {
+		userIds = append(userIds, v.UserID)
+	}
+
+	var (
+		usersMap map[uint64]*User
+	)
+	usersMap, err = ac.userRepo.GetUserByUserIds(ctx, userIds)
+	if nil != err {
+		return &pb.BuyLandRecordReply{Status: "不存在用户信息"}, nil
+	}
+	if 0 == len(usersMap) {
+		return &pb.BuyLandRecordReply{Status: "ok", List: res}, nil
+	}
+
+	for _, v := range landRecord {
+		address := ""
+		if _, ok := usersMap[v.UserID]; ok {
+			address = usersMap[v.UserID].Address
+		}
+
+		res = append(res, &pb.BuyLandRecordReply_List{
+			Address:   address,
+			Amount:    v.Amount,
+			CreatedAt: v.CreatedAt.Add(8 * time.Hour).Format("2006-01-02 15:04:05"),
+		})
+	}
+
+	return &pb.BuyLandRecordReply{Status: "ok", List: res}, nil
+}
+
+func (ac *AppUsecase) BuyLand(ctx context.Context, addreses string, req *pb.BuyLandRequest) (*pb.BuyLandReply, error) {
+	var (
+		user          *User
+		err           error
+		landBuy       *BuyLand
+		landRecord    []*BuyLandRecord
+		newLandRecord *BuyLandRecord
+	)
+
+	user, err = ac.userRepo.GetUserByAddress(ctx, addreses)
+	if nil != err {
+		return &pb.BuyLandReply{Status: "地址不存在用户"}, nil
+	}
+	if nil == user {
+		return &pb.BuyLandReply{Status: "地址不存在用户"}, nil
+	}
+
+	landBuy, err = ac.userRepo.GetBuyLandById(ctx)
+	if nil != err {
+		return &pb.BuyLandReply{Status: "不存在拍卖信息"}, nil
+	}
+
+	if nil == landBuy {
+		return &pb.BuyLandReply{Status: "暂无拍卖信息"}, nil
+	}
+
+	now := time.Now().Unix()
+	if uint64(now) >= landBuy.Limit {
+		return &pb.BuyLandReply{Status: "拍卖结束"}, nil
+	}
+
+	landRecord, err = ac.userRepo.GetAllBuyLandRecords(ctx, landBuy.ID)
+	if nil != err {
+		return &pb.BuyLandReply{Status: "记录错误"}, nil
+	}
+
+	if 1 <= len(landRecord) {
+		newLandRecord = landRecord[0]
+	}
+
+	if 1 == req.SendBody.BuyType {
+		if 0 >= landBuy.AmountTwo {
+			return &pb.BuyLandReply{Status: "未设定一口价"}, nil
+		}
+
+		amountTmp := landBuy.AmountTwo
+		if nil != newLandRecord {
+			if newLandRecord.Amount >= amountTmp {
+				return &pb.BuyLandReply{Status: "当前最高价已经高于一口价"}, nil
+			}
+		}
+
+		if user.Git < amountTmp {
+			return &pb.BuyLandReply{Status: "git余额不足"}, nil
+		}
+
+		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+			err = ac.userRepo.CreateBuyLandRecordOne(ctx, &BuyLandRecord{
+				BuyLandID: landBuy.ID,
+				Amount:    float64(amountTmp),
+				Status:    3,
+				UserID:    user.ID,
+			})
+			if nil != err {
+				return err
+			}
+
+			return nil
+		}); nil != err {
+			return &pb.BuyLandReply{
+				Status: "竞拍失败",
+			}, nil
+		}
+	} else {
+		amountTmp := req.SendBody.Amount
+
+		if nil != newLandRecord {
+			if newLandRecord.Amount >= float64(amountTmp) {
+				return &pb.BuyLandReply{Status: "出价低于当前最高价"}, nil
+			}
+		}
+
+		if uint64(user.Git) < amountTmp {
+			return &pb.BuyLandReply{Status: "git余额不足"}, nil
+		}
+
+		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+			err = ac.userRepo.CreateBuyLandRecord(ctx, uint64(now)+1200, &BuyLandRecord{
+				BuyLandID: landBuy.ID,
+				Amount:    float64(amountTmp),
+				Status:    1,
+				UserID:    user.ID,
+			})
+			if nil != err {
+				return err
+			}
+
+			return nil
+		}); nil != err {
+			return &pb.BuyLandReply{
+				Status: "竞拍失败",
+			}, nil
+		}
+	}
+
+	return &pb.BuyLandReply{
 		Status: "ok",
 	}, nil
 }

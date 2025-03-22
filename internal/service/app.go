@@ -1671,3 +1671,113 @@ func (a *AppService) SetGit(ctx context.Context, req *pb.SetGitRequest) (*pb.Set
 func (a *AppService) SetLand(ctx context.Context, req *pb.SetLandRequest) (*pb.SetLandReply, error) {
 	return a.ac.SetLand(ctx, req)
 }
+
+func (a *AppService) GetBuyLand(ctx context.Context, req *pb.GetBuyLandRequest) (*pb.GetBuyLandReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		address string
+	)
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["Address"] == nil {
+			return &pb.GetBuyLandReply{Status: "无效token"}, nil
+		}
+
+		address = c["Address"].(string)
+
+		// 验证
+		var (
+			res bool
+			err error
+		)
+		res, err = addressCheck(address)
+		if nil != err {
+			return &pb.GetBuyLandReply{Status: "无效token"}, nil
+		}
+
+		if !res {
+			return &pb.GetBuyLandReply{Status: "无效token"}, nil
+		}
+	} else {
+		return &pb.GetBuyLandReply{Status: "无效token"}, nil
+	}
+
+	return a.ac.GetBuyLand(ctx, address, req)
+}
+
+func (a *AppService) BuyLandRecord(ctx context.Context, req *pb.BuyLandRecordRequest) (*pb.BuyLandRecordReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		address string
+	)
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["Address"] == nil {
+			return &pb.BuyLandRecordReply{Status: "无效token"}, nil
+		}
+
+		address = c["Address"].(string)
+
+		// 验证
+		var (
+			res bool
+			err error
+		)
+		res, err = addressCheck(address)
+		if nil != err {
+			return &pb.BuyLandRecordReply{Status: "无效token"}, nil
+		}
+
+		if !res {
+			return &pb.BuyLandRecordReply{Status: "无效token"}, nil
+		}
+	} else {
+		return &pb.BuyLandRecordReply{Status: "无效token"}, nil
+	}
+
+	return a.ac.BuyLandRecord(ctx, address, req)
+}
+
+func (a *AppService) BuyLand(ctx context.Context, req *pb.BuyLandRequest) (*pb.BuyLandReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		address string
+	)
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["Address"] == nil {
+			return &pb.BuyLandReply{Status: "无效token"}, nil
+		}
+
+		address = c["Address"].(string)
+
+		// 验证
+		var (
+			res bool
+			err error
+		)
+		res, err = addressCheck(address)
+		if nil != err {
+			return &pb.BuyLandReply{Status: "无效token"}, nil
+		}
+
+		if !res {
+			return &pb.BuyLandReply{Status: "无效token"}, nil
+		}
+	} else {
+		return &pb.BuyLandReply{Status: "无效token"}, nil
+	}
+
+	var (
+		res             bool
+		addressFromSign string
+	)
+	res, addressFromSign = verifySig(req.SendBody.Sign, []byte(address))
+	if !res || addressFromSign != address {
+		return &pb.BuyLandReply{
+			Status: "地址签名错误",
+		}, nil
+	}
+
+	return a.ac.BuyLand(ctx, address, req)
+}

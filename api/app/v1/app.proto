@@ -318,6 +318,28 @@ service App {
 			get: "/api/app_server/set_land"
 		};
 	};
+
+	//  购买盲盒
+	rpc BuyLand (BuyLandRequest) returns (BuyLandReply) {
+		option (google.api.http) = {
+			post: "/api/app_server/buy_land"
+			body: "send_body"
+		};
+	};
+
+	//  购买盲盒
+	rpc GetBuyLand (BuyLandRequest) returns (BuyLandReply) {
+		option (google.api.http) = {
+			get: "/api/app_server/get_buy_land"
+		};
+	};
+
+	//  购买盲盒
+	rpc BuyLandRecord (BuyLandRecordRequest) returns (BuyLandRecordReply) {
+		option (google.api.http) = {
+			get: "/api/app_server/buy_land_record"
+		};
+	};
 }
 
 message TestSignRequest {
@@ -1022,4 +1044,42 @@ message SetLandRequest {
 
 message SetLandReply {
 	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
+}
+
+message GetBuyLandRequest {
+}
+
+message GetBuyLandReply {
+	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
+	double amount = 2; // 当前竞拍价
+	double amountOne = 3; // 当前竞拍价
+	uint64 limit = 4; // 竞拍结束时间 (秒级别时间戳)
+}
+
+message BuyLandRequest {
+	message SendBody{
+		string sign = 4; // 签名
+		uint64 amount = 1; // 出价
+		uint64 buyType = 2; // 一口价1，默认0
+	}
+
+	SendBody send_body = 1;
+}
+
+message BuyLandReply {
+	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
+}
+
+message BuyLandRecordReply {
+	string status = 1; // 状态为字符串"ok"时接口正常，其他情况忽略，弹出显示该字段文案即可
+
+	repeated List list = 3;
+	message List {
+		string address = 1; // 地址
+		double amount = 3; // 参与金额
+		string createdAt = 5; // 时间
+	}
+}
+
+message BuyLandRecordRequest {
 }

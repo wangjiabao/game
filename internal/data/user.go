@@ -143,6 +143,7 @@ type BuyLand struct {
 	UpdatedAt time.Time `gorm:"type:datetime;default:null"`
 	AmountTwo float64   `gorm:"type:decimal(65,20);not null;default:0.0"`
 	Limit     uint64    `gorm:"not null;default:0"`
+	Level     uint64    `gorm:"not null;default:1"`
 }
 
 type BuyLandRecord struct {
@@ -3176,17 +3177,54 @@ func (u *UserRepo) GetBuyLandById(ctx context.Context) (*biz.BuyLand, error) {
 		UpdatedAt: buyLand.UpdatedAt,
 		AmountTwo: buyLand.AmountTwo,
 		Limit:     buyLand.Limit,
+		Level:     buyLand.Level,
 	}, nil
 }
 
+func (u *UserRepo) CreateBuyLandRecordOne(ctx context.Context, bl *biz.BuyLandRecord) error {
+	res := u.data.DB(ctx).Table("buy_land").Where("id=?", bl.BuyLandID).Where("status=?", 1).
+		Updates(map[string]interface{}{
+			"status":     3,
+			"updated_at": time.Now().Format("2006-01-02 15:04:05"),
+		})
+	if res.Error != nil {
+		return errors.New(500, "SetStakeGetPlaySub", "用户信息修改失败")
+	}
+
+	res = u.data.DB(ctx).Table("user").Where("id=?", bl.UserID).Where("git>=?", bl.Amount).
+		Updates(map[string]interface{}{"git": gorm.Expr("git - ?", bl.Amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "CreateBuyLandRecordOne", "用户信息修改失败")
+	}
+
+	var buyLandRecord BuyLandRecord
+	buyLandRecord.BuyLandID = bl.BuyLandID
+	buyLandRecord.UserID = bl.UserID
+	buyLandRecord.Amount = bl.Amount
+	buyLandRecord.Status = bl.Status
+
+	res = u.data.DB(ctx).Table("buy_land_record").Create(&buyLandRecord)
+	if res.Error != nil {
+		return errors.New(500, "CREATE BUY LAND RECORD ERROR", "创建拍卖记录失败")
+	}
+
+	return nil
+}
+
 func (u *UserRepo) CreateBuyLandRecord(ctx context.Context, limit uint64, bl *biz.BuyLandRecord) error {
-	res := u.data.DB(ctx).Table("buy_land").Where("id=?", bl.BuyLandID).
+	res := u.data.DB(ctx).Table("buy_land").Where("id=?", bl.BuyLandID).Where("status=?", 1).
 		Updates(map[string]interface{}{
 			"limit":      limit,
 			"updated_at": time.Now().Format("2006-01-02 15:04:05"),
 		})
 	if res.Error != nil {
 		return errors.New(500, "SetStakeGetPlaySub", "用户信息修改失败")
+	}
+
+	res = u.data.DB(ctx).Table("user").Where("id=?", bl.UserID).Where("git>=?", bl.Amount).
+		Updates(map[string]interface{}{"git": gorm.Expr("git - ?", bl.Amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "CreateBuyLandRecord", "用户信息修改失败")
 	}
 
 	var buyLandRecord BuyLandRecord
