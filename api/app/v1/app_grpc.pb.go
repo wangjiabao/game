@@ -64,6 +64,7 @@ const (
 	App_BuyLand_FullMethodName                = "/api.app.v1.App/BuyLand"
 	App_GetBuyLand_FullMethodName             = "/api.app.v1.App/GetBuyLand"
 	App_BuyLandRecord_FullMethodName          = "/api.app.v1.App/BuyLandRecord"
+	App_SetBuyLand_FullMethodName             = "/api.app.v1.App/SetBuyLand"
 )
 
 // AppClient is the client API for App service.
@@ -155,6 +156,8 @@ type AppClient interface {
 	GetBuyLand(ctx context.Context, in *GetBuyLandRequest, opts ...grpc.CallOption) (*GetBuyLandReply, error)
 	// 购买盲盒
 	BuyLandRecord(ctx context.Context, in *BuyLandRecordRequest, opts ...grpc.CallOption) (*BuyLandRecordReply, error)
+	// 购买盲盒
+	SetBuyLand(ctx context.Context, in *SetBuyLandRequest, opts ...grpc.CallOption) (*SetBuyLandReply, error)
 }
 
 type appClient struct {
@@ -615,6 +618,16 @@ func (c *appClient) BuyLandRecord(ctx context.Context, in *BuyLandRecordRequest,
 	return out, nil
 }
 
+func (c *appClient) SetBuyLand(ctx context.Context, in *SetBuyLandRequest, opts ...grpc.CallOption) (*SetBuyLandReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SetBuyLandReply)
+	err := c.cc.Invoke(ctx, App_SetBuyLand_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AppServer is the server API for App service.
 // All implementations must embed UnimplementedAppServer
 // for forward compatibility.
@@ -704,6 +717,8 @@ type AppServer interface {
 	GetBuyLand(context.Context, *GetBuyLandRequest) (*GetBuyLandReply, error)
 	// 购买盲盒
 	BuyLandRecord(context.Context, *BuyLandRecordRequest) (*BuyLandRecordReply, error)
+	// 购买盲盒
+	SetBuyLand(context.Context, *SetBuyLandRequest) (*SetBuyLandReply, error)
 	mustEmbedUnimplementedAppServer()
 }
 
@@ -848,6 +863,9 @@ func (UnimplementedAppServer) GetBuyLand(context.Context, *GetBuyLandRequest) (*
 }
 func (UnimplementedAppServer) BuyLandRecord(context.Context, *BuyLandRecordRequest) (*BuyLandRecordReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method BuyLandRecord not implemented")
+}
+func (UnimplementedAppServer) SetBuyLand(context.Context, *SetBuyLandRequest) (*SetBuyLandReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetBuyLand not implemented")
 }
 func (UnimplementedAppServer) mustEmbedUnimplementedAppServer() {}
 func (UnimplementedAppServer) testEmbeddedByValue()             {}
@@ -1680,6 +1698,24 @@ func _App_BuyLandRecord_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _App_SetBuyLand_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetBuyLandRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AppServer).SetBuyLand(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: App_SetBuyLand_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppServer).SetBuyLand(ctx, req.(*SetBuyLandRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // App_ServiceDesc is the grpc.ServiceDesc for App service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1866,6 +1902,10 @@ var App_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "BuyLandRecord",
 			Handler:    _App_BuyLandRecord_Handler,
+		},
+		{
+			MethodName: "SetBuyLand",
+			Handler:    _App_SetBuyLand_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

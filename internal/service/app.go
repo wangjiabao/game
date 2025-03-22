@@ -1672,6 +1672,10 @@ func (a *AppService) SetLand(ctx context.Context, req *pb.SetLandRequest) (*pb.S
 	return a.ac.SetLand(ctx, req)
 }
 
+func (a *AppService) SetBuyLand(ctx context.Context, req *pb.SetBuyLandRequest) (*pb.SetBuyLandReply, error) {
+	return a.ac.SetBuyLand(ctx, req)
+}
+
 func (a *AppService) GetBuyLand(ctx context.Context, req *pb.GetBuyLandRequest) (*pb.GetBuyLandReply, error) {
 	// 在上下文 context 中取出 claims 对象
 	var (

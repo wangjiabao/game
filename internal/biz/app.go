@@ -444,6 +444,9 @@ type UserRepo interface {
 	GetBuyLandById(ctx context.Context) (*BuyLand, error)
 	CreateBuyLandRecord(ctx context.Context, limit uint64, bl *BuyLandRecord) error
 	CreateBuyLandRecordOne(ctx context.Context, bl *BuyLandRecord) error
+	GetSetBuyLandById(ctx context.Context) (*BuyLand, error)
+	BackUserGit(ctx context.Context, userId, id uint64, git float64) error
+	SetBuyLandOver(ctx context.Context, id uint64) error
 }
 
 // AppUsecase is an app usecase.
@@ -5120,6 +5123,203 @@ func (ac *AppUsecase) GetBuyLand(ctx context.Context, addreses string, req *pb.G
 			Now:       uint64(now),
 		}, nil
 	}
+}
+
+func (ac *AppUsecase) SetBuyLand(ctx context.Context, req *pb.SetBuyLandRequest) (*pb.SetBuyLandReply, error) {
+	var (
+		err        error
+		landBuy    *BuyLand
+		landRecord []*BuyLandRecord
+		landInfos  map[uint64]*LandInfo
+	)
+
+	landBuy, err = ac.userRepo.GetBuyLandById(ctx)
+	if nil != err {
+		return &pb.SetBuyLandReply{}, nil
+	}
+
+	now := time.Now().Unix()
+	if nil == landBuy {
+		return &pb.SetBuyLandReply{}, nil
+	}
+
+	if 3 == landBuy.Status {
+		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+			err = ac.userRepo.SetBuyLandOver(ctx, landBuy.ID)
+			if nil != err {
+				return err
+			}
+
+			return nil
+		}); nil != err {
+			return &pb.SetBuyLandReply{}, nil
+		}
+
+		landRecord, err = ac.userRepo.GetAllBuyLandRecords(ctx, landBuy.ID)
+		if nil != err {
+			return &pb.SetBuyLandReply{}, nil
+		}
+
+		userIdTmp := uint64(0)
+		for _, v := range landRecord {
+			if 3 == v.Status {
+				userIdTmp = v.UserID
+				continue
+			}
+
+			if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+				err = ac.userRepo.BackUserGit(ctx, v.UserID, v.ID, v.Amount)
+				if nil != err {
+					return err
+				}
+
+				return nil
+			}); nil != err {
+				return &pb.SetBuyLandReply{}, nil
+			}
+		}
+
+		landInfos, err = ac.userRepo.GetLandInfoByLevels(ctx)
+		if nil != err {
+			return &pb.SetBuyLandReply{}, nil
+		}
+
+		if 0 >= len(landInfos) {
+			return &pb.SetBuyLandReply{}, nil
+		}
+
+		tmpLevel := landBuy.Level
+		if _, ok := landInfos[tmpLevel]; !ok {
+			return &pb.SetBuyLandReply{}, nil
+		}
+
+		rngTmp := rand2.New(rand2.NewSource(time.Now().UnixNano()))
+		outMin := int64(landInfos[tmpLevel].OutPutRateMin)
+		outMax := int64(landInfos[tmpLevel].OutPutRateMax)
+
+		// 计算随机范围
+		tmpNum := outMax - outMin
+		if tmpNum <= 0 {
+			tmpNum = 1 // 避免 Int63n(0) panic
+		}
+
+		// 生成随机数
+		randomNumber := outMin + rngTmp.Int63n(tmpNum)
+
+		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+			_, err = ac.userRepo.CreateLand(ctx, &Land{
+				UserId:     userIdTmp,
+				Level:      landInfos[tmpLevel].Level,
+				OutPutRate: float64(randomNumber),
+				MaxHealth:  landInfos[tmpLevel].MaxHealth,
+				PerHealth:  landInfos[tmpLevel].PerHealth,
+				LimitDate:  uint64(now) + landInfos[tmpLevel].LimitDateMax*3600*24,
+				Status:     0,
+				One:        1,
+				Two:        1,
+				Three:      1,
+			})
+			if nil != err {
+				return err
+			}
+
+			return nil
+		}); nil != err {
+			return &pb.SetBuyLandReply{}, nil
+		}
+
+	} else if 1 == landBuy.Status {
+		if uint64(now) <= landBuy.Limit {
+			return &pb.SetBuyLandReply{}, nil
+		}
+
+		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+			err = ac.userRepo.SetBuyLandOver(ctx, landBuy.ID)
+			if nil != err {
+				return err
+			}
+
+			return nil
+		}); nil != err {
+			return &pb.SetBuyLandReply{}, nil
+		}
+
+		landRecord, err = ac.userRepo.GetAllBuyLandRecords(ctx, landBuy.ID)
+		if nil != err {
+			return &pb.SetBuyLandReply{}, nil
+		}
+
+		userIdTmp := uint64(0)
+		for k, v := range landRecord {
+			if 0 == k {
+				userIdTmp = v.UserID
+				continue
+			}
+
+			if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+				err = ac.userRepo.BackUserGit(ctx, v.UserID, v.ID, v.Amount)
+				if nil != err {
+					return err
+				}
+
+				return nil
+			}); nil != err {
+				return &pb.SetBuyLandReply{}, nil
+			}
+		}
+
+		landInfos, err = ac.userRepo.GetLandInfoByLevels(ctx)
+		if nil != err {
+			return &pb.SetBuyLandReply{}, nil
+		}
+
+		if 0 >= len(landInfos) {
+			return &pb.SetBuyLandReply{}, nil
+		}
+
+		tmpLevel := landBuy.Level
+		if _, ok := landInfos[tmpLevel]; !ok {
+			return &pb.SetBuyLandReply{}, nil
+		}
+
+		rngTmp := rand2.New(rand2.NewSource(time.Now().UnixNano()))
+		outMin := int64(landInfos[tmpLevel].OutPutRateMin)
+		outMax := int64(landInfos[tmpLevel].OutPutRateMax)
+
+		// 计算随机范围
+		tmpNum := outMax - outMin
+		if tmpNum <= 0 {
+			tmpNum = 1 // 避免 Int63n(0) panic
+		}
+
+		// 生成随机数
+		randomNumber := outMin + rngTmp.Int63n(tmpNum)
+
+		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+			_, err = ac.userRepo.CreateLand(ctx, &Land{
+				UserId:     userIdTmp,
+				Level:      landInfos[tmpLevel].Level,
+				OutPutRate: float64(randomNumber),
+				MaxHealth:  landInfos[tmpLevel].MaxHealth,
+				PerHealth:  landInfos[tmpLevel].PerHealth,
+				LimitDate:  uint64(now) + landInfos[tmpLevel].LimitDateMax*3600*24,
+				Status:     0,
+				One:        1,
+				Two:        1,
+				Three:      1,
+			})
+			if nil != err {
+				return err
+			}
+
+			return nil
+		}); nil != err {
+			return &pb.SetBuyLandReply{}, nil
+		}
+	}
+
+	return &pb.SetBuyLandReply{}, nil
+
 }
 
 func (ac *AppUsecase) BuyLandRecord(ctx context.Context, addreses string, req *pb.BuyLandRecordRequest) (*pb.BuyLandRecordReply, error) {

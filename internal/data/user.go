@@ -3161,7 +3161,30 @@ func (u *UserRepo) Withdraw(ctx context.Context, userId uint64, giw float64) err
 // GetBuyLandById 获取指定 ID 的 BuyLand 记录
 func (u *UserRepo) GetBuyLandById(ctx context.Context) (*biz.BuyLand, error) {
 	var buyLand *BuyLand
-	if err := u.data.DB(ctx).Where("status=?", 1).Order("id desc").Table("buy_land").First(&buyLand).Error; err != nil {
+	if err := u.data.DB(ctx).Where("status=?", 1).Order("id asc").Table("buy_land").First(&buyLand).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+
+		return nil, errors.New(500, "BUY LAND ERROR", err.Error())
+	}
+
+	return &biz.BuyLand{
+		ID:        buyLand.ID,
+		Amount:    buyLand.Amount,
+		Status:    buyLand.Status,
+		CreatedAt: buyLand.CreatedAt,
+		UpdatedAt: buyLand.UpdatedAt,
+		AmountTwo: buyLand.AmountTwo,
+		Limit:     buyLand.Limit,
+		Level:     buyLand.Level,
+	}, nil
+}
+
+// GetSetBuyLandById 获取指定 ID 的 BuyLand 记录
+func (u *UserRepo) GetSetBuyLandById(ctx context.Context) (*biz.BuyLand, error) {
+	var buyLand *BuyLand
+	if err := u.data.DB(ctx).Where("status<=?", 3).Order("id asc").Table("buy_land").First(&buyLand).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
@@ -3267,4 +3290,37 @@ func (u *UserRepo) GetAllBuyLandRecords(ctx context.Context, id uint64) ([]*biz.
 	}
 
 	return res, nil
+}
+
+// BackUserGit .
+func (u *UserRepo) BackUserGit(ctx context.Context, userId, id uint64, git float64) error {
+	res := u.data.DB(ctx).Table("user").Where("id=?", userId).
+		Updates(map[string]interface{}{"git": gorm.Expr("git + ?", git), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "BackUserGit", "用户信息修改失败")
+	}
+
+	res = u.data.DB(ctx).Table("buy_land_record").Where("id=?", id).
+		Updates(map[string]interface{}{
+			"status":     4,
+			"updated_at": time.Now().Format("2006-01-02 15:04:05"),
+		})
+	if res.Error != nil {
+		return errors.New(500, "SetBuyLandOver", "用户信息修改失败")
+	}
+
+	return nil
+}
+
+func (u *UserRepo) SetBuyLandOver(ctx context.Context, id uint64) error {
+	res := u.data.DB(ctx).Table("buy_land").Where("id=?", id).
+		Updates(map[string]interface{}{
+			"status":     4,
+			"updated_at": time.Now().Format("2006-01-02 15:04:05"),
+		})
+	if res.Error != nil {
+		return errors.New(500, "SetBuyLandOver", "用户信息修改失败")
+	}
+
+	return nil
 }

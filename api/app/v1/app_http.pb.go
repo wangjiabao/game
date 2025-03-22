@@ -39,6 +39,7 @@ const OperationAppLandPlayTwo = "/api.app.v1.App/LandPlayTwo"
 const OperationAppOpenBox = "/api.app.v1.App/OpenBox"
 const OperationAppRentLand = "/api.app.v1.App/RentLand"
 const OperationAppSell = "/api.app.v1.App/Sell"
+const OperationAppSetBuyLand = "/api.app.v1.App/SetBuyLand"
 const OperationAppSetGit = "/api.app.v1.App/SetGit"
 const OperationAppSetGiw = "/api.app.v1.App/SetGiw"
 const OperationAppSetLand = "/api.app.v1.App/SetLand"
@@ -105,6 +106,8 @@ type AppHTTPServer interface {
 	RentLand(context.Context, *RentLandRequest) (*RentLandReply, error)
 	// Sell  出售道具下架道具
 	Sell(context.Context, *SellRequest) (*SellReply, error)
+	// SetBuyLand  购买盲盒
+	SetBuyLand(context.Context, *SetBuyLandRequest) (*SetBuyLandReply, error)
 	SetGit(context.Context, *SetGitRequest) (*SetGitReply, error)
 	SetGiw(context.Context, *SetGiwRequest) (*SetGiwReply, error)
 	SetLand(context.Context, *SetLandRequest) (*SetLandReply, error)
@@ -200,6 +203,7 @@ func RegisterAppHTTPServer(s *http.Server, srv AppHTTPServer) {
 	r.POST("/api/app_server/buy_land", _App_BuyLand0_HTTP_Handler(srv))
 	r.GET("/api/app_server/get_buy_land", _App_GetBuyLand0_HTTP_Handler(srv))
 	r.GET("/api/app_server/buy_land_record", _App_BuyLandRecord0_HTTP_Handler(srv))
+	r.GET("/api/app_server/set_buy_land", _App_SetBuyLand0_HTTP_Handler(srv))
 }
 
 func _App_TestSign0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
@@ -1123,6 +1127,25 @@ func _App_BuyLandRecord0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) 
 	}
 }
 
+func _App_SetBuyLand0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in SetBuyLandRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAppSetBuyLand)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.SetBuyLand(ctx, req.(*SetBuyLandRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*SetBuyLandReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 type AppHTTPClient interface {
 	Buy(ctx context.Context, req *BuyRequest, opts ...http.CallOption) (rsp *BuyReply, err error)
 	BuyBox(ctx context.Context, req *BuyBoxRequest, opts ...http.CallOption) (rsp *BuyBoxReply, err error)
@@ -1144,6 +1167,7 @@ type AppHTTPClient interface {
 	OpenBox(ctx context.Context, req *OpenBoxRequest, opts ...http.CallOption) (rsp *OpenBoxReply, err error)
 	RentLand(ctx context.Context, req *RentLandRequest, opts ...http.CallOption) (rsp *RentLandReply, err error)
 	Sell(ctx context.Context, req *SellRequest, opts ...http.CallOption) (rsp *SellReply, err error)
+	SetBuyLand(ctx context.Context, req *SetBuyLandRequest, opts ...http.CallOption) (rsp *SetBuyLandReply, err error)
 	SetGit(ctx context.Context, req *SetGitRequest, opts ...http.CallOption) (rsp *SetGitReply, err error)
 	SetGiw(ctx context.Context, req *SetGiwRequest, opts ...http.CallOption) (rsp *SetGiwReply, err error)
 	SetLand(ctx context.Context, req *SetLandRequest, opts ...http.CallOption) (rsp *SetLandReply, err error)
@@ -1433,6 +1457,19 @@ func (c *AppHTTPClientImpl) Sell(ctx context.Context, in *SellRequest, opts ...h
 	opts = append(opts, http.Operation(OperationAppSell))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "POST", path, in.SendBody, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *AppHTTPClientImpl) SetBuyLand(ctx context.Context, in *SetBuyLandRequest, opts ...http.CallOption) (*SetBuyLandReply, error) {
+	var out SetBuyLandReply
+	pattern := "/api/app_server/set_buy_land"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationAppSetBuyLand))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {
 		return nil, err
 	}
