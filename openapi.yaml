@@ -1212,6 +1212,10 @@ components:
                     format: double
                 limit:
                     type: string
+                level:
+                    type: string
+                now:
+                    type: string
         GetLandReply:
             type: object
             properties:

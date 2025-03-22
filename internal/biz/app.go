@@ -5046,6 +5046,8 @@ func (ac *AppUsecase) GetBuyLand(ctx context.Context, addreses string, req *pb.G
 			Amount:    newLandRecord.Amount,
 			AmountOne: landBuy.AmountTwo,
 			Limit:     landBuy.Limit,
+			Level:     landBuy.Level,
+			Now:       uint64(now),
 		}, nil
 	} else {
 		return &pb.GetBuyLandReply{
@@ -5053,6 +5055,8 @@ func (ac *AppUsecase) GetBuyLand(ctx context.Context, addreses string, req *pb.G
 			Amount:    landBuy.Amount,
 			AmountOne: landBuy.AmountTwo,
 			Limit:     landBuy.Limit,
+			Level:     landBuy.Level,
+			Now:       uint64(now),
 		}, nil
 	}
 }

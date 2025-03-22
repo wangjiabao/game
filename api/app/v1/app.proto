@@ -1054,6 +1054,8 @@ message GetBuyLandReply {
 	double amount = 2; // 当前竞拍价
 	double amountOne = 3; // 当前竞拍价
 	uint64 limit = 4; // 竞拍结束时间 (秒级别时间戳)
+	uint64 level = 5; // 土地级别
+	uint64 now = 6; // 当前时间
 }
 
 message BuyLandRequest {
