@@ -78,7 +78,7 @@ type AppHTTPServer interface {
 	// Exchange 兑换
 	Exchange(context.Context, *ExchangeRequest) (*ExchangeReply, error)
 	// GetBuyLand  购买盲盒
-	GetBuyLand(context.Context, *BuyLandRequest) (*BuyLandReply, error)
+	GetBuyLand(context.Context, *GetBuyLandRequest) (*GetBuyLandReply, error)
 	// GetLand 合成土地
 	GetLand(context.Context, *GetLandRequest) (*GetLandReply, error)
 	// LandAddOutRate  培育
@@ -1087,19 +1087,19 @@ func _App_BuyLand0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error 
 
 func _App_GetBuyLand0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
-		var in BuyLandRequest
+		var in GetBuyLandRequest
 		if err := ctx.BindQuery(&in); err != nil {
 			return err
 		}
 		http.SetOperation(ctx, OperationAppGetBuyLand)
 		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
-			return srv.GetBuyLand(ctx, req.(*BuyLandRequest))
+			return srv.GetBuyLand(ctx, req.(*GetBuyLandRequest))
 		})
 		out, err := h(ctx, &in)
 		if err != nil {
 			return err
 		}
-		reply := out.(*BuyLandReply)
+		reply := out.(*GetBuyLandReply)
 		return ctx.Result(200, reply)
 	}
 }
@@ -1130,7 +1130,7 @@ type AppHTTPClient interface {
 	BuyLandRecord(ctx context.Context, req *BuyLandRecordRequest, opts ...http.CallOption) (rsp *BuyLandRecordReply, err error)
 	EthAuthorize(ctx context.Context, req *EthAuthorizeRequest, opts ...http.CallOption) (rsp *EthAuthorizeReply, err error)
 	Exchange(ctx context.Context, req *ExchangeRequest, opts ...http.CallOption) (rsp *ExchangeReply, err error)
-	GetBuyLand(ctx context.Context, req *BuyLandRequest, opts ...http.CallOption) (rsp *BuyLandReply, err error)
+	GetBuyLand(ctx context.Context, req *GetBuyLandRequest, opts ...http.CallOption) (rsp *GetBuyLandReply, err error)
 	GetLand(ctx context.Context, req *GetLandRequest, opts ...http.CallOption) (rsp *GetLandReply, err error)
 	LandAddOutRate(ctx context.Context, req *LandAddOutRateRequest, opts ...http.CallOption) (rsp *LandAddOutRateReply, err error)
 	LandPlay(ctx context.Context, req *LandPlayRequest, opts ...http.CallOption) (rsp *LandPlayReply, err error)
@@ -1257,8 +1257,8 @@ func (c *AppHTTPClientImpl) Exchange(ctx context.Context, in *ExchangeRequest, o
 	return &out, nil
 }
 
-func (c *AppHTTPClientImpl) GetBuyLand(ctx context.Context, in *BuyLandRequest, opts ...http.CallOption) (*BuyLandReply, error) {
-	var out BuyLandReply
+func (c *AppHTTPClientImpl) GetBuyLand(ctx context.Context, in *GetBuyLandRequest, opts ...http.CallOption) (*GetBuyLandReply, error) {
+	var out GetBuyLandReply
 	pattern := "/api/app_server/get_buy_land"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationAppGetBuyLand))

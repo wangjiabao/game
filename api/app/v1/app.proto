@@ -328,7 +328,7 @@ service App {
 	};
 
 	//  购买盲盒
-	rpc GetBuyLand (BuyLandRequest) returns (BuyLandReply) {
+	rpc GetBuyLand (GetBuyLandRequest) returns (GetBuyLandReply) {
 		option (google.api.http) = {
 			get: "/api/app_server/get_buy_land"
 		};

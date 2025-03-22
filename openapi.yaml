@@ -155,26 +155,13 @@ paths:
                 - App
             description: 购买盲盒
             operationId: App_GetBuyLand
-            parameters:
-                - name: sendBody.sign
-                  in: query
-                  schema:
-                    type: string
-                - name: sendBody.amount
-                  in: query
-                  schema:
-                    type: string
-                - name: sendBody.buyType
-                  in: query
-                  schema:
-                    type: string
             responses:
                 "200":
                     description: OK
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/BuyLandReply'
+                                $ref: '#/components/schemas/GetBuyLandReply'
                 default:
                     description: Default error response
                     content:
@@ -1211,6 +1198,19 @@ components:
                 amount:
                     type: string
                 sign:
+                    type: string
+        GetBuyLandReply:
+            type: object
+            properties:
+                status:
+                    type: string
+                amount:
+                    type: number
+                    format: double
+                amountOne:
+                    type: number
+                    format: double
+                limit:
                     type: string
         GetLandReply:
             type: object

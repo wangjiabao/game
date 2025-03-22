@@ -152,7 +152,7 @@ type AppClient interface {
 	// 购买盲盒
 	BuyLand(ctx context.Context, in *BuyLandRequest, opts ...grpc.CallOption) (*BuyLandReply, error)
 	// 购买盲盒
-	GetBuyLand(ctx context.Context, in *BuyLandRequest, opts ...grpc.CallOption) (*BuyLandReply, error)
+	GetBuyLand(ctx context.Context, in *GetBuyLandRequest, opts ...grpc.CallOption) (*GetBuyLandReply, error)
 	// 购买盲盒
 	BuyLandRecord(ctx context.Context, in *BuyLandRecordRequest, opts ...grpc.CallOption) (*BuyLandRecordReply, error)
 }
@@ -595,9 +595,9 @@ func (c *appClient) BuyLand(ctx context.Context, in *BuyLandRequest, opts ...grp
 	return out, nil
 }
 
-func (c *appClient) GetBuyLand(ctx context.Context, in *BuyLandRequest, opts ...grpc.CallOption) (*BuyLandReply, error) {
+func (c *appClient) GetBuyLand(ctx context.Context, in *GetBuyLandRequest, opts ...grpc.CallOption) (*GetBuyLandReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(BuyLandReply)
+	out := new(GetBuyLandReply)
 	err := c.cc.Invoke(ctx, App_GetBuyLand_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -701,7 +701,7 @@ type AppServer interface {
 	// 购买盲盒
 	BuyLand(context.Context, *BuyLandRequest) (*BuyLandReply, error)
 	// 购买盲盒
-	GetBuyLand(context.Context, *BuyLandRequest) (*BuyLandReply, error)
+	GetBuyLand(context.Context, *GetBuyLandRequest) (*GetBuyLandReply, error)
 	// 购买盲盒
 	BuyLandRecord(context.Context, *BuyLandRecordRequest) (*BuyLandRecordReply, error)
 	mustEmbedUnimplementedAppServer()
@@ -843,7 +843,7 @@ func (UnimplementedAppServer) SetLand(context.Context, *SetLandRequest) (*SetLan
 func (UnimplementedAppServer) BuyLand(context.Context, *BuyLandRequest) (*BuyLandReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method BuyLand not implemented")
 }
-func (UnimplementedAppServer) GetBuyLand(context.Context, *BuyLandRequest) (*BuyLandReply, error) {
+func (UnimplementedAppServer) GetBuyLand(context.Context, *GetBuyLandRequest) (*GetBuyLandReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetBuyLand not implemented")
 }
 func (UnimplementedAppServer) BuyLandRecord(context.Context, *BuyLandRecordRequest) (*BuyLandRecordReply, error) {
@@ -1645,7 +1645,7 @@ func _App_BuyLand_Handler(srv interface{}, ctx context.Context, dec func(interfa
 }
 
 func _App_GetBuyLand_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(BuyLandRequest)
+	in := new(GetBuyLandRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -1657,7 +1657,7 @@ func _App_GetBuyLand_Handler(srv interface{}, ctx context.Context, dec func(inte
 		FullMethod: App_GetBuyLand_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AppServer).GetBuyLand(ctx, req.(*BuyLandRequest))
+		return srv.(AppServer).GetBuyLand(ctx, req.(*GetBuyLandRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
