@@ -139,8 +139,8 @@ type BuyLand struct {
 	ID        uint64    `gorm:"primarykey;type:int"`
 	Amount    float64   `gorm:"type:decimal(65,20);not null;default:0.0"`
 	Status    uint64    `gorm:"type:int;not null;default:1;"`
-	CreatedAt time.Time `gorm:"type:datetime;default:null"`
-	UpdatedAt time.Time `gorm:"type:datetime;default:null"`
+	CreatedAt time.Time `gorm:"type:datetime;"`
+	UpdatedAt time.Time `gorm:"type:datetime;"`
 	AmountTwo float64   `gorm:"type:decimal(65,20);not null;default:0.0"`
 	Limit     uint64    `gorm:"not null;default:0"`
 	Level     uint64    `gorm:"not null;default:1"`
@@ -150,8 +150,8 @@ type BuyLandRecord struct {
 	ID        uint64    `gorm:"primarykey;type:int"`
 	BuyLandID uint64    `gorm:"type:int;not null;"`
 	Amount    float64   `gorm:"type:decimal(65,20);not null;default:0.0"`
-	CreatedAt time.Time `gorm:"type:datetime;default:null"`
-	UpdatedAt time.Time `gorm:"type:datetime;default:null"`
+	CreatedAt time.Time `gorm:"type:datetime;"`
+	UpdatedAt time.Time `gorm:"type:datetime;"`
 	Status    uint64    `gorm:"type:int;not null;default:1;"`
 	UserID    uint64    `gorm:"type:int;not null;"`
 }
@@ -162,8 +162,8 @@ type ExchangeRecord struct {
 	Git       float64   `gorm:"type:decimal(65,20);not null;comment:git数量"`
 	Giw       float64   `gorm:"type:decimal(65,20);not null;comment:giw数量"`
 	Fee       float64   `gorm:"type:decimal(65,20);not null;comment:手续费"`
-	CreatedAt time.Time `gorm:"type:datetime;default:null"`
-	UpdatedAt time.Time `gorm:"type:datetime;default:null"`
+	CreatedAt time.Time `gorm:"type:datetime;"`
+	UpdatedAt time.Time `gorm:"type:datetime;"`
 }
 
 type Market struct {
