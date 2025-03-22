@@ -946,15 +946,16 @@ func (ac *AppUsecase) UserLand(ctx context.Context, address string, req *pb.User
 		}
 
 		res = append(res, &pb.UserLandReply_List{
-			Id:        v.ID,
-			Level:     v.Level,
-			Health:    v.MaxHealth,
-			Status:    statusTmp,
-			OutRate:   v.OutPutRate * 100,
-			PerHealth: v.PerHealth,
-			One:       v.One,
-			Two:       v.Two,
-			Three:     v.Three,
+			Id:         v.ID,
+			Level:      v.Level,
+			Health:     v.MaxHealth,
+			Status:     statusTmp,
+			OutRate:    v.OutPutRate,
+			PerHealth:  v.PerHealth,
+			RentAmount: v.RentOutPutRate,
+			One:        v.One,
+			Two:        v.Two,
+			Three:      v.Three,
 		})
 	}
 
@@ -1293,7 +1294,7 @@ func (ac *AppUsecase) UserMarketLandList(ctx context.Context, address string, re
 			MaxHealth:  vLand.MaxHealth,
 			Amount:     vLand.SellAmount,
 			PerHealth:  vLand.PerHealth,
-			OutPutRate: uint64(vLand.OutPutRate) * 100,
+			OutPutRate: uint64(vLand.OutPutRate),
 		})
 	}
 
@@ -1528,7 +1529,7 @@ func (ac *AppUsecase) UserMyMarketList(ctx context.Context, address string, req 
 			Amount:     vLand.SellAmount,
 			RentAmount: vLand.RentOutPutRate,
 			PerHealth:  vLand.PerHealth,
-			OutPutRate: uint64(vLand.OutPutRate) * 100,
+			OutPutRate: uint64(vLand.OutPutRate),
 		})
 	}
 

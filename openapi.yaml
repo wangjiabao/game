@@ -1721,6 +1721,9 @@ components:
                     format: double
                 perHealth:
                     type: string
+                rentAmount:
+                    type: number
+                    format: double
                 one:
                     type: string
                 two:
