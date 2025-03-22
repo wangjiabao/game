@@ -3306,7 +3306,7 @@ func (u *UserRepo) BackUserGit(ctx context.Context, userId, id uint64, git float
 			"updated_at": time.Now().Format("2006-01-02 15:04:05"),
 		})
 	if res.Error != nil {
-		return errors.New(500, "SetBuyLandOver", "用户信息修改失败")
+		return errors.New(500, "BackUserGit", "用户信息修改失败")
 	}
 
 	return nil
