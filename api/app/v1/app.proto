@@ -553,6 +553,7 @@ message UserMarketSeedListReply {
 		double amount = 3; // 售价
 		double outMax = 4; // 最大产出
 		uint64 time = 5;
+		string address = 99;
 	}
 }
 
@@ -573,6 +574,7 @@ message UserMarketLandListReply {
 		double amount = 3; // 售价
 		uint64 perHealth = 5; // 每次消耗肥沃度
 		uint64 outPutRate = 6; // 增产率
+		string address = 99;
 	}
 }
 
@@ -591,6 +593,7 @@ message UserMarketPropListReply {
 		uint64 num = 2; // 对应的内容：对应文档种子和道具那列从上到下，1-14，15铲子，16盲盒
 		double amount = 3; // 售价
 		uint64 useMax = 4; // 可用次数
+		string address = 99;
 	}
 }
 
@@ -624,6 +627,7 @@ message UserMyMarketListReply {
 	uint64 count = 2; // 总个数，每页1000个
 	repeated List list = 3;
 	message List {
+		string address = 99;
 		uint64 id = 1; // id 操作时需要使用的参数，显示时#000001，一共6个整数位
 		uint64 type = 5; // 1种子和道具，2土地
 

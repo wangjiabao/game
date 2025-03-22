@@ -1757,6 +1757,8 @@ components:
                     type: string
                 outPutRate:
                     type: string
+                address:
+                    type: string
         UserMarketPropListReply:
             type: object
             properties:
@@ -1779,6 +1781,8 @@ components:
                     type: number
                     format: double
                 useMax:
+                    type: string
+                address:
                     type: string
         UserMarketRentLandListReply:
             type: object
@@ -1836,6 +1840,8 @@ components:
                     format: double
                 time:
                     type: string
+                address:
+                    type: string
         UserMyMarketListReply:
             type: object
             properties:
@@ -1850,6 +1856,8 @@ components:
         UserMyMarketListReply_List:
             type: object
             properties:
+                address:
+                    type: string
                 id:
                     type: string
                 type:

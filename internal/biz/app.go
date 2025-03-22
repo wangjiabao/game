@@ -1245,13 +1245,32 @@ func (ac *AppUsecase) UserMarketSeedList(ctx context.Context, address string, re
 		}, nil
 	}
 
+	userIds := make([]uint64, 0)
 	for _, vSeed := range seed {
+		userIds = append(userIds, vSeed.UserId)
+	}
+
+	usersMap := make(map[uint64]*User)
+	usersMap, err = ac.userRepo.GetUserByUserIds(ctx, userIds)
+	if nil != err {
+		return &pb.UserMarketSeedListReply{
+			Status: "查询错误",
+		}, nil
+	}
+
+	for _, vSeed := range seed {
+		addressTmp := ""
+		if _, ok := usersMap[vSeed.UserId]; ok {
+			addressTmp = usersMap[vSeed.UserId].Address
+		}
+
 		res = append(res, &pb.UserMarketSeedListReply_List{
-			Id:     vSeed.ID,
-			Num:    vSeed.SeedId,
-			Amount: vSeed.SellAmount,
-			OutMax: vSeed.OutMaxAmount,
-			Time:   vSeed.OutOverTime,
+			Id:      vSeed.ID,
+			Num:     vSeed.SeedId,
+			Amount:  vSeed.SellAmount,
+			OutMax:  vSeed.OutMaxAmount,
+			Time:    vSeed.OutOverTime,
+			Address: addressTmp,
 		})
 	}
 
@@ -1287,7 +1306,25 @@ func (ac *AppUsecase) UserMarketLandList(ctx context.Context, address string, re
 		}, nil
 	}
 
+	userIds := make([]uint64, 0)
 	for _, vLand := range land {
+		userIds = append(userIds, vLand.UserId)
+	}
+
+	usersMap := make(map[uint64]*User)
+	usersMap, err = ac.userRepo.GetUserByUserIds(ctx, userIds)
+	if nil != err {
+		return &pb.UserMarketLandListReply{
+			Status: "错误查询",
+		}, nil
+	}
+
+	for _, vLand := range land {
+		addressTmp := ""
+		if _, ok := usersMap[vLand.UserId]; ok {
+			addressTmp = usersMap[vLand.UserId].Address
+		}
+
 		res = append(res, &pb.UserMarketLandListReply_List{
 			Id:         vLand.ID,
 			Level:      vLand.Level,
@@ -1295,6 +1332,7 @@ func (ac *AppUsecase) UserMarketLandList(ctx context.Context, address string, re
 			Amount:     vLand.SellAmount,
 			PerHealth:  vLand.PerHealth,
 			OutPutRate: uint64(vLand.OutPutRate),
+			Address:    addressTmp,
 		})
 	}
 
@@ -1331,7 +1369,25 @@ func (ac *AppUsecase) UserMarketPropList(ctx context.Context, address string, re
 		}, nil
 	}
 
+	userIds := make([]uint64, 0)
+	for _, vProp := range prop {
+		userIds = append(userIds, vProp.UserId)
+	}
+
+	usersMap := make(map[uint64]*User)
+	usersMap, err = ac.userRepo.GetUserByUserIds(ctx, userIds)
+	if nil != err {
+		return &pb.UserMarketPropListReply{
+			Status: "错误查询",
+		}, nil
+	}
+
 	for _, v := range prop {
+		addressTmp := ""
+		if _, ok := usersMap[v.UserId]; ok {
+			addressTmp = usersMap[v.UserId].Address
+		}
+
 		useNum := uint64(0)
 		if 12 == v.PropType {
 			useNum = uint64(v.ThreeOne) // 水
@@ -1344,10 +1400,11 @@ func (ac *AppUsecase) UserMarketPropList(ctx context.Context, address string, re
 		}
 
 		res = append(res, &pb.UserMarketPropListReply_List{
-			Id:     v.ID,
-			Num:    uint64(v.PropType),
-			Amount: v.SellAmount,
-			UseMax: useNum,
+			Id:      v.ID,
+			Num:     uint64(v.PropType),
+			Amount:  v.SellAmount,
+			UseMax:  useNum,
+			Address: addressTmp,
 		})
 	}
 
@@ -1458,6 +1515,7 @@ func (ac *AppUsecase) UserMyMarketList(ctx context.Context, address string, req 
 			Amount:     vSeed.SellAmount,
 			RentAmount: 0,
 			Time:       vSeed.OutOverTime,
+			Address:    address,
 		})
 	}
 
@@ -1497,6 +1555,7 @@ func (ac *AppUsecase) UserMyMarketList(ctx context.Context, address string, req 
 			MaxHealth:  0,
 			Amount:     vProp.SellAmount,
 			RentAmount: 0,
+			Address:    address,
 		})
 	}
 
@@ -1530,6 +1589,7 @@ func (ac *AppUsecase) UserMyMarketList(ctx context.Context, address string, req 
 			RentAmount: vLand.RentOutPutRate,
 			PerHealth:  vLand.PerHealth,
 			OutPutRate: uint64(vLand.OutPutRate),
+			Address:    address,
 		})
 	}
 
