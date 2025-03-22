@@ -463,6 +463,7 @@ message UserLandReply {
 		uint64 status = 4; // 状态：默认1,种植2, 出租中3，出售中4，拍卖中5，左上角显示对应的英文文案，在资源里找对应的图
 		double outRate = 5; // 增产率
 		uint64 perHealth = 6; // 种植消耗
+		uint64 rentAmount = 10;
 		uint64 one = 7; // 可出租
 		uint64 two = 8; // 可合成
 		uint64 three = 9; // 可出售
