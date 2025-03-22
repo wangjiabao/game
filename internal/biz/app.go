@@ -5390,7 +5390,11 @@ func (ac *AppUsecase) BuyLandRecord(ctx context.Context, addreses string, req *p
 	return &pb.BuyLandRecordReply{Status: "ok", List: res}, nil
 }
 
+var BuyLandR sync.Mutex
+
 func (ac *AppUsecase) BuyLand(ctx context.Context, addreses string, req *pb.BuyLandRequest) (*pb.BuyLandReply, error) {
+	BuyLandR.Lock()
+	defer BuyLandR.Unlock()
 	var (
 		user          *User
 		err           error
