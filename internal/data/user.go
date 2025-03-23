@@ -1601,7 +1601,6 @@ func (u *UserRepo) GetStakeGetPlayRecordsByUserID(ctx context.Context, userID ui
 
 	res := make([]*biz.StakeGetPlayRecord, 0)
 	instance := u.data.DB(ctx).Table("stake_get_play_record").
-		Where("user_id = ?", userID).
 		Order("id desc")
 
 	if 0 < status {
