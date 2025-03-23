@@ -5133,7 +5133,7 @@ func (ac *AppUsecase) SetBuyLand(ctx context.Context, req *pb.SetBuyLandRequest)
 		landInfos  map[uint64]*LandInfo
 	)
 
-	landBuy, err = ac.userRepo.GetBuyLandById(ctx)
+	landBuy, err = ac.userRepo.GetSetBuyLandById(ctx)
 	if nil != err {
 		return &pb.SetBuyLandReply{}, nil
 	}
