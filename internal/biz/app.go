@@ -3168,9 +3168,10 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 	}
 
 	current := time.Now().Unix()
-	if uint64(current) < landUserUse.OverTime {
+	// todo
+	if uint64(current) < landUserUse.OverTime+3600 {
 		return &pb.LandPlaySixReply{
-			Status: "还未成熟",
+			Status: "成熟1小时后可以铲除",
 		}, nil
 	}
 
