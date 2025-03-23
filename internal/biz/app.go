@@ -5475,6 +5475,10 @@ func (ac *AppUsecase) BuyLand(ctx context.Context, addreses string, req *pb.BuyL
 			if newLandRecord.Amount >= float64(amountTmp) {
 				return &pb.BuyLandReply{Status: "出价低于当前最高价"}, nil
 			}
+		} else {
+			if landBuy.Amount >= float64(amountTmp) {
+				return &pb.BuyLandReply{Status: "出价低于当前竞拍价"}, nil
+			}
 		}
 
 		if uint64(user.Git) < amountTmp {
