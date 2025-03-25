@@ -56,6 +56,50 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Status'
+    /api/app_server/buy_land:
+        post:
+            tags:
+                - App
+            description: 购买盲盒
+            operationId: App_BuyLand
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/BuyLandRequest_SendBody'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/BuyLandReply'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /api/app_server/buy_land_record:
+        get:
+            tags:
+                - App
+            description: 购买盲盒
+            operationId: App_BuyLandRecord
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/BuyLandRecordReply'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
     /api/app_server/eth_authorize:
         post:
             tags:
@@ -99,6 +143,25 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/ExchangeReply'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /api/app_server/get_buy_land:
+        get:
+            tags:
+                - App
+            description: 购买盲盒
+            operationId: App_GetBuyLand
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetBuyLandReply'
                 default:
                     description: Default error response
                     content:
@@ -424,6 +487,25 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/SellReply'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /api/app_server/set_buy_land:
+        get:
+            tags:
+                - App
+            description: 购买盲盒
+            operationId: App_SetBuyLand
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SetBuyLandReply'
                 default:
                     description: Default error response
                     content:
@@ -1061,6 +1143,39 @@ components:
                     type: string
                 sign:
                     type: string
+        BuyLandRecordReply:
+            type: object
+            properties:
+                status:
+                    type: string
+                list:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/BuyLandRecordReply_List'
+        BuyLandRecordReply_List:
+            type: object
+            properties:
+                address:
+                    type: string
+                amount:
+                    type: number
+                    format: double
+                createdAt:
+                    type: string
+        BuyLandReply:
+            type: object
+            properties:
+                status:
+                    type: string
+        BuyLandRequest_SendBody:
+            type: object
+            properties:
+                sign:
+                    type: string
+                amount:
+                    type: string
+                buyType:
+                    type: string
         BuyReply:
             type: object
             properties:
@@ -1102,6 +1217,23 @@ components:
                 amount:
                     type: string
                 sign:
+                    type: string
+        GetBuyLandReply:
+            type: object
+            properties:
+                status:
+                    type: string
+                amount:
+                    type: number
+                    format: double
+                amountOne:
+                    type: number
+                    format: double
+                limit:
+                    type: string
+                level:
+                    type: string
+                now:
                     type: string
         GetLandReply:
             type: object
@@ -1317,6 +1449,9 @@ components:
                     type: string
                 sign:
                     type: string
+        SetBuyLandReply:
+            type: object
+            properties: {}
         SetGitReply:
             type: object
             properties:
@@ -1608,6 +1743,9 @@ components:
                     format: double
                 perHealth:
                     type: string
+                rentAmount:
+                    type: number
+                    format: double
                 one:
                     type: string
                 two:
@@ -1641,6 +1779,8 @@ components:
                     type: string
                 outPutRate:
                     type: string
+                address:
+                    type: string
         UserMarketPropListReply:
             type: object
             properties:
@@ -1663,6 +1803,8 @@ components:
                     type: number
                     format: double
                 useMax:
+                    type: string
+                address:
                     type: string
         UserMarketRentLandListReply:
             type: object
@@ -1720,6 +1862,8 @@ components:
                     format: double
                 time:
                     type: string
+                address:
+                    type: string
         UserMyMarketListReply:
             type: object
             properties:
@@ -1734,6 +1878,8 @@ components:
         UserMyMarketListReply_List:
             type: object
             properties:
+                address:
+                    type: string
                 id:
                     type: string
                 type:

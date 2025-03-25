@@ -139,18 +139,19 @@ type BuyLand struct {
 	ID        uint64    `gorm:"primarykey;type:int"`
 	Amount    float64   `gorm:"type:decimal(65,20);not null;default:0.0"`
 	Status    uint64    `gorm:"type:int;not null;default:1;"`
-	CreatedAt time.Time `gorm:"type:datetime;default:null"`
-	UpdatedAt time.Time `gorm:"type:datetime;default:null"`
+	CreatedAt time.Time `gorm:"type:datetime;"`
+	UpdatedAt time.Time `gorm:"type:datetime;"`
 	AmountTwo float64   `gorm:"type:decimal(65,20);not null;default:0.0"`
 	Limit     uint64    `gorm:"not null;default:0"`
+	Level     uint64    `gorm:"not null;default:1"`
 }
 
 type BuyLandRecord struct {
 	ID        uint64    `gorm:"primarykey;type:int"`
 	BuyLandID uint64    `gorm:"type:int;not null;"`
 	Amount    float64   `gorm:"type:decimal(65,20);not null;default:0.0"`
-	CreatedAt time.Time `gorm:"type:datetime;default:null"`
-	UpdatedAt time.Time `gorm:"type:datetime;default:null"`
+	CreatedAt time.Time `gorm:"type:datetime;"`
+	UpdatedAt time.Time `gorm:"type:datetime;"`
 	Status    uint64    `gorm:"type:int;not null;default:1;"`
 	UserID    uint64    `gorm:"type:int;not null;"`
 }
@@ -161,8 +162,8 @@ type ExchangeRecord struct {
 	Git       float64   `gorm:"type:decimal(65,20);not null;comment:git数量"`
 	Giw       float64   `gorm:"type:decimal(65,20);not null;comment:giw数量"`
 	Fee       float64   `gorm:"type:decimal(65,20);not null;comment:手续费"`
-	CreatedAt time.Time `gorm:"type:datetime;default:null"`
-	UpdatedAt time.Time `gorm:"type:datetime;default:null"`
+	CreatedAt time.Time `gorm:"type:datetime;"`
+	UpdatedAt time.Time `gorm:"type:datetime;"`
 }
 
 type Market struct {
@@ -1600,7 +1601,6 @@ func (u *UserRepo) GetStakeGetPlayRecordsByUserID(ctx context.Context, userID ui
 
 	res := make([]*biz.StakeGetPlayRecord, 0)
 	instance := u.data.DB(ctx).Table("stake_get_play_record").
-		Where("user_id = ?", userID).
 		Order("id desc")
 
 	if 0 < status {
@@ -3160,7 +3160,7 @@ func (u *UserRepo) Withdraw(ctx context.Context, userId uint64, giw float64) err
 // GetBuyLandById 获取指定 ID 的 BuyLand 记录
 func (u *UserRepo) GetBuyLandById(ctx context.Context) (*biz.BuyLand, error) {
 	var buyLand *BuyLand
-	if err := u.data.DB(ctx).Where("status=?", 1).Order("id desc").Table("buy_land").First(&buyLand).Error; err != nil {
+	if err := u.data.DB(ctx).Where("status=?", 1).Order("id asc").Table("buy_land").First(&buyLand).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
@@ -3176,17 +3176,77 @@ func (u *UserRepo) GetBuyLandById(ctx context.Context) (*biz.BuyLand, error) {
 		UpdatedAt: buyLand.UpdatedAt,
 		AmountTwo: buyLand.AmountTwo,
 		Limit:     buyLand.Limit,
+		Level:     buyLand.Level,
 	}, nil
 }
 
+// GetSetBuyLandById 获取指定 ID 的 BuyLand 记录
+func (u *UserRepo) GetSetBuyLandById(ctx context.Context) (*biz.BuyLand, error) {
+	var buyLand *BuyLand
+	if err := u.data.DB(ctx).Where("status<=?", 3).Order("id asc").Table("buy_land").First(&buyLand).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+
+		return nil, errors.New(500, "BUY LAND ERROR", err.Error())
+	}
+
+	return &biz.BuyLand{
+		ID:        buyLand.ID,
+		Amount:    buyLand.Amount,
+		Status:    buyLand.Status,
+		CreatedAt: buyLand.CreatedAt,
+		UpdatedAt: buyLand.UpdatedAt,
+		AmountTwo: buyLand.AmountTwo,
+		Limit:     buyLand.Limit,
+		Level:     buyLand.Level,
+	}, nil
+}
+
+func (u *UserRepo) CreateBuyLandRecordOne(ctx context.Context, bl *biz.BuyLandRecord) error {
+	res := u.data.DB(ctx).Table("buy_land").Where("id=?", bl.BuyLandID).Where("status=?", 1).
+		Updates(map[string]interface{}{
+			"status":     3,
+			"updated_at": time.Now().Format("2006-01-02 15:04:05"),
+		})
+	if res.Error != nil {
+		return errors.New(500, "SetStakeGetPlaySub", "用户信息修改失败")
+	}
+
+	res = u.data.DB(ctx).Table("user").Where("id=?", bl.UserID).Where("git>=?", bl.Amount).
+		Updates(map[string]interface{}{"git": gorm.Expr("git - ?", bl.Amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "CreateBuyLandRecordOne", "用户信息修改失败")
+	}
+
+	var buyLandRecord BuyLandRecord
+	buyLandRecord.BuyLandID = bl.BuyLandID
+	buyLandRecord.UserID = bl.UserID
+	buyLandRecord.Amount = bl.Amount
+	buyLandRecord.Status = bl.Status
+
+	res = u.data.DB(ctx).Table("buy_land_record").Create(&buyLandRecord)
+	if res.Error != nil {
+		return errors.New(500, "CREATE BUY LAND RECORD ERROR", "创建拍卖记录失败")
+	}
+
+	return nil
+}
+
 func (u *UserRepo) CreateBuyLandRecord(ctx context.Context, limit uint64, bl *biz.BuyLandRecord) error {
-	res := u.data.DB(ctx).Table("buy_land").Where("id=?", bl.BuyLandID).
+	res := u.data.DB(ctx).Table("buy_land").Where("id=?", bl.BuyLandID).Where("status=?", 1).
 		Updates(map[string]interface{}{
 			"limit":      limit,
 			"updated_at": time.Now().Format("2006-01-02 15:04:05"),
 		})
 	if res.Error != nil {
 		return errors.New(500, "SetStakeGetPlaySub", "用户信息修改失败")
+	}
+
+	res = u.data.DB(ctx).Table("user").Where("id=?", bl.UserID).Where("git>=?", bl.Amount).
+		Updates(map[string]interface{}{"git": gorm.Expr("git - ?", bl.Amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "CreateBuyLandRecord", "用户信息修改失败")
 	}
 
 	var buyLandRecord BuyLandRecord
@@ -3229,4 +3289,37 @@ func (u *UserRepo) GetAllBuyLandRecords(ctx context.Context, id uint64) ([]*biz.
 	}
 
 	return res, nil
+}
+
+// BackUserGit .
+func (u *UserRepo) BackUserGit(ctx context.Context, userId, id uint64, git float64) error {
+	res := u.data.DB(ctx).Table("user").Where("id=?", userId).
+		Updates(map[string]interface{}{"git": gorm.Expr("git + ?", git), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "BackUserGit", "用户信息修改失败")
+	}
+
+	res = u.data.DB(ctx).Table("buy_land_record").Where("id=?", id).
+		Updates(map[string]interface{}{
+			"status":     4,
+			"updated_at": time.Now().Format("2006-01-02 15:04:05"),
+		})
+	if res.Error != nil {
+		return errors.New(500, "BackUserGit", "用户信息修改失败")
+	}
+
+	return nil
+}
+
+func (u *UserRepo) SetBuyLandOver(ctx context.Context, id uint64) error {
+	res := u.data.DB(ctx).Table("buy_land").Where("id=?", id).
+		Updates(map[string]interface{}{
+			"status":     4,
+			"updated_at": time.Now().Format("2006-01-02 15:04:05"),
+		})
+	if res.Error != nil {
+		return errors.New(500, "SetBuyLandOver", "用户信息修改失败")
+	}
+
+	return nil
 }

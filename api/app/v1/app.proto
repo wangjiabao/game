@@ -318,6 +318,35 @@ service App {
 			get: "/api/app_server/set_land"
 		};
 	};
+
+	//  购买盲盒
+	rpc BuyLand (BuyLandRequest) returns (BuyLandReply) {
+		option (google.api.http) = {
+			post: "/api/app_server/buy_land"
+			body: "send_body"
+		};
+	};
+
+	//  购买盲盒
+	rpc GetBuyLand (GetBuyLandRequest) returns (GetBuyLandReply) {
+		option (google.api.http) = {
+			get: "/api/app_server/get_buy_land"
+		};
+	};
+
+	//  购买盲盒
+	rpc BuyLandRecord (BuyLandRecordRequest) returns (BuyLandRecordReply) {
+		option (google.api.http) = {
+			get: "/api/app_server/buy_land_record"
+		};
+	};
+
+	//  购买盲盒
+	rpc SetBuyLand (SetBuyLandRequest) returns (SetBuyLandReply) {
+		option (google.api.http) = {
+			get: "/api/app_server/set_buy_land"
+		};
+	};
 }
 
 message TestSignRequest {
@@ -441,6 +470,7 @@ message UserLandReply {
 		uint64 status = 4; // 状态：默认1,种植2, 出租中3，出售中4，拍卖中5，左上角显示对应的英文文案，在资源里找对应的图
 		double outRate = 5; // 增产率
 		uint64 perHealth = 6; // 种植消耗
+		double rentAmount = 10;
 		uint64 one = 7; // 可出租
 		uint64 two = 8; // 可合成
 		uint64 three = 9; // 可出售
@@ -530,6 +560,7 @@ message UserMarketSeedListReply {
 		double amount = 3; // 售价
 		double outMax = 4; // 最大产出
 		uint64 time = 5;
+		string address = 99;
 	}
 }
 
@@ -550,6 +581,7 @@ message UserMarketLandListReply {
 		double amount = 3; // 售价
 		uint64 perHealth = 5; // 每次消耗肥沃度
 		uint64 outPutRate = 6; // 增产率
+		string address = 99;
 	}
 }
 
@@ -568,6 +600,7 @@ message UserMarketPropListReply {
 		uint64 num = 2; // 对应的内容：对应文档种子和道具那列从上到下，1-14，15铲子，16盲盒
 		double amount = 3; // 售价
 		uint64 useMax = 4; // 可用次数
+		string address = 99;
 	}
 }
 
@@ -601,6 +634,7 @@ message UserMyMarketListReply {
 	uint64 count = 2; // 总个数，每页1000个
 	repeated List list = 3;
 	message List {
+		string address = 99;
 		uint64 id = 1; // id 操作时需要使用的参数，显示时#000001，一共6个整数位
 		uint64 type = 5; // 1种子和道具，2土地
 
@@ -1022,4 +1056,50 @@ message SetLandRequest {
 
 message SetLandReply {
 	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
+}
+
+message GetBuyLandRequest {
+}
+
+message GetBuyLandReply {
+	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
+	double amount = 2; // 当前竞拍价
+	double amountOne = 3; // 当前竞拍价
+	uint64 limit = 4; // 竞拍结束时间 (秒级别时间戳)
+	uint64 level = 5; // 土地级别
+	uint64 now = 6; // 当前时间
+}
+
+message SetBuyLandRequest {
+}
+
+message SetBuyLandReply {
+}
+
+message BuyLandRequest {
+	message SendBody{
+		string sign = 4; // 签名
+		uint64 amount = 1; // 出价
+		uint64 buyType = 2; // 一口价1，默认0
+	}
+
+	SendBody send_body = 1;
+}
+
+message BuyLandReply {
+	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
+}
+
+message BuyLandRecordReply {
+	string status = 1; // 状态为字符串"ok"时接口正常，其他情况忽略，弹出显示该字段文案即可
+
+	repeated List list = 3;
+	message List {
+		string address = 1; // 地址
+		double amount = 3; // 参与金额
+		string createdAt = 5; // 时间
+	}
+}
+
+message BuyLandRecordRequest {
 }
