@@ -2337,7 +2337,7 @@ func (ac *AppUsecase) OpenBox(ctx context.Context, address string, req *pb.OpenB
 		// 种子
 		boxId := uint64(0)
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-			boxId, err = ac.userRepo.OpenBoxSeed(ctx, box.ID, "", &Seed{
+			boxId, err = ac.userRepo.OpenBoxSeed(ctx, box.ID, "获得种子", &Seed{
 				UserId:       user.ID,
 				SeedId:       result,
 				Name:         seedInfosMap[result].Name,
@@ -2384,7 +2384,7 @@ func (ac *AppUsecase) OpenBox(ctx context.Context, address string, req *pb.OpenB
 		// 种子
 		boxId := uint64(0)
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-			boxId, err = ac.userRepo.OpenBoxProp(ctx, box.ID, "", &Prop{
+			boxId, err = ac.userRepo.OpenBoxProp(ctx, box.ID, "获得道具", &Prop{
 				UserId:   user.ID,
 				PropType: int(result),
 				OneOne:   int(propInfosMap[result].OneOne),
