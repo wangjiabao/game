@@ -3897,81 +3897,85 @@ func (ac *AppUsecase) Buy(ctx context.Context, address string, req *pb.BuyReques
 			}, nil
 		}
 	} else if 3 == req.SendBody.BuyType {
-		var (
-			land *Land
-		)
-		land, err = ac.userRepo.GetLandByID(ctx, req.SendBody.Id)
-		if nil != err || nil == land {
-			return &pb.BuyReply{
-				Status: "不存道具",
-			}, nil
-		}
+		return &pb.BuyReply{
+			Status: "暂未开放",
+		}, nil
 
-		if user.ID == land.UserId {
-			return &pb.BuyReply{
-				Status: "不允许购买自己的",
-			}, nil
-		}
-
-		if 4 != land.Status {
-			return &pb.BuyReply{
-				Status: "未出售",
-			}, nil
-		}
-
-		if 0 >= land.SellAmount {
-			return &pb.BuyReply{
-				Status: "金额错误",
-			}, nil
-		}
-
-		if user.Git < land.SellAmount {
-			return &pb.BuyReply{
-				Status: "余额不足",
-			}, nil
-		}
-
-		// 土地
-		tmpGet := land.SellAmount - land.SellAmount*feeRate
-		if 0 >= tmpGet {
-			return &pb.BuyReply{
-				Status: "金额错误",
-			}, nil
-		}
-
-		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-			err = ac.userRepo.BuyLand(ctx, land.SellAmount, tmpGet, land.UserId, user.ID, land.ID)
-			if nil != err {
-				return err
-			}
-
-			err = ac.userRepo.CreateNotice(
-				ctx,
-				land.UserId,
-				"您购买了土地，花费"+strconv.FormatFloat(land.SellAmount, 'f', -1, 64)+"GIT",
-				"You've pay "+strconv.FormatFloat(land.SellAmount, 'f', -1, 64)+" GIT for land",
-			)
-			if nil != err {
-				return err
-			}
-
-			err = ac.userRepo.CreateNotice(
-				ctx,
-				user.ID,
-				"您出售了土地，获得"+strconv.FormatFloat(tmpGet, 'f', -1, 64)+"GIT",
-				"You've get "+strconv.FormatFloat(tmpGet, 'f', -1, 64)+" GIT for land",
-			)
-			if nil != err {
-				return err
-			}
-
-			return nil
-		}); nil != err {
-			fmt.Println(err, "buyLand", user)
-			return &pb.BuyReply{
-				Status: "购买失败",
-			}, nil
-		}
+		//var (
+		//	land *Land
+		//)
+		//land, err = ac.userRepo.GetLandByID(ctx, req.SendBody.Id)
+		//if nil != err || nil == land {
+		//	return &pb.BuyReply{
+		//		Status: "不存道具",
+		//	}, nil
+		//}
+		//
+		//if user.ID == land.UserId {
+		//	return &pb.BuyReply{
+		//		Status: "不允许购买自己的",
+		//	}, nil
+		//}
+		//
+		//if 4 != land.Status {
+		//	return &pb.BuyReply{
+		//		Status: "未出售",
+		//	}, nil
+		//}
+		//
+		//if 0 >= land.SellAmount {
+		//	return &pb.BuyReply{
+		//		Status: "金额错误",
+		//	}, nil
+		//}
+		//
+		//if user.Git < land.SellAmount {
+		//	return &pb.BuyReply{
+		//		Status: "余额不足",
+		//	}, nil
+		//}
+		//
+		//// 土地
+		//tmpGet := land.SellAmount - land.SellAmount*feeRate
+		//if 0 >= tmpGet {
+		//	return &pb.BuyReply{
+		//		Status: "金额错误",
+		//	}, nil
+		//}
+		//
+		//if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+		//	err = ac.userRepo.BuyLand(ctx, land.SellAmount, tmpGet, land.UserId, user.ID, land.ID)
+		//	if nil != err {
+		//		return err
+		//	}
+		//
+		//	err = ac.userRepo.CreateNotice(
+		//		ctx,
+		//		land.UserId,
+		//		"您购买了土地，花费"+strconv.FormatFloat(land.SellAmount, 'f', -1, 64)+"GIT",
+		//		"You've pay "+strconv.FormatFloat(land.SellAmount, 'f', -1, 64)+" GIT for land",
+		//	)
+		//	if nil != err {
+		//		return err
+		//	}
+		//
+		//	err = ac.userRepo.CreateNotice(
+		//		ctx,
+		//		user.ID,
+		//		"您出售了土地，获得"+strconv.FormatFloat(tmpGet, 'f', -1, 64)+"GIT",
+		//		"You've get "+strconv.FormatFloat(tmpGet, 'f', -1, 64)+" GIT for land",
+		//	)
+		//	if nil != err {
+		//		return err
+		//	}
+		//
+		//	return nil
+		//}); nil != err {
+		//	fmt.Println(err, "buyLand", user)
+		//	return &pb.BuyReply{
+		//		Status: "购买失败",
+		//	}, nil
+		//}
 	} else {
 		return &pb.BuyReply{
 			Status: "参数错误",
@@ -4055,48 +4059,52 @@ func (ac *AppUsecase) Sell(ctx context.Context, address string, req *pb.SellRequ
 				}, nil
 			}
 		} else if 3 == req.SendBody.SellType {
-			var (
-				land *Land
-			)
-			land, err = ac.userRepo.GetLandByID(ctx, req.SendBody.Id)
-			if nil != err || nil == land {
-				return &pb.SellReply{
-					Status: "不存在土地",
-				}, nil
-			}
+			return &pb.SellReply{
+				Status: "暂未开放",
+			}, nil
 
-			if user.ID != land.UserId {
-				return &pb.SellReply{
-					Status: "不是自己的",
-				}, nil
-			}
-
-			if 0 != land.LocationNum {
-				return &pb.SellReply{
-					Status: "土地布置中",
-				}, nil
-			}
-
-			if 0 != land.Status {
-				return &pb.SellReply{
-					Status: "不符合上架状态",
-				}, nil
-			}
-
-			if 1 != land.Three {
-				return &pb.SellReply{
-					Status: "不可出售土地",
-				}, nil
-			}
-
-			if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-				return ac.userRepo.SellLand(ctx, land.ID, user.ID, tmpSellAmount)
-			}); nil != err {
-				fmt.Println(err, "sellProp", user)
-				return &pb.SellReply{
-					Status: "上架失败",
-				}, nil
-			}
+			//var (
+			//	land *Land
+			//)
+			//land, err = ac.userRepo.GetLandByID(ctx, req.SendBody.Id)
+			//if nil != err || nil == land {
+			//	return &pb.SellReply{
+			//		Status: "不存在土地",
+			//	}, nil
+			//}
+			//
+			//if user.ID != land.UserId {
+			//	return &pb.SellReply{
+			//		Status: "不是自己的",
+			//	}, nil
+			//}
+			//
+			//if 0 != land.LocationNum {
+			//	return &pb.SellReply{
+			//		Status: "土地布置中",
+			//	}, nil
+			//}
+			//
+			//if 0 != land.Status {
+			//	return &pb.SellReply{
+			//		Status: "不符合上架状态",
+			//	}, nil
+			//}
+			//
+			//if 1 != land.Three {
+			//	return &pb.SellReply{
+			//		Status: "不可出售土地",
+			//	}, nil
+			//}
+			//
+			//if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+			//	return ac.userRepo.SellLand(ctx, land.ID, user.ID, tmpSellAmount)
+			//}); nil != err {
+			//	fmt.Println(err, "sellProp", user)
+			//	return &pb.SellReply{
+			//		Status: "上架失败",
+			//	}, nil
+			//}
 		} else {
 			return &pb.SellReply{
 				Status: "参数错误",
@@ -4154,42 +4162,46 @@ func (ac *AppUsecase) Sell(ctx context.Context, address string, req *pb.SellRequ
 				}, nil
 			}
 		} else if 3 == req.SendBody.SellType {
-			var (
-				land *Land
-			)
-			land, err = ac.userRepo.GetLandByID(ctx, req.SendBody.Id)
-			if nil != err || nil == land {
-				return &pb.SellReply{
-					Status: "不存在土地",
-				}, nil
-			}
+			return &pb.SellReply{
+				Status: "暂未开放",
+			}, nil
 
-			if user.ID != land.UserId {
-				return &pb.SellReply{
-					Status: "不是自己的",
-				}, nil
-			}
-
-			if 0 != land.LocationNum {
-				return &pb.SellReply{
-					Status: "土地布置中",
-				}, nil
-			}
-
-			if 4 != land.Status {
-				return &pb.SellReply{
-					Status: "不符合下架要求",
-				}, nil
-			}
-
-			if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-				return ac.userRepo.UnSellLand(ctx, land.ID, user.ID)
-			}); nil != err {
-				fmt.Println(err, "unSellLand", user)
-				return &pb.SellReply{
-					Status: "下架失败",
-				}, nil
-			}
+			//var (
+			//	land *Land
+			//)
+			//land, err = ac.userRepo.GetLandByID(ctx, req.SendBody.Id)
+			//if nil != err || nil == land {
+			//	return &pb.SellReply{
+			//		Status: "不存在土地",
+			//	}, nil
+			//}
+			//
+			//if user.ID != land.UserId {
+			//	return &pb.SellReply{
+			//		Status: "不是自己的",
+			//	}, nil
+			//}
+			//
+			//if 0 != land.LocationNum {
+			//	return &pb.SellReply{
+			//		Status: "土地布置中",
+			//	}, nil
+			//}
+			//
+			//if 4 != land.Status {
+			//	return &pb.SellReply{
+			//		Status: "不符合下架要求",
+			//	}, nil
+			//}
+			//
+			//if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+			//	return ac.userRepo.UnSellLand(ctx, land.ID, user.ID)
+			//}); nil != err {
+			//	fmt.Println(err, "unSellLand", user)
+			//	return &pb.SellReply{
+			//		Status: "下架失败",
+			//	}, nil
+			//}
 		} else {
 			return &pb.SellReply{
 				Status: "参数错误",
@@ -5164,7 +5176,7 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 		}
 
 		return &pb.StakeGetPlayReply{Status: "ok", PlayStatus: 1, Amount: tmpGit}, nil
-	} else { // 输：下注金额加入池子
+	} else {                                                         // 输：下注金额加入池子
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 			err = ac.userRepo.SetStakeGetPlaySub(ctx, user.ID, float64(req.SendBody.Amount))
 			if nil != err {
