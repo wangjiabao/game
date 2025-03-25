@@ -959,6 +959,8 @@ func (ac *AppUsecase) UserLand(ctx context.Context, address string, req *pb.User
 			One:        v.One,
 			Two:        v.Two,
 			Three:      v.Three,
+			Content:    "在Magic Manor大陆最肥沃的土地，由神秘的地契合成，层叠强大的成长性，任何劣质的种子都可以得到茁壮的成长。",
+			EContent:   "The most fertile land in the Magic Manorcontinent is composed of mysterious landdeeds. lt has strong growth potential, andany low-quality seeds can grow vigorously.",
 		})
 	}
 
@@ -1147,14 +1149,16 @@ func (ac *AppUsecase) UserBackList(ctx context.Context, address string, req *pb.
 		}
 
 		res = append(res, &pb.UserBackListReply_List{
-			Id:     vSeed.ID,
-			Type:   1,
-			Num:    vSeed.SeedId,
-			UseNum: 0,
-			Status: tmpStatus,
-			OutMax: vSeed.OutMaxAmount,
-			Time:   vSeed.OutOverTime,
-			Amount: vSeed.SellAmount,
+			Id:       vSeed.ID,
+			Type:     1,
+			Num:      vSeed.SeedId,
+			UseNum:   0,
+			Status:   tmpStatus,
+			OutMax:   vSeed.OutMaxAmount,
+			Time:     vSeed.OutOverTime,
+			Amount:   vSeed.SellAmount,
+			Content:  "一种来自区块链世界算法加密的种子，打开盲盒或合成获得，每一颗种子都不同，找到适合他的土地后，会有惊人的产出！",
+			EContent: "A seed from the blockchain world algorithm encryption, open the blind box or synthetic access, each seed is different, find suitable for his land, there will be amazing output!",
 		})
 	}
 
@@ -1173,24 +1177,42 @@ func (ac *AppUsecase) UserBackList(ctx context.Context, address string, req *pb.
 	for _, vProp := range prop {
 
 		useNum := uint64(0)
+		contentTmp := ""
+		eContentTmp := ""
 		if 12 == vProp.PropType {
 			useNum = uint64(vProp.ThreeOne) // 水
+			contentTmp = "一种植物在成长过程中也许会用到的特殊用水，缺水的植物会停止成长，使用后您的植物将永远不会缺水。"
+			eContentTmp = "A plant may use special water duringits growth. Plants that are short ofwater will stop growing. After using it,your plants will never be short of water."
 		} else if 13 == vProp.PropType {
 			useNum = uint64(vProp.FiveOne) // 手套
+			contentTmp = "带上手套后，可偷取任何邻居家的已经成熟的植物，可获得一定的GIT，但是使用的次数有限。"
+			eContentTmp = "After wearing gloves, you can stealany mature plants from your neighbor'shouse and obtain a certain amount ofGlT, but the number of uses is limited."
 		} else if 14 == vProp.PropType {
 			useNum = uint64(vProp.FourOne) // 除虫剂
+			contentTmp = "由Magic Manor大陆中的巫师制作，不除虫子的植物，每5分钟减产1%;直到最后为产量为0，它可以杀死Magic Manor大陆中的任何害虫。"
+			eContentTmp = "Made by wizards in the Magic Manorcontinent, plants that do not eliminateinsects will reduce their yield by 1% every5 minutes; until the final yield is O, it can killany pests in the Magic Manor continent."
 		} else if 15 == vProp.PropType {
 			useNum = uint64(vProp.TwoOne) // 铲子
+			contentTmp = "可铲除出租土地上已经成熟的植物，不可铲除自己种植的植物，但是成熟时间必须大于1H。"
+			eContentTmp = "Mature plants on the leased land canbe eradicated, but self-grown plantscannot be eradicated, but the maturitytime must be greater than 1H."
+		} else if 11 == vProp.PropType {
+			contentTmp = "一种通过算法生成的增加产量道具，合成士地和增加土地肥沃度。"
+			eContentTmp = "An algorithmically generated item thatincreases yield, synthesizes land, andincreases land fertility."
+		} else if 17 == vProp.PropType {
+			contentTmp = "在Magic Manor大陆深处埋徵着一张”地契”，它是初创统治者亲手制作，代表着整个Magic Manor最肥沃的土地，找到它的人不仅可以拥有土地，还能解锁谷中隐藏的古老秘密。\n\t\t获取方式:每新增1亿GIT产出业绩，自动获得1张地契:作用:1张地契加5块化肥，可合成一个崭新的1级土地;地契描述"
+			eContentTmp = "There is a \"land deed\" buried deep in the Magic Manorcontinent. lt was made by the original ruler himself andrepresents the most fertile land in the entire MagicManor. Whoever finds it will not only claim the land, butalso unlock ancient secrets hidden within the valley.How to obtain: For every 100 milion new GlT outputs,you will automatically obtain a land deed;Function: 1 land deed and 5 fertilizers can be combinedinto a brand new level 1 land."
 		}
 
 		res = append(res, &pb.UserBackListReply_List{
-			Id:     vProp.ID,
-			Type:   2,
-			Num:    uint64(vProp.PropType),
-			UseNum: useNum,
-			Status: uint64(vProp.Status),
-			OutMax: 0,
-			Amount: vProp.SellAmount,
+			Id:       vProp.ID,
+			Type:     2,
+			Num:      uint64(vProp.PropType),
+			UseNum:   useNum,
+			Status:   uint64(vProp.Status),
+			OutMax:   0,
+			Amount:   vProp.SellAmount,
+			Content:  contentTmp,
+			EContent: eContentTmp,
 		})
 	}
 
@@ -1268,12 +1290,14 @@ func (ac *AppUsecase) UserMarketSeedList(ctx context.Context, address string, re
 		}
 
 		res = append(res, &pb.UserMarketSeedListReply_List{
-			Id:      vSeed.ID,
-			Num:     vSeed.SeedId,
-			Amount:  vSeed.SellAmount,
-			OutMax:  vSeed.OutMaxAmount,
-			Time:    vSeed.OutOverTime,
-			Address: addressTmp,
+			Id:       vSeed.ID,
+			Num:      vSeed.SeedId,
+			Amount:   vSeed.SellAmount,
+			OutMax:   vSeed.OutMaxAmount,
+			Time:     vSeed.OutOverTime,
+			Address:  addressTmp,
+			Content:  "一种来自区块链世界算法加密的种子，打开盲盒或合成获得，每一颗种子都不同，找到适合他的土地后，会有惊人的产出！",
+			EContent: "A seed from the blockchain world algorithm encryption, open the blind box or synthetic access, each seed is different, find suitable for his land, there will be amazing output!",
 		})
 	}
 
@@ -1336,6 +1360,8 @@ func (ac *AppUsecase) UserMarketLandList(ctx context.Context, address string, re
 			PerHealth:  vLand.PerHealth,
 			OutPutRate: uint64(vLand.OutPutRate),
 			Address:    addressTmp,
+			Content:    "在Magic Manor大陆最肥沃的土地，由神秘的地契合成，层叠强大的成长性，任何劣质的种子都可以得到茁壮的成长。",
+			EContent:   "The most fertile land in the Magic Manorcontinent is composed of mysterious landdeeds. lt has strong growth potential, andany low-quality seeds can grow vigorously.",
 		})
 	}
 
@@ -1392,22 +1418,40 @@ func (ac *AppUsecase) UserMarketPropList(ctx context.Context, address string, re
 		}
 
 		useNum := uint64(0)
+		contentTmp := ""
+		eContentTmp := ""
 		if 12 == v.PropType {
 			useNum = uint64(v.ThreeOne) // 水
+			contentTmp = "一种植物在成长过程中也许会用到的特殊用水，缺水的植物会停止成长，使用后您的植物将永远不会缺水。"
+			eContentTmp = "A plant may use special water duringits growth. Plants that are short ofwater will stop growing. After using it,your plants will never be short of water."
 		} else if 13 == v.PropType {
 			useNum = uint64(v.FiveOne) // 手套
+			contentTmp = "带上手套后，可偷取任何邻居家的已经成熟的植物，可获得一定的GIT，但是使用的次数有限。"
+			eContentTmp = "After wearing gloves, you can stealany mature plants from your neighbor'shouse and obtain a certain amount ofGlT, but the number of uses is limited."
 		} else if 14 == v.PropType {
 			useNum = uint64(v.FourOne) // 除虫剂
+			contentTmp = "由Magic Manor大陆中的巫师制作，不除虫子的植物，每5分钟减产1%;直到最后为产量为0，它可以杀死Magic Manor大陆中的任何害虫。"
+			eContentTmp = "Made by wizards in the Magic Manorcontinent, plants that do not eliminateinsects will reduce their yield by 1% every5 minutes; until the final yield is O, it can killany pests in the Magic Manor continent."
 		} else if 15 == v.PropType {
 			useNum = uint64(v.TwoOne) // 铲子
+			contentTmp = "可铲除出租土地上已经成熟的植物，不可铲除自己种植的植物，但是成熟时间必须大于1H。"
+			eContentTmp = "Mature plants on the leased land canbe eradicated, but self-grown plantscannot be eradicated, but the maturitytime must be greater than 1H."
+		} else if 11 == v.PropType {
+			contentTmp = "一种通过算法生成的增加产量道具，合成士地和增加土地肥沃度。"
+			eContentTmp = "An algorithmically generated item thatincreases yield, synthesizes land, andincreases land fertility."
+		} else if 17 == v.PropType {
+			contentTmp = "在Magic Manor大陆深处埋徵着一张”地契”，它是初创统治者亲手制作，代表着整个Magic Manor最肥沃的土地，找到它的人不仅可以拥有土地，还能解锁谷中隐藏的古老秘密。\n\t\t获取方式:每新增1亿GIT产出业绩，自动获得1张地契:作用:1张地契加5块化肥，可合成一个崭新的1级土地;地契描述"
+			eContentTmp = "There is a \"land deed\" buried deep in the Magic Manorcontinent. lt was made by the original ruler himself andrepresents the most fertile land in the entire MagicManor. Whoever finds it will not only claim the land, butalso unlock ancient secrets hidden within the valley.How to obtain: For every 100 milion new GlT outputs,you will automatically obtain a land deed;Function: 1 land deed and 5 fertilizers can be combinedinto a brand new level 1 land."
 		}
 
 		res = append(res, &pb.UserMarketPropListReply_List{
-			Id:      v.ID,
-			Num:     uint64(v.PropType),
-			Amount:  v.SellAmount,
-			UseMax:  useNum,
-			Address: addressTmp,
+			Id:       v.ID,
+			Num:      uint64(v.PropType),
+			Amount:   v.SellAmount,
+			UseMax:   useNum,
+			Address:  addressTmp,
+			Content:  contentTmp,
+			EContent: eContentTmp,
 		})
 	}
 
@@ -1470,6 +1514,8 @@ func (ac *AppUsecase) UserMarketRentLandList(ctx context.Context, address string
 			Address:    addressTmp,
 			OutPutRate: vLand.OutPutRate,
 			PerHealth:  vLand.PerHealth,
+			Content:    "在Magic Manor大陆最肥沃的土地，由神秘的地契合成，层叠强大的成长性，任何劣质的种子都可以得到茁壮的成长。",
+			EContent:   "The most fertile land in the Magic Manorcontinent is composed of mysterious landdeeds. lt has strong growth potential, andany low-quality seeds can grow vigorously.",
 		})
 	}
 
@@ -1519,6 +1565,8 @@ func (ac *AppUsecase) UserMyMarketList(ctx context.Context, address string, req 
 			RentAmount: 0,
 			Time:       vSeed.OutOverTime,
 			Address:    address,
+			Content:    "一种来自区块链世界算法加密的种子，打开盲盒或合成获得，每一颗种子都不同，找到适合他的土地后，会有惊人的产出！",
+			EContent:   "A seed from the blockchain world algorithm encryption, open the blind box or synthetic access, each seed is different, find suitable for his land, there will be amazing output!",
 		})
 	}
 
@@ -1537,14 +1585,30 @@ func (ac *AppUsecase) UserMyMarketList(ctx context.Context, address string, req 
 	for _, vProp := range prop {
 
 		useNum := uint64(0)
+		contentTmp := ""
+		eContentTmp := ""
 		if 12 == vProp.PropType {
 			useNum = uint64(vProp.ThreeOne) // 水
+			contentTmp = "一种植物在成长过程中也许会用到的特殊用水，缺水的植物会停止成长，使用后您的植物将永远不会缺水。"
+			eContentTmp = "A plant may use special water duringits growth. Plants that are short ofwater will stop growing. After using it,your plants will never be short of water."
 		} else if 13 == vProp.PropType {
 			useNum = uint64(vProp.FiveOne) // 手套
+			contentTmp = "带上手套后，可偷取任何邻居家的已经成熟的植物，可获得一定的GIT，但是使用的次数有限。"
+			eContentTmp = "After wearing gloves, you can stealany mature plants from your neighbor'shouse and obtain a certain amount ofGlT, but the number of uses is limited."
 		} else if 14 == vProp.PropType {
 			useNum = uint64(vProp.FourOne) // 除虫剂
+			contentTmp = "由Magic Manor大陆中的巫师制作，不除虫子的植物，每5分钟减产1%;直到最后为产量为0，它可以杀死Magic Manor大陆中的任何害虫。"
+			eContentTmp = "Made by wizards in the Magic Manorcontinent, plants that do not eliminateinsects will reduce their yield by 1% every5 minutes; until the final yield is O, it can killany pests in the Magic Manor continent."
 		} else if 15 == vProp.PropType {
 			useNum = uint64(vProp.TwoOne) // 铲子
+			contentTmp = "可铲除出租土地上已经成熟的植物，不可铲除自己种植的植物，但是成熟时间必须大于1H。"
+			eContentTmp = "Mature plants on the leased land canbe eradicated, but self-grown plantscannot be eradicated, but the maturitytime must be greater than 1H."
+		} else if 11 == vProp.PropType {
+			contentTmp = "一种通过算法生成的增加产量道具，合成士地和增加土地肥沃度。"
+			eContentTmp = "An algorithmically generated item thatincreases yield, synthesizes land, andincreases land fertility."
+		} else if 17 == vProp.PropType {
+			contentTmp = "在Magic Manor大陆深处埋徵着一张”地契”，它是初创统治者亲手制作，代表着整个Magic Manor最肥沃的土地，找到它的人不仅可以拥有土地，还能解锁谷中隐藏的古老秘密。\n\t\t获取方式:每新增1亿GIT产出业绩，自动获得1张地契:作用:1张地契加5块化肥，可合成一个崭新的1级土地;地契描述"
+			eContentTmp = "There is a \"land deed\" buried deep in the Magic Manorcontinent. lt was made by the original ruler himself andrepresents the most fertile land in the entire MagicManor. Whoever finds it will not only claim the land, butalso unlock ancient secrets hidden within the valley.How to obtain: For every 100 milion new GlT outputs,you will automatically obtain a land deed;Function: 1 land deed and 5 fertilizers can be combinedinto a brand new level 1 land."
 		}
 
 		res = append(res, &pb.UserMyMarketListReply_List{
@@ -1559,6 +1623,8 @@ func (ac *AppUsecase) UserMyMarketList(ctx context.Context, address string, req 
 			Amount:     vProp.SellAmount,
 			RentAmount: 0,
 			Address:    address,
+			Content:    contentTmp,
+			EContent:   eContentTmp,
 		})
 	}
 
@@ -1593,6 +1659,8 @@ func (ac *AppUsecase) UserMyMarketList(ctx context.Context, address string, req 
 			PerHealth:  vLand.PerHealth,
 			OutPutRate: uint64(vLand.OutPutRate),
 			Address:    address,
+			Content:    "在Magic Manor大陆最肥沃的土地，由神秘的地契合成，层叠强大的成长性，任何劣质的种子都可以得到茁壮的成长。",
+			EContent:   "The most fertile land in the Magic Manorcontinent is composed of mysterious landdeeds. lt has strong growth potential, andany low-quality seeds can grow vigorously.",
 		})
 	}
 

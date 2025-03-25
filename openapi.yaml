@@ -60,7 +60,6 @@ paths:
         post:
             tags:
                 - App
-            description: 购买盲盒
             operationId: App_BuyLand
             requestBody:
                 content:
@@ -85,7 +84,6 @@ paths:
         get:
             tags:
                 - App
-            description: 购买盲盒
             operationId: App_BuyLandRecord
             responses:
                 "200":
@@ -153,7 +151,6 @@ paths:
         get:
             tags:
                 - App
-            description: 购买盲盒
             operationId: App_GetBuyLand
             responses:
                 "200":
@@ -497,7 +494,6 @@ paths:
         get:
             tags:
                 - App
-            description: 购买盲盒
             operationId: App_SetBuyLand
             responses:
                 "200":
@@ -1567,6 +1563,10 @@ components:
                 amount:
                     type: number
                     format: double
+                content:
+                    type: string
+                eContent:
+                    type: string
         UserBoxListReply:
             type: object
             properties:
@@ -1752,6 +1752,10 @@ components:
                     type: string
                 three:
                     type: string
+                content:
+                    type: string
+                eContent:
+                    type: string
         UserMarketLandListReply:
             type: object
             properties:
@@ -1781,6 +1785,10 @@ components:
                     type: string
                 address:
                     type: string
+                content:
+                    type: string
+                eContent:
+                    type: string
         UserMarketPropListReply:
             type: object
             properties:
@@ -1805,6 +1813,10 @@ components:
                 useMax:
                     type: string
                 address:
+                    type: string
+                content:
+                    type: string
+                eContent:
                     type: string
         UserMarketRentLandListReply:
             type: object
@@ -1836,6 +1848,10 @@ components:
                     format: double
                 perHealth:
                     type: string
+                content:
+                    type: string
+                eContent:
+                    type: string
         UserMarketSeedListReply:
             type: object
             properties:
@@ -1863,6 +1879,10 @@ components:
                 time:
                     type: string
                 address:
+                    type: string
+                content:
+                    type: string
+                eContent:
                     type: string
         UserMyMarketListReply:
             type: object
@@ -1909,6 +1929,10 @@ components:
                 rentAmount:
                     type: number
                     format: double
+                content:
+                    type: string
+                eContent:
+                    type: string
         UserNoticeListReply:
             type: object
             properties:

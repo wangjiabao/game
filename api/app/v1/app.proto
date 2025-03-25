@@ -319,7 +319,6 @@ service App {
 		};
 	};
 
-	//  购买盲盒
 	rpc BuyLand (BuyLandRequest) returns (BuyLandReply) {
 		option (google.api.http) = {
 			post: "/api/app_server/buy_land"
@@ -327,21 +326,18 @@ service App {
 		};
 	};
 
-	//  购买盲盒
 	rpc GetBuyLand (GetBuyLandRequest) returns (GetBuyLandReply) {
 		option (google.api.http) = {
 			get: "/api/app_server/get_buy_land"
 		};
 	};
 
-	//  购买盲盒
 	rpc BuyLandRecord (BuyLandRecordRequest) returns (BuyLandRecordReply) {
 		option (google.api.http) = {
 			get: "/api/app_server/buy_land_record"
 		};
 	};
 
-	//  购买盲盒
 	rpc SetBuyLand (SetBuyLandRequest) returns (SetBuyLandReply) {
 		option (google.api.http) = {
 			get: "/api/app_server/set_buy_land"
@@ -474,6 +470,8 @@ message UserLandReply {
 		uint64 one = 7; // 可出租
 		uint64 two = 8; // 可合成
 		uint64 three = 9; // 可出售
+		string content = 11;
+		string eContent = 12;
 	}
 }
 
@@ -542,6 +540,8 @@ message UserBackListReply {
 		double outMax = 6; // 如果是种子，需要展示的产出数量
 		uint64 time = 7;
 		double amount = 8;
+		string content = 10;
+		string eContent = 12;
 	}
 }
 
@@ -561,6 +561,8 @@ message UserMarketSeedListReply {
 		double outMax = 4; // 最大产出
 		uint64 time = 5;
 		string address = 99;
+		string content = 7;
+		string eContent = 12;
 	}
 }
 
@@ -582,6 +584,8 @@ message UserMarketLandListReply {
 		uint64 perHealth = 5; // 每次消耗肥沃度
 		uint64 outPutRate = 6; // 增产率
 		string address = 99;
+		string content = 50;
+		string eContent = 12;
 	}
 }
 
@@ -601,6 +605,8 @@ message UserMarketPropListReply {
 		double amount = 3; // 售价
 		uint64 useMax = 4; // 可用次数
 		string address = 99;
+		string content = 50;
+		string eContent = 12;
 	}
 }
 
@@ -621,6 +627,8 @@ message UserMarketRentLandListReply {
 		string address = 5;
 		double outPutRate = 6;
 		uint64 perHealth = 7;
+		string content = 50;
+		string eContent = 12;
 	}
 }
 
@@ -652,6 +660,8 @@ message UserMyMarketListReply {
 		double amount = 8; // 售价
 
 		double rentAmount = 10; // 如果是土地，出租收益
+		string content = 50;
+		string eContent = 51;
 	}
 }
 
