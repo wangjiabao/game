@@ -1712,6 +1712,7 @@ func (ac *AppUsecase) UserNoticeList(ctx context.Context, address string, req *p
 
 	for _, vNotice := range notice {
 		res = append(res, &pb.UserNoticeListReply_List{
+			EContent:  vNotice.NoticeContentTwo,
 			Content:   vNotice.NoticeContent,
 			CreatedAt: vNotice.CreatedAt.Add(8 * time.Hour).Format("2006-01-02 15:04:05"),
 		})
@@ -2346,6 +2347,17 @@ func (ac *AppUsecase) OpenBox(ctx context.Context, address string, req *pb.OpenB
 			if nil != err {
 				return err
 			}
+
+			//err = ac.userRepo.CreateNotice(
+			//	ctx,
+			//	user.ID,
+			//	"您开盒子获得了, 种子",
+			//	"You've get seed from box",
+			//)
+			//if nil != err {
+			//	return err
+			//}
+
 			return nil
 		}); nil != err {
 			fmt.Println(err, "openBox", user)
@@ -2386,6 +2398,17 @@ func (ac *AppUsecase) OpenBox(ctx context.Context, address string, req *pb.OpenB
 			if nil != err {
 				return err
 			}
+
+			//err = ac.userRepo.CreateNotice(
+			//	ctx,
+			//	user.ID,
+			//	"您开盒子获得了, 道具",
+			//	"You've get prop from box",
+			//)
+			//if nil != err {
+			//	return err
+			//}
+
 			return nil
 		}); nil != err {
 			fmt.Println(err, "openBox", user)
@@ -2775,8 +2798,8 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 		err = ac.userRepo.CreateNotice(
 			ctx,
 			rentUserId,
-			"您收获了"+strconv.FormatFloat(reward, 'f', -1, 64)+"GIT",
-			"You've harvest "+strconv.FormatFloat(reward, 'f', -1, 64)+" GIT",
+			"您收获了"+strconv.FormatFloat(rentReward, 'f', -1, 64)+"GIT",
+			"You've harvest "+strconv.FormatFloat(rentReward, 'f', -1, 64)+" GIT",
 		)
 		if nil != err {
 			return err
@@ -2814,6 +2837,16 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 				if nil != err {
 					return err
 				}
+
+				err = ac.userRepo.CreateNotice(
+					ctx,
+					uint64(tmpUserId),
+					"您收获了"+strconv.FormatFloat(reward, 'f', -1, 64)+"GIT",
+					"You've harvest "+strconv.FormatFloat(reward, 'f', -1, 64)+" GIT",
+				)
+				if nil != err {
+					return err
+				}
 			}
 		}
 
@@ -2846,6 +2879,16 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 
 				// 奖励
 				err = ac.userRepo.PlantPlatTwoTwoL(ctx, landUserUse.ID, uint64(tmpUserId), landUserUse.OwnerUserId, tmpNum, tmpReward)
+				if nil != err {
+					return err
+				}
+
+				err = ac.userRepo.CreateNotice(
+					ctx,
+					uint64(tmpUserId),
+					"您收获了"+strconv.FormatFloat(reward, 'f', -1, 64)+"GIT",
+					"You've harvest "+strconv.FormatFloat(reward, 'f', -1, 64)+" GIT",
+				)
 				if nil != err {
 					return err
 				}
@@ -3405,6 +3448,23 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 			return err
 		}
 
+		err = ac.userRepo.CreateNotice(
+			ctx,
+			landUserUse.UserId,
+			"您收获了"+strconv.FormatFloat(tmpOverMax, 'f', -1, 64)+"GIT",
+			"You've harvest "+strconv.FormatFloat(tmpOverMax, 'f', -1, 64)+" GIT",
+		)
+		if nil != err {
+			return err
+		}
+
+		err = ac.userRepo.CreateNotice(
+			ctx,
+			landUserUse.OwnerUserId,
+			"您收获了"+strconv.FormatFloat(tmpOverMax, 'f', -1, 64)+"GIT",
+			"You've harvest "+strconv.FormatFloat(tmpOverMax, 'f', -1, 64)+" GIT",
+		)
+
 		// l1-l3，奖励发放
 		if tmpOverMax > 0 {
 			tmpI := 1
@@ -3434,6 +3494,16 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 
 				// 奖励
 				err = ac.userRepo.PlantPlatTwoTwoL(ctx, landUserUse.ID, uint64(tmpUserId), landUserUse.UserId, tmpNum, tmpReward)
+				if nil != err {
+					return err
+				}
+
+				err = ac.userRepo.CreateNotice(
+					ctx,
+					uint64(tmpUserId),
+					"您收获了"+strconv.FormatFloat(tmpReward, 'f', -1, 64)+"GIT",
+					"You've harvest "+strconv.FormatFloat(tmpReward, 'f', -1, 64)+" GIT",
+				)
 				if nil != err {
 					return err
 				}
@@ -3469,6 +3539,16 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 
 				// 奖励
 				err = ac.userRepo.PlantPlatTwoTwoL(ctx, landUserUse.ID, uint64(tmpUserId), landUserUse.OwnerUserId, tmpNum, tmpReward)
+				if nil != err {
+					return err
+				}
+
+				err = ac.userRepo.CreateNotice(
+					ctx,
+					uint64(tmpUserId),
+					"您收获了"+strconv.FormatFloat(tmpReward, 'f', -1, 64)+"GIT",
+					"You've harvest "+strconv.FormatFloat(tmpReward, 'f', -1, 64)+" GIT",
+				)
 				if nil != err {
 					return err
 				}
@@ -3715,7 +3795,32 @@ func (ac *AppUsecase) Buy(ctx context.Context, address string, req *pb.BuyReques
 		}
 
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-			return ac.userRepo.BuySeed(ctx, seed.SellAmount, tmpGet, seed.UserId, user.ID, seed.ID)
+			err = ac.userRepo.BuySeed(ctx, seed.SellAmount, tmpGet, seed.UserId, user.ID, seed.ID)
+			if nil != err {
+				return err
+			}
+
+			err = ac.userRepo.CreateNotice(
+				ctx,
+				user.ID,
+				"您购买了种子，花费"+strconv.FormatFloat(seed.SellAmount, 'f', -1, 64)+"GIT",
+				"You've pay "+strconv.FormatFloat(seed.SellAmount, 'f', -1, 64)+" GIT for seed",
+			)
+			if nil != err {
+				return err
+			}
+
+			err = ac.userRepo.CreateNotice(
+				ctx,
+				seed.UserId,
+				"您出售了种子，获得"+strconv.FormatFloat(tmpGet, 'f', -1, 64)+"GIT",
+				"You've get "+strconv.FormatFloat(tmpGet, 'f', -1, 64)+" GIT for seed",
+			)
+			if nil != err {
+				return err
+			}
+
+			return nil
 		}); nil != err {
 			fmt.Println(err, "buySeed", user)
 			return &pb.BuyReply{
@@ -3760,7 +3865,31 @@ func (ac *AppUsecase) Buy(ctx context.Context, address string, req *pb.BuyReques
 		}
 
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-			return ac.userRepo.BuyProp(ctx, prop.SellAmount, tmpGet, prop.UserId, user.ID, prop.ID)
+			err = ac.userRepo.BuyProp(ctx, prop.SellAmount, tmpGet, prop.UserId, user.ID, prop.ID)
+			if nil != err {
+				return err
+			}
+			err = ac.userRepo.CreateNotice(
+				ctx,
+				user.ID,
+				"您购买了道具，花费"+strconv.FormatFloat(prop.SellAmount, 'f', -1, 64)+"GIT",
+				"You've pay "+strconv.FormatFloat(prop.SellAmount, 'f', -1, 64)+" GIT for prop",
+			)
+			if nil != err {
+				return err
+			}
+
+			err = ac.userRepo.CreateNotice(
+				ctx,
+				prop.UserId,
+				"您出售了道具，获得"+strconv.FormatFloat(tmpGet, 'f', -1, 64)+"GIT",
+				"You've get "+strconv.FormatFloat(tmpGet, 'f', -1, 64)+" GIT for prop",
+			)
+			if nil != err {
+				return err
+			}
+
+			return nil
 		}); nil != err {
 			fmt.Println(err, "buyProp", user)
 			return &pb.BuyReply{
@@ -3811,7 +3940,32 @@ func (ac *AppUsecase) Buy(ctx context.Context, address string, req *pb.BuyReques
 		}
 
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-			return ac.userRepo.BuyLand(ctx, land.SellAmount, tmpGet, land.UserId, user.ID, land.ID)
+			err = ac.userRepo.BuyLand(ctx, land.SellAmount, tmpGet, land.UserId, user.ID, land.ID)
+			if nil != err {
+				return err
+			}
+
+			err = ac.userRepo.CreateNotice(
+				ctx,
+				land.UserId,
+				"您购买了土地，花费"+strconv.FormatFloat(land.SellAmount, 'f', -1, 64)+"GIT",
+				"You've pay "+strconv.FormatFloat(land.SellAmount, 'f', -1, 64)+" GIT for land",
+			)
+			if nil != err {
+				return err
+			}
+
+			err = ac.userRepo.CreateNotice(
+				ctx,
+				user.ID,
+				"您出售了土地，获得"+strconv.FormatFloat(tmpGet, 'f', -1, 64)+"GIT",
+				"You've get "+strconv.FormatFloat(tmpGet, 'f', -1, 64)+" GIT for land",
+			)
+			if nil != err {
+				return err
+			}
+
+			return nil
 		}); nil != err {
 			fmt.Println(err, "buyLand", user)
 			return &pb.BuyReply{
@@ -4824,6 +4978,16 @@ func (ac *AppUsecase) StakeGet(ctx context.Context, address string, req *pb.Stak
 			if nil != err {
 				return err
 			}
+
+			err = ac.userRepo.CreateNotice(
+				ctx,
+				user.ID,
+				"您向果实放大器质押"+strconv.FormatFloat(tmpAmount, 'f', -1, 64)+"GIT",
+				"You've deposit "+strconv.FormatFloat(tmpAmount, 'f', -1, 64)+" GIT to game",
+			)
+			if nil != err {
+				return err
+			}
 			return nil
 		}); nil != err {
 			return &pb.StakeGetReply{
@@ -4871,6 +5035,16 @@ func (ac *AppUsecase) StakeGet(ctx context.Context, address string, req *pb.Stak
 			}
 
 			err = ac.userRepo.SetStakeGetSub(ctx, user.ID, tmpGit, sharesToRemove)
+			if nil != err {
+				return err
+			}
+
+			err = ac.userRepo.CreateNotice(
+				ctx,
+				user.ID,
+				"您在果实放大器解押"+strconv.FormatFloat(tmpGit, 'f', -1, 64)+"GIT",
+				"You've withdraw "+strconv.FormatFloat(tmpGit, 'f', -1, 64)+" GIT from game",
+			)
 			if nil != err {
 				return err
 			}
@@ -4971,6 +5145,17 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 			if nil != err {
 				return err
 			}
+
+			err = ac.userRepo.CreateNotice(
+				ctx,
+				user.ID,
+				"您在果实放大器赢得"+strconv.FormatFloat(tmpGit, 'f', -1, 64)+"GIT",
+				"You've win "+strconv.FormatFloat(tmpGit, 'f', -1, 64)+" GIT from game",
+			)
+			if nil != err {
+				return err
+			}
+
 			return nil
 		}); nil != err {
 			return &pb.StakeGetPlayReply{
@@ -4982,6 +5167,16 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 	} else { // 输：下注金额加入池子
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 			err = ac.userRepo.SetStakeGetPlaySub(ctx, user.ID, float64(req.SendBody.Amount))
+			if nil != err {
+				return err
+			}
+
+			err = ac.userRepo.CreateNotice(
+				ctx,
+				user.ID,
+				"您在果实放大器输了"+strconv.FormatFloat(float64(req.SendBody.Amount), 'f', -1, 64)+"GIT",
+				"You've lost "+strconv.FormatFloat(float64(req.SendBody.Amount), 'f', -1, 64)+" GIT from game",
+			)
 			if nil != err {
 				return err
 			}
@@ -5055,6 +5250,16 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 		if nil != err {
 			return err
 		}
+
+		err = ac.userRepo.CreateNotice(
+			ctx,
+			user.ID,
+			"兑换"+strconv.FormatFloat(float64(req.SendBody.Amount), 'f', -1, 64)+" GIT 获得 "+strconv.FormatFloat(giw, 'f', -1, 64)+" GIW",
+			"exchange "+strconv.FormatFloat(float64(req.SendBody.Amount), 'f', -1, 64)+" GIT for "+strconv.FormatFloat(giw, 'f', -1, 64)+" GIW",
+		)
+		if nil != err {
+			return err
+		}
 		return nil
 	}); nil != err {
 		return &pb.ExchangeReply{
@@ -5122,6 +5327,16 @@ func (ac *AppUsecase) Withdraw(ctx context.Context, address string, req *pb.With
 
 	if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 		err = ac.userRepo.Withdraw(ctx, user.ID, float64(req.SendBody.Amount))
+		if nil != err {
+			return err
+		}
+
+		err = ac.userRepo.CreateNotice(
+			ctx,
+			user.ID,
+			"提现金额"+strconv.FormatFloat(float64(req.SendBody.Amount), 'f', -1, 64)+"GIT",
+			"You've withdraw "+strconv.FormatFloat(float64(req.SendBody.Amount), 'f', -1, 64)+" GIT",
+		)
 		if nil != err {
 			return err
 		}
@@ -5325,91 +5540,12 @@ func (ac *AppUsecase) SetBuyLand(ctx context.Context, req *pb.SetBuyLandRequest)
 					return err
 				}
 
-				return nil
-			}); nil != err {
-				return &pb.SetBuyLandReply{}, nil
-			}
-		}
-
-		landInfos, err = ac.userRepo.GetLandInfoByLevels(ctx)
-		if nil != err {
-			return &pb.SetBuyLandReply{}, nil
-		}
-
-		if 0 >= len(landInfos) {
-			return &pb.SetBuyLandReply{}, nil
-		}
-
-		tmpLevel := landBuy.Level
-		if _, ok := landInfos[tmpLevel]; !ok {
-			return &pb.SetBuyLandReply{}, nil
-		}
-
-		rngTmp := rand2.New(rand2.NewSource(time.Now().UnixNano()))
-		outMin := int64(landInfos[tmpLevel].OutPutRateMin)
-		outMax := int64(landInfos[tmpLevel].OutPutRateMax)
-
-		// 计算随机范围
-		tmpNum := outMax - outMin
-		if tmpNum <= 0 {
-			tmpNum = 1 // 避免 Int63n(0) panic
-		}
-
-		// 生成随机数
-		randomNumber := outMin + rngTmp.Int63n(tmpNum)
-
-		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-			_, err = ac.userRepo.CreateLand(ctx, &Land{
-				UserId:     userIdTmp,
-				Level:      landInfos[tmpLevel].Level,
-				OutPutRate: float64(randomNumber),
-				MaxHealth:  landInfos[tmpLevel].MaxHealth,
-				PerHealth:  landInfos[tmpLevel].PerHealth,
-				LimitDate:  uint64(now) + landInfos[tmpLevel].LimitDateMax*3600*24,
-				Status:     0,
-				One:        1,
-				Two:        1,
-				Three:      1,
-			})
-			if nil != err {
-				return err
-			}
-
-			return nil
-		}); nil != err {
-			return &pb.SetBuyLandReply{}, nil
-		}
-
-	} else if 1 == landBuy.Status {
-		if uint64(now) <= landBuy.Limit {
-			return &pb.SetBuyLandReply{}, nil
-		}
-
-		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-			err = ac.userRepo.SetBuyLandOver(ctx, landBuy.ID)
-			if nil != err {
-				return err
-			}
-
-			return nil
-		}); nil != err {
-			return &pb.SetBuyLandReply{}, nil
-		}
-
-		landRecord, err = ac.userRepo.GetAllBuyLandRecords(ctx, landBuy.ID)
-		if nil != err {
-			return &pb.SetBuyLandReply{}, nil
-		}
-
-		userIdTmp := uint64(0)
-		for k, v := range landRecord {
-			if 0 == k {
-				userIdTmp = v.UserID
-				continue
-			}
-
-			if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-				err = ac.userRepo.BackUserGit(ctx, v.UserID, v.ID, v.Amount)
+				err = ac.userRepo.CreateNotice(
+					ctx,
+					v.UserID,
+					"未竞拍到物品，退还"+strconv.FormatFloat(v.Amount, 'f', -1, 64)+"GIT",
+					"You've get "+strconv.FormatFloat(v.Amount, 'f', -1, 64)+" GIT from auction",
+				)
 				if nil != err {
 					return err
 				}
@@ -5464,6 +5600,124 @@ func (ac *AppUsecase) SetBuyLand(ctx context.Context, req *pb.SetBuyLandRequest)
 				return err
 			}
 
+			err = ac.userRepo.CreateNotice(
+				ctx,
+				userIdTmp,
+				"您竞拍到物品，级别"+strconv.FormatUint(landInfos[tmpLevel].Level, 10),
+				"You've get land level "+strconv.FormatUint(landInfos[tmpLevel].Level, 10),
+			)
+			if nil != err {
+				return err
+			}
+
+			return nil
+		}); nil != err {
+			return &pb.SetBuyLandReply{}, nil
+		}
+
+	} else if 1 == landBuy.Status {
+		if uint64(now) <= landBuy.Limit {
+			return &pb.SetBuyLandReply{}, nil
+		}
+
+		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+			err = ac.userRepo.SetBuyLandOver(ctx, landBuy.ID)
+			if nil != err {
+				return err
+			}
+
+			return nil
+		}); nil != err {
+			return &pb.SetBuyLandReply{}, nil
+		}
+
+		landRecord, err = ac.userRepo.GetAllBuyLandRecords(ctx, landBuy.ID)
+		if nil != err {
+			return &pb.SetBuyLandReply{}, nil
+		}
+
+		userIdTmp := uint64(0)
+		for k, v := range landRecord {
+			if 0 == k {
+				userIdTmp = v.UserID
+				continue
+			}
+
+			if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+				err = ac.userRepo.BackUserGit(ctx, v.UserID, v.ID, v.Amount)
+				if nil != err {
+					return err
+				}
+
+				err = ac.userRepo.CreateNotice(
+					ctx,
+					v.UserID,
+					"未竞拍到物品，退还"+strconv.FormatFloat(v.Amount, 'f', -1, 64)+"GIT",
+					"You've get "+strconv.FormatFloat(v.Amount, 'f', -1, 64)+" GIT from auction",
+				)
+				if nil != err {
+					return err
+				}
+
+				return nil
+			}); nil != err {
+				return &pb.SetBuyLandReply{}, nil
+			}
+		}
+
+		landInfos, err = ac.userRepo.GetLandInfoByLevels(ctx)
+		if nil != err {
+			return &pb.SetBuyLandReply{}, nil
+		}
+
+		if 0 >= len(landInfos) {
+			return &pb.SetBuyLandReply{}, nil
+		}
+
+		tmpLevel := landBuy.Level
+		if _, ok := landInfos[tmpLevel]; !ok {
+			return &pb.SetBuyLandReply{}, nil
+		}
+
+		rngTmp := rand2.New(rand2.NewSource(time.Now().UnixNano()))
+		outMin := int64(landInfos[tmpLevel].OutPutRateMin)
+		outMax := int64(landInfos[tmpLevel].OutPutRateMax)
+
+		// 计算随机范围
+		tmpNum := outMax - outMin
+		if tmpNum <= 0 {
+			tmpNum = 1 // 避免 Int63n(0) panic
+		}
+
+		// 生成随机数
+		randomNumber := outMin + rngTmp.Int63n(tmpNum)
+
+		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+			_, err = ac.userRepo.CreateLand(ctx, &Land{
+				UserId:     userIdTmp,
+				Level:      landInfos[tmpLevel].Level,
+				OutPutRate: float64(randomNumber),
+				MaxHealth:  landInfos[tmpLevel].MaxHealth,
+				PerHealth:  landInfos[tmpLevel].PerHealth,
+				LimitDate:  uint64(now) + landInfos[tmpLevel].LimitDateMax*3600*24,
+				Status:     0,
+				One:        1,
+				Two:        1,
+				Three:      1,
+			})
+			if nil != err {
+				return err
+			}
+
+			err = ac.userRepo.CreateNotice(
+				ctx,
+				userIdTmp,
+				"您竞拍到物品，级别"+strconv.FormatUint(landInfos[tmpLevel].Level, 10),
+				"You've get land level "+strconv.FormatUint(landInfos[tmpLevel].Level, 10),
+			)
+			if nil != err {
+				return err
+			}
 			return nil
 		}); nil != err {
 			return &pb.SetBuyLandReply{}, nil
@@ -5613,6 +5867,16 @@ func (ac *AppUsecase) BuyLand(ctx context.Context, addreses string, req *pb.BuyL
 				return err
 			}
 
+			err = ac.userRepo.CreateNotice(
+				ctx,
+				user.ID,
+				"您参与了拍卖土地，使用"+strconv.FormatFloat(amountTmp, 'f', -1, 64)+"GIT",
+				"You've used "+strconv.FormatFloat(amountTmp, 'f', -1, 64)+" GIT to auction",
+			)
+			if nil != err {
+				return err
+			}
+
 			return nil
 		}); nil != err {
 			return &pb.BuyLandReply{
@@ -5643,6 +5907,16 @@ func (ac *AppUsecase) BuyLand(ctx context.Context, addreses string, req *pb.BuyL
 				Status:    1,
 				UserID:    user.ID,
 			})
+			if nil != err {
+				return err
+			}
+
+			err = ac.userRepo.CreateNotice(
+				ctx,
+				user.ID,
+				"您参与了拍卖土地，使用"+strconv.FormatFloat(float64(amountTmp), 'f', -1, 64)+"GIT",
+				"You've used "+strconv.FormatFloat(float64(amountTmp), 'f', -1, 64)+" GIT to auction",
+			)
 			if nil != err {
 				return err
 			}
