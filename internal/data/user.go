@@ -179,11 +179,12 @@ type Market struct {
 }
 
 type Notice struct {
-	ID            uint64    `gorm:"primarykey;type:int"`
-	UserId        uint64    `gorm:"type:int;not null;comment:用户id"`
-	NoticeContent string    `gorm:"type:varchar(500);not null;comment:消息内容"`
-	CreatedAt     time.Time `gorm:"type:datetime;not null"`
-	UpdatedAt     time.Time `gorm:"type:datetime;not null"`
+	ID               uint64    `gorm:"primarykey;type:int"`
+	UserId           uint64    `gorm:"type:int;not null;comment:用户id"`
+	NoticeContent    string    `gorm:"type:varchar(500);not null;comment:消息内容"`
+	NoticeContentTwo string    `gorm:"type:varchar(500);not null;comment:消息内容"`
+	CreatedAt        time.Time `gorm:"type:datetime;not null"`
+	UpdatedAt        time.Time `gorm:"type:datetime;not null"`
 }
 
 type Prop struct {
@@ -1386,11 +1387,12 @@ func (u *UserRepo) GetNoticesByUserID(ctx context.Context, userID uint64, b *biz
 
 	for _, noticeRecord := range noticeRecords {
 		res = append(res, &biz.Notice{
-			ID:            noticeRecord.ID,
-			UserId:        noticeRecord.UserId,
-			NoticeContent: noticeRecord.NoticeContent,
-			CreatedAt:     noticeRecord.CreatedAt,
-			UpdatedAt:     noticeRecord.UpdatedAt,
+			ID:               noticeRecord.ID,
+			UserId:           noticeRecord.UserId,
+			NoticeContent:    noticeRecord.NoticeContent,
+			NoticeContentTwo: noticeRecord.NoticeContentTwo,
+			CreatedAt:        noticeRecord.CreatedAt,
+			UpdatedAt:        noticeRecord.UpdatedAt,
 		})
 	}
 
@@ -3107,6 +3109,20 @@ func (u *UserRepo) SetStakeGetPlay(ctx context.Context, userId uint64, git, amou
 	if res.Error != nil {
 		return errors.New(500, "SetStakeGetPlaySub", "创建质押记录失败")
 	}
+	return nil
+}
+
+func (u *UserRepo) CreateNotice(ctx context.Context, userId uint64, content string, contentTwo string) error {
+	var notice Notice
+	notice.UserId = userId
+	notice.NoticeContent = content
+	notice.NoticeContentTwo = contentTwo
+
+	res := u.data.DB(ctx).Table("notice").Create(&notice)
+	if res.Error != nil {
+		return errors.New(500, "CREATE_NOTICE_ERROR", "创建消息记录失败")
+	}
+
 	return nil
 }
 
