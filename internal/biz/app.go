@@ -2822,7 +2822,9 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 
 				tmpNum := uint64(4)
 				tmpReward = reward * oneRate
-				if 2 == tmpI {
+				if 1 == tmpI {
+
+				} else if 2 == tmpI {
 					tmpReward = reward * twoRate
 					tmpNum = 7
 				} else if 3 == tmpI {
@@ -3482,7 +3484,9 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 
 				tmpNum := uint64(4)
 				tmpReward = tmpOverMax * oneRate
-				if 2 == tmpI {
+				if 1 == tmpI {
+
+				} else if 2 == tmpI {
 					tmpReward = tmpOverMax * twoRate
 					tmpNum = 7
 				} else if 3 == tmpI {
