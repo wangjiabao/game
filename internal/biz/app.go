@@ -2807,9 +2807,9 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 
 		// l1-l3，奖励发放
 		if reward > 0 {
-			tmpI := 1
+			tmpI := 0
 			for i := len(tmpRecommendUserIds) - 1; i >= 0; i-- {
-				if 4 <= tmpI {
+				if 3 <= tmpI {
 					break
 				}
 				tmpI++
@@ -3467,9 +3467,9 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 
 		// l1-l3，奖励发放
 		if tmpOverMax > 0 {
-			tmpI := 1
+			tmpI := 0
 			for i := len(tmpRecommendUserIds) - 1; i >= 0; i-- {
-				if 4 <= tmpI {
+				if 3 <= tmpI {
 					break
 				}
 				tmpI++
