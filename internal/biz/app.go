@@ -5559,8 +5559,8 @@ func (ac *AppUsecase) SetBuyLand(ctx context.Context, req *pb.SetBuyLandRequest)
 				err = ac.userRepo.CreateNotice(
 					ctx,
 					v.UserID,
-					"未竞拍到物品，退还"+fmt.Sprintf("%.2f", v.Amount)+"GIT",
-					"You've get "+fmt.Sprintf("%.2f", v.Amount)+" GIT from auction",
+					"未竞拍到物品，退还"+fmt.Sprintf("%.2f", v.Amount)+"GIW",
+					"You've get "+fmt.Sprintf("%.2f", v.Amount)+" GIW from auction",
 				)
 				if nil != err {
 					return err
@@ -5668,8 +5668,8 @@ func (ac *AppUsecase) SetBuyLand(ctx context.Context, req *pb.SetBuyLandRequest)
 				err = ac.userRepo.CreateNotice(
 					ctx,
 					v.UserID,
-					"未竞拍到物品，退还"+fmt.Sprintf("%.2f", v.Amount)+"GIT",
-					"You've get "+fmt.Sprintf("%.2f", v.Amount)+" GIT from auction",
+					"未竞拍到物品，退还"+fmt.Sprintf("%.2f", v.Amount)+"GIW",
+					"You've get "+fmt.Sprintf("%.2f", v.Amount)+" GIW from auction",
 				)
 				if nil != err {
 					return err
@@ -5868,8 +5868,8 @@ func (ac *AppUsecase) BuyLand(ctx context.Context, addreses string, req *pb.BuyL
 			}
 		}
 
-		if user.Git < amountTmp {
-			return &pb.BuyLandReply{Status: "git余额不足"}, nil
+		if user.Giw < amountTmp {
+			return &pb.BuyLandReply{Status: "giw余额不足"}, nil
 		}
 
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
@@ -5886,8 +5886,8 @@ func (ac *AppUsecase) BuyLand(ctx context.Context, addreses string, req *pb.BuyL
 			err = ac.userRepo.CreateNotice(
 				ctx,
 				user.ID,
-				"您参与了拍卖土地，使用"+fmt.Sprintf("%.2f", amountTmp)+"GIT",
-				"You've used "+fmt.Sprintf("%.2f", amountTmp)+" GIT to auction",
+				"您参与了拍卖土地，使用"+fmt.Sprintf("%.2f", amountTmp)+"GIW",
+				"You've used "+fmt.Sprintf("%.2f", amountTmp)+" GIW to auction",
 			)
 			if nil != err {
 				return err
@@ -5912,7 +5912,7 @@ func (ac *AppUsecase) BuyLand(ctx context.Context, addreses string, req *pb.BuyL
 			}
 		}
 
-		if uint64(user.Git) < amountTmp {
+		if uint64(user.Giw) < amountTmp {
 			return &pb.BuyLandReply{Status: "git余额不足"}, nil
 		}
 
@@ -5930,8 +5930,8 @@ func (ac *AppUsecase) BuyLand(ctx context.Context, addreses string, req *pb.BuyL
 			err = ac.userRepo.CreateNotice(
 				ctx,
 				user.ID,
-				"您参与了拍卖土地，使用"+strconv.FormatUint(amountTmp, 10)+"GIT",
-				"You've used "+strconv.FormatUint(amountTmp, 10)+" GIT to auction",
+				"您参与了拍卖土地，使用"+strconv.FormatUint(amountTmp, 10)+"GIW",
+				"You've used "+strconv.FormatUint(amountTmp, 10)+" GIW to auction",
 			)
 			if nil != err {
 				return err

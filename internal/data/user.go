@@ -3229,8 +3229,8 @@ func (u *UserRepo) CreateBuyLandRecordOne(ctx context.Context, bl *biz.BuyLandRe
 		return errors.New(500, "SetStakeGetPlaySub", "用户信息修改失败")
 	}
 
-	res = u.data.DB(ctx).Table("user").Where("id=?", bl.UserID).Where("git>=?", bl.Amount).
-		Updates(map[string]interface{}{"git": gorm.Expr("git - ?", bl.Amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	res = u.data.DB(ctx).Table("user").Where("id=?", bl.UserID).Where("giw>=?", bl.Amount).
+		Updates(map[string]interface{}{"giw": gorm.Expr("giw - ?", bl.Amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil {
 		return errors.New(500, "CreateBuyLandRecordOne", "用户信息修改失败")
 	}
@@ -3259,8 +3259,8 @@ func (u *UserRepo) CreateBuyLandRecord(ctx context.Context, limit uint64, bl *bi
 		return errors.New(500, "SetStakeGetPlaySub", "用户信息修改失败")
 	}
 
-	res = u.data.DB(ctx).Table("user").Where("id=?", bl.UserID).Where("git>=?", bl.Amount).
-		Updates(map[string]interface{}{"git": gorm.Expr("git - ?", bl.Amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	res = u.data.DB(ctx).Table("user").Where("id=?", bl.UserID).Where("giw>=?", bl.Amount).
+		Updates(map[string]interface{}{"giw": gorm.Expr("giw - ?", bl.Amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil {
 		return errors.New(500, "CreateBuyLandRecord", "用户信息修改失败")
 	}
@@ -3310,7 +3310,7 @@ func (u *UserRepo) GetAllBuyLandRecords(ctx context.Context, id uint64) ([]*biz.
 // BackUserGit .
 func (u *UserRepo) BackUserGit(ctx context.Context, userId, id uint64, git float64) error {
 	res := u.data.DB(ctx).Table("user").Where("id=?", userId).
-		Updates(map[string]interface{}{"git": gorm.Expr("git + ?", git), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+		Updates(map[string]interface{}{"giw": gorm.Expr("giw + ?", git), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil {
 		return errors.New(500, "BackUserGit", "用户信息修改失败")
 	}
