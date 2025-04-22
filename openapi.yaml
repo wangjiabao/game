@@ -1816,6 +1816,9 @@ components:
                 git:
                     type: number
                     format: double
+                usdt:
+                    type: number
+                    format: double
                 recommendTotal:
                     type: string
                 recommendTotalBiw:

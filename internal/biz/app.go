@@ -919,6 +919,7 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		SellFeeRate:               sellFeeRate,
 		WithdrawMax:               withdrawMax,
 		WithdrawMin:               withdrawMin,
+		Usdt:                      user.AmountUsdt,
 	}, nil
 }
 
@@ -5516,6 +5517,12 @@ func (ac *AppUsecase) BuyTwo(ctx context.Context, address string, req *pb.BuyTwo
 	if nil != err || nil == user {
 		return &pb.BuyTwoReply{
 			Status: "不存在用户",
+		}, nil
+	}
+
+	if 0 < user.Amount {
+		return &pb.BuyTwoReply{
+			Status: "已认购",
 		}, nil
 	}
 
