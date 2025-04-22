@@ -29,6 +29,20 @@ service App {
 		};
 	};
 
+	// 认购信息
+	rpc UserBuy (UserBuyRequest) returns (UserBuyReply) {
+		option (google.api.http) = {
+			get: "/api/app_server/user_buy"
+		};
+	};
+
+	// 认购奖励内容
+	rpc UserBuyL (UserBuyLRequest) returns (UserBuyLReply) {
+		option (google.api.http) = {
+			get: "/api/app_server/user_buy_l"
+		};
+	};
+
 	// 直推列表
 	rpc UserRecommend (UserRecommendRequest) returns (UserRecommendReply) {
 		option (google.api.http) = {
@@ -138,6 +152,14 @@ service App {
 	rpc UserOrderList (UserOrderListRequest) returns (UserOrderListReply) {
 		option (google.api.http) = {
 			get: "/api/app_server/user_order_list"
+		};
+	};
+
+	// 提现
+	rpc BuyTwo (BuyTwoRequest) returns (BuyTwoReply) {
+		option (google.api.http) = {
+			post: "/api/app_server/buy_two"
+			body: "send_body"
 		};
 	};
 
@@ -417,6 +439,33 @@ message UserInfoReply {
 	uint64 withdrawMax = 30; // 提现最大
 }
 
+message UserBuyRequest {
+
+}
+
+message UserBuyReply {
+	string status = 1; // 状态为字符串"ok"时接口正常，其他情况忽略，弹出显示该字段文案即可
+
+	double one = 2; // 认购金额，认购金额大于0时候，隐藏认购按钮
+	double two = 3; // 倍率
+	double three = 4; // 已释放
+	double four = 5; // 待释放
+	double five = 6; // 静态
+	double six = 7; // 直推
+	double seven = 8; // 直推加速
+	double eight = 9; // 团队
+	double nine = 10; // 平级
+	double ten = 11; // 全网
+	double elven = 12; // 总业绩
+	double twelve = 13; // 直推业绩
+	double thirteen = 14; // 大区业绩
+	double fourteen = 15; // 小区业绩
+	uint64 recommendNum = 16; // 直推人数
+	double price = 17; // 价格 biw的数量=usdt的数量/price
+	double giw = 18; // biw余额
+	double usdt = 19; // usdt余额
+}
+
 message UserRecommendRequest {
 	uint64 page = 1; // 页数
 }
@@ -430,6 +479,25 @@ message UserRecommendReply {
 		string address = 1; // 地址
 		uint64 level = 2; // 等级
 		string createdAt = 3; // 时间
+	}
+}
+
+message UserBuyLRequest {
+	uint64 page = 1; // 页数
+	uint64 num = 2; // 1认购 2直推 3静态 4直推加速 5团队 6平级 7全网
+}
+
+message UserBuyLReply {
+	string status = 1; // 状态为字符串"ok"时接口正常，其他情况忽略，弹出显示该字段文案即可
+
+	uint64 count = 2; // 总个数，每页20个
+	repeated List list = 3;
+	message List {
+		double amount = 2; // 奖励USDT 加上usdt后缀
+		double amountTwo = 3; // 奖励BIW 加上biw后缀
+		string address = 4; // 下级地址，2，4，5，6时展示
+		uint64 num = 6; // 代数，4，5，6时展示
+		string createdAt = 5; // 奖励时间
 	}
 }
 
@@ -850,6 +918,19 @@ message SellRequest {
 }
 
 message SellReply {
+	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
+}
+
+message BuyTwoRequest {
+	message SendBody{
+		string sign = 2; // 签名
+		uint64 amount = 1; // 金额
+	}
+
+	SendBody send_body = 1;
+}
+
+message BuyTwoReply {
 	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
 }
 

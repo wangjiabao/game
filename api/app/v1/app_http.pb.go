@@ -23,6 +23,7 @@ const OperationAppBuy = "/api.app.v1.App/Buy"
 const OperationAppBuyBox = "/api.app.v1.App/BuyBox"
 const OperationAppBuyLand = "/api.app.v1.App/BuyLand"
 const OperationAppBuyLandRecord = "/api.app.v1.App/BuyLandRecord"
+const OperationAppBuyTwo = "/api.app.v1.App/BuyTwo"
 const OperationAppEthAuthorize = "/api.app.v1.App/EthAuthorize"
 const OperationAppExchange = "/api.app.v1.App/Exchange"
 const OperationAppGetBuyLand = "/api.app.v1.App/GetBuyLand"
@@ -49,6 +50,8 @@ const OperationAppStakeGit = "/api.app.v1.App/StakeGit"
 const OperationAppTestSign = "/api.app.v1.App/TestSign"
 const OperationAppUserBackList = "/api.app.v1.App/UserBackList"
 const OperationAppUserBoxList = "/api.app.v1.App/UserBoxList"
+const OperationAppUserBuy = "/api.app.v1.App/UserBuy"
+const OperationAppUserBuyL = "/api.app.v1.App/UserBuyL"
 const OperationAppUserIndexList = "/api.app.v1.App/UserIndexList"
 const OperationAppUserInfo = "/api.app.v1.App/UserInfo"
 const OperationAppUserLand = "/api.app.v1.App/UserLand"
@@ -73,6 +76,8 @@ type AppHTTPServer interface {
 	BuyBox(context.Context, *BuyBoxRequest) (*BuyBoxReply, error)
 	BuyLand(context.Context, *BuyLandRequest) (*BuyLandReply, error)
 	BuyLandRecord(context.Context, *BuyLandRecordRequest) (*BuyLandRecordReply, error)
+	// BuyTwo 提现
+	BuyTwo(context.Context, *BuyTwoRequest) (*BuyTwoReply, error)
 	EthAuthorize(context.Context, *EthAuthorizeRequest) (*EthAuthorizeReply, error)
 	// Exchange 兑换
 	Exchange(context.Context, *ExchangeRequest) (*ExchangeReply, error)
@@ -118,6 +123,10 @@ type AppHTTPServer interface {
 	UserBackList(context.Context, *UserBackListRequest) (*UserBackListReply, error)
 	// UserBoxList 盲盒列表
 	UserBoxList(context.Context, *UserBoxListRequest) (*UserBoxListReply, error)
+	// UserBuy 认购信息
+	UserBuy(context.Context, *UserBuyRequest) (*UserBuyReply, error)
+	// UserBuyL 认购奖励内容
+	UserBuyL(context.Context, *UserBuyLRequest) (*UserBuyLReply, error)
 	// UserIndexList 首页
 	UserIndexList(context.Context, *UserIndexListRequest) (*UserIndexListReply, error)
 	// UserInfo 用户信息
@@ -157,6 +166,8 @@ func RegisterAppHTTPServer(s *http.Server, srv AppHTTPServer) {
 	r.GET("/api/app_server/test_sign", _App_TestSign0_HTTP_Handler(srv))
 	r.POST("/api/app_server/eth_authorize", _App_EthAuthorize0_HTTP_Handler(srv))
 	r.GET("/api/app_server/user_info", _App_UserInfo0_HTTP_Handler(srv))
+	r.GET("/api/app_server/user_buy", _App_UserBuy0_HTTP_Handler(srv))
+	r.GET("/api/app_server/user_buy_l", _App_UserBuyL0_HTTP_Handler(srv))
 	r.GET("/api/app_server/user_recommend", _App_UserRecommend0_HTTP_Handler(srv))
 	r.GET("/api/app_server/user_recommend_l", _App_UserRecommendL0_HTTP_Handler(srv))
 	r.GET("/api/app_server/user_land", _App_UserLand0_HTTP_Handler(srv))
@@ -173,6 +184,7 @@ func RegisterAppHTTPServer(s *http.Server, srv AppHTTPServer) {
 	r.GET("/api/app_server/user_skate_reward_list", _App_UserStakeRewardList0_HTTP_Handler(srv))
 	r.GET("/api/app_server/user_index_list", _App_UserIndexList0_HTTP_Handler(srv))
 	r.GET("/api/app_server/user_order_list", _App_UserOrderList0_HTTP_Handler(srv))
+	r.POST("/api/app_server/buy_two", _App_BuyTwo0_HTTP_Handler(srv))
 	r.POST("/api/app_server/withdraw", _App_Withdraw0_HTTP_Handler(srv))
 	r.POST("/api/app_server/exchange", _App_Exchange0_HTTP_Handler(srv))
 	r.POST("/api/app_server/get_land", _App_GetLand0_HTTP_Handler(srv))
@@ -258,6 +270,44 @@ func _App_UserInfo0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error
 			return err
 		}
 		reply := out.(*UserInfoReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _App_UserBuy0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in UserBuyRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAppUserBuy)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.UserBuy(ctx, req.(*UserBuyRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*UserBuyReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _App_UserBuyL0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in UserBuyLRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAppUserBuyL)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.UserBuyL(ctx, req.(*UserBuyLRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*UserBuyLReply)
 		return ctx.Result(200, reply)
 	}
 }
@@ -562,6 +612,28 @@ func _App_UserOrderList0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) 
 			return err
 		}
 		reply := out.(*UserOrderListReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _App_BuyTwo0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in BuyTwoRequest
+		if err := ctx.Bind(&in.SendBody); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAppBuyTwo)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.BuyTwo(ctx, req.(*BuyTwoRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*BuyTwoReply)
 		return ctx.Result(200, reply)
 	}
 }
@@ -1147,6 +1219,7 @@ type AppHTTPClient interface {
 	BuyBox(ctx context.Context, req *BuyBoxRequest, opts ...http.CallOption) (rsp *BuyBoxReply, err error)
 	BuyLand(ctx context.Context, req *BuyLandRequest, opts ...http.CallOption) (rsp *BuyLandReply, err error)
 	BuyLandRecord(ctx context.Context, req *BuyLandRecordRequest, opts ...http.CallOption) (rsp *BuyLandRecordReply, err error)
+	BuyTwo(ctx context.Context, req *BuyTwoRequest, opts ...http.CallOption) (rsp *BuyTwoReply, err error)
 	EthAuthorize(ctx context.Context, req *EthAuthorizeRequest, opts ...http.CallOption) (rsp *EthAuthorizeReply, err error)
 	Exchange(ctx context.Context, req *ExchangeRequest, opts ...http.CallOption) (rsp *ExchangeReply, err error)
 	GetBuyLand(ctx context.Context, req *GetBuyLandRequest, opts ...http.CallOption) (rsp *GetBuyLandReply, err error)
@@ -1173,6 +1246,8 @@ type AppHTTPClient interface {
 	TestSign(ctx context.Context, req *TestSignRequest, opts ...http.CallOption) (rsp *TestSignReply, err error)
 	UserBackList(ctx context.Context, req *UserBackListRequest, opts ...http.CallOption) (rsp *UserBackListReply, err error)
 	UserBoxList(ctx context.Context, req *UserBoxListRequest, opts ...http.CallOption) (rsp *UserBoxListReply, err error)
+	UserBuy(ctx context.Context, req *UserBuyRequest, opts ...http.CallOption) (rsp *UserBuyReply, err error)
+	UserBuyL(ctx context.Context, req *UserBuyLRequest, opts ...http.CallOption) (rsp *UserBuyLReply, err error)
 	UserIndexList(ctx context.Context, req *UserIndexListRequest, opts ...http.CallOption) (rsp *UserIndexListReply, err error)
 	UserInfo(ctx context.Context, req *UserInfoRequest, opts ...http.CallOption) (rsp *UserInfoReply, err error)
 	UserLand(ctx context.Context, req *UserLandRequest, opts ...http.CallOption) (rsp *UserLandReply, err error)
@@ -1245,6 +1320,19 @@ func (c *AppHTTPClientImpl) BuyLandRecord(ctx context.Context, in *BuyLandRecord
 	opts = append(opts, http.Operation(OperationAppBuyLandRecord))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *AppHTTPClientImpl) BuyTwo(ctx context.Context, in *BuyTwoRequest, opts ...http.CallOption) (*BuyTwoReply, error) {
+	var out BuyTwoReply
+	pattern := "/api/app_server/buy_two"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationAppBuyTwo))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in.SendBody, &out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1581,6 +1669,32 @@ func (c *AppHTTPClientImpl) UserBoxList(ctx context.Context, in *UserBoxListRequ
 	pattern := "/api/app_server/user_box_list"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationAppUserBoxList))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *AppHTTPClientImpl) UserBuy(ctx context.Context, in *UserBuyRequest, opts ...http.CallOption) (*UserBuyReply, error) {
+	var out UserBuyReply
+	pattern := "/api/app_server/user_buy"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationAppUserBuy))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *AppHTTPClientImpl) UserBuyL(ctx context.Context, in *UserBuyLRequest, opts ...http.CallOption) (*UserBuyLReply, error) {
+	var out UserBuyLReply
+	pattern := "/api/app_server/user_buy_l"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationAppUserBuyL))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {

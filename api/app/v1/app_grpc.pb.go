@@ -22,6 +22,8 @@ const (
 	App_TestSign_FullMethodName               = "/api.app.v1.App/TestSign"
 	App_EthAuthorize_FullMethodName           = "/api.app.v1.App/EthAuthorize"
 	App_UserInfo_FullMethodName               = "/api.app.v1.App/UserInfo"
+	App_UserBuy_FullMethodName                = "/api.app.v1.App/UserBuy"
+	App_UserBuyL_FullMethodName               = "/api.app.v1.App/UserBuyL"
 	App_UserRecommend_FullMethodName          = "/api.app.v1.App/UserRecommend"
 	App_UserRecommendL_FullMethodName         = "/api.app.v1.App/UserRecommendL"
 	App_UserLand_FullMethodName               = "/api.app.v1.App/UserLand"
@@ -38,6 +40,7 @@ const (
 	App_UserStakeRewardList_FullMethodName    = "/api.app.v1.App/UserStakeRewardList"
 	App_UserIndexList_FullMethodName          = "/api.app.v1.App/UserIndexList"
 	App_UserOrderList_FullMethodName          = "/api.app.v1.App/UserOrderList"
+	App_BuyTwo_FullMethodName                 = "/api.app.v1.App/BuyTwo"
 	App_Withdraw_FullMethodName               = "/api.app.v1.App/Withdraw"
 	App_Exchange_FullMethodName               = "/api.app.v1.App/Exchange"
 	App_GetLand_FullMethodName                = "/api.app.v1.App/GetLand"
@@ -75,6 +78,10 @@ type AppClient interface {
 	EthAuthorize(ctx context.Context, in *EthAuthorizeRequest, opts ...grpc.CallOption) (*EthAuthorizeReply, error)
 	// 用户信息
 	UserInfo(ctx context.Context, in *UserInfoRequest, opts ...grpc.CallOption) (*UserInfoReply, error)
+	// 认购信息
+	UserBuy(ctx context.Context, in *UserBuyRequest, opts ...grpc.CallOption) (*UserBuyReply, error)
+	// 认购奖励内容
+	UserBuyL(ctx context.Context, in *UserBuyLRequest, opts ...grpc.CallOption) (*UserBuyLReply, error)
 	// 直推列表
 	UserRecommend(ctx context.Context, in *UserRecommendRequest, opts ...grpc.CallOption) (*UserRecommendReply, error)
 	// L1L2L3内容
@@ -107,6 +114,8 @@ type AppClient interface {
 	UserIndexList(ctx context.Context, in *UserIndexListRequest, opts ...grpc.CallOption) (*UserIndexListReply, error)
 	// 排行榜
 	UserOrderList(ctx context.Context, in *UserOrderListRequest, opts ...grpc.CallOption) (*UserOrderListReply, error)
+	// 提现
+	BuyTwo(ctx context.Context, in *BuyTwoRequest, opts ...grpc.CallOption) (*BuyTwoReply, error)
 	// 提现
 	Withdraw(ctx context.Context, in *WithdrawRequest, opts ...grpc.CallOption) (*WithdrawReply, error)
 	// 兑换
@@ -188,6 +197,26 @@ func (c *appClient) UserInfo(ctx context.Context, in *UserInfoRequest, opts ...g
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(UserInfoReply)
 	err := c.cc.Invoke(ctx, App_UserInfo_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *appClient) UserBuy(ctx context.Context, in *UserBuyRequest, opts ...grpc.CallOption) (*UserBuyReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UserBuyReply)
+	err := c.cc.Invoke(ctx, App_UserBuy_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *appClient) UserBuyL(ctx context.Context, in *UserBuyLRequest, opts ...grpc.CallOption) (*UserBuyLReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UserBuyLReply)
+	err := c.cc.Invoke(ctx, App_UserBuyL_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -348,6 +377,16 @@ func (c *appClient) UserOrderList(ctx context.Context, in *UserOrderListRequest,
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(UserOrderListReply)
 	err := c.cc.Invoke(ctx, App_UserOrderList_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *appClient) BuyTwo(ctx context.Context, in *BuyTwoRequest, opts ...grpc.CallOption) (*BuyTwoReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(BuyTwoReply)
+	err := c.cc.Invoke(ctx, App_BuyTwo_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -632,6 +671,10 @@ type AppServer interface {
 	EthAuthorize(context.Context, *EthAuthorizeRequest) (*EthAuthorizeReply, error)
 	// 用户信息
 	UserInfo(context.Context, *UserInfoRequest) (*UserInfoReply, error)
+	// 认购信息
+	UserBuy(context.Context, *UserBuyRequest) (*UserBuyReply, error)
+	// 认购奖励内容
+	UserBuyL(context.Context, *UserBuyLRequest) (*UserBuyLReply, error)
 	// 直推列表
 	UserRecommend(context.Context, *UserRecommendRequest) (*UserRecommendReply, error)
 	// L1L2L3内容
@@ -664,6 +707,8 @@ type AppServer interface {
 	UserIndexList(context.Context, *UserIndexListRequest) (*UserIndexListReply, error)
 	// 排行榜
 	UserOrderList(context.Context, *UserOrderListRequest) (*UserOrderListReply, error)
+	// 提现
+	BuyTwo(context.Context, *BuyTwoRequest) (*BuyTwoReply, error)
 	// 提现
 	Withdraw(context.Context, *WithdrawRequest) (*WithdrawReply, error)
 	// 兑换
@@ -730,6 +775,12 @@ func (UnimplementedAppServer) EthAuthorize(context.Context, *EthAuthorizeRequest
 func (UnimplementedAppServer) UserInfo(context.Context, *UserInfoRequest) (*UserInfoReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UserInfo not implemented")
 }
+func (UnimplementedAppServer) UserBuy(context.Context, *UserBuyRequest) (*UserBuyReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserBuy not implemented")
+}
+func (UnimplementedAppServer) UserBuyL(context.Context, *UserBuyLRequest) (*UserBuyLReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserBuyL not implemented")
+}
 func (UnimplementedAppServer) UserRecommend(context.Context, *UserRecommendRequest) (*UserRecommendReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UserRecommend not implemented")
 }
@@ -777,6 +828,9 @@ func (UnimplementedAppServer) UserIndexList(context.Context, *UserIndexListReque
 }
 func (UnimplementedAppServer) UserOrderList(context.Context, *UserOrderListRequest) (*UserOrderListReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UserOrderList not implemented")
+}
+func (UnimplementedAppServer) BuyTwo(context.Context, *BuyTwoRequest) (*BuyTwoReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BuyTwo not implemented")
 }
 func (UnimplementedAppServer) Withdraw(context.Context, *WithdrawRequest) (*WithdrawReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Withdraw not implemented")
@@ -930,6 +984,42 @@ func _App_UserInfo_Handler(srv interface{}, ctx context.Context, dec func(interf
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AppServer).UserInfo(ctx, req.(*UserInfoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _App_UserBuy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserBuyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AppServer).UserBuy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: App_UserBuy_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppServer).UserBuy(ctx, req.(*UserBuyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _App_UserBuyL_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserBuyLRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AppServer).UserBuyL(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: App_UserBuyL_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppServer).UserBuyL(ctx, req.(*UserBuyLRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1218,6 +1308,24 @@ func _App_UserOrderList_Handler(srv interface{}, ctx context.Context, dec func(i
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AppServer).UserOrderList(ctx, req.(*UserOrderListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _App_BuyTwo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BuyTwoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AppServer).BuyTwo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: App_BuyTwo_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppServer).BuyTwo(ctx, req.(*BuyTwoRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1728,6 +1836,14 @@ var App_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _App_UserInfo_Handler,
 		},
 		{
+			MethodName: "UserBuy",
+			Handler:    _App_UserBuy_Handler,
+		},
+		{
+			MethodName: "UserBuyL",
+			Handler:    _App_UserBuyL_Handler,
+		},
+		{
 			MethodName: "UserRecommend",
 			Handler:    _App_UserRecommend_Handler,
 		},
@@ -1790,6 +1906,10 @@ var App_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UserOrderList",
 			Handler:    _App_UserOrderList_Handler,
+		},
+		{
+			MethodName: "BuyTwo",
+			Handler:    _App_BuyTwo_Handler,
 		},
 		{
 			MethodName: "Withdraw",

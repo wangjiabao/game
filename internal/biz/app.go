@@ -7,6 +7,7 @@ import (
 	pb "game/api/app/v1"
 	"github.com/go-kratos/kratos/v2/errors"
 	"github.com/go-kratos/kratos/v2/log"
+	"math"
 	"math/big"
 	rand2 "math/rand"
 	"strconv"
@@ -46,6 +47,13 @@ type User struct {
 	Area             float64
 	AreaTwo          float64
 	All              float64
+	Amount           float64
+	AmountGet        float64
+	AmountUsdt       float64
+	MyTotalAmount    float64
+	OutNum           uint64
+	Vip              uint64
+	VipAdmin         uint64
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
 }
@@ -94,6 +102,20 @@ type Reward struct {
 	Two       uint64
 	Three     float64
 	Amount    float64
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+type RewardTwo struct {
+	ID        uint64
+	UserId    uint64
+	Reason    uint64
+	One       uint64
+	Two       uint64
+	Three     float64
+	Amount    float64
+	Four      string
+	Five      float64
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -371,7 +393,9 @@ type UserRepo interface {
 	GetLandByUserID(ctx context.Context, userID uint64, status []uint64, b *Pagination) ([]*Land, error)
 	GetLandByExUserID(ctx context.Context, userID uint64, status []uint64, b *Pagination) ([]*Land, error)
 	GetUserRewardPage(ctx context.Context, userId uint64, reason []uint64, b *Pagination) ([]*Reward, error)
+	GetUserRewardTwoPage(ctx context.Context, userId uint64, reason uint64, b *Pagination) ([]*RewardTwo, error)
 	GetUserRewardPageCount(ctx context.Context, userId uint64, reason []uint64) (int64, error)
+	GetUserRewardTwoPageCount(ctx context.Context, userId uint64, reason uint64) (int64, error)
 	GetSeedByUserID(ctx context.Context, userID uint64, status []uint64, b *Pagination) ([]*Seed, error)
 	GetSeedByExUserID(ctx context.Context, userID uint64, status []uint64, b *Pagination) ([]*Seed, error)
 	GetLandUserUseByUserIDUseing(ctx context.Context, userID uint64, status uint64, b *Pagination) ([]*LandUserUse, error)
@@ -455,6 +479,10 @@ type UserRepo interface {
 	GetSetBuyLandById(ctx context.Context) (*BuyLand, error)
 	BackUserGit(ctx context.Context, userId, id uint64, git float64) error
 	SetBuyLandOver(ctx context.Context, id uint64) error
+	UpdateUserNewTwoNew(ctx context.Context, userId uint64, amount, giw float64, amountUsdt uint64) error
+	UpdateUserMyTotalAmount(ctx context.Context, userId uint64, amount float64) error
+	UpdateUserMyTotalAmountSub(ctx context.Context, userId int64, amount float64) error
+	UpdateUserRewardRecommend2(ctx context.Context, userId uint64, giw, giw2, usdt float64, amountOrigin float64, stop bool, address string) error
 }
 
 // AppUsecase is an app usecase.
@@ -546,6 +574,123 @@ func (ac *AppUsecase) GetExistUserByAddressOrCreate(ctx context.Context, address
 	}
 
 	return user, nil, ""
+}
+
+func (ac *AppUsecase) UserBuy(ctx context.Context, address string) (*pb.UserBuyReply, error) {
+	var (
+		user *User
+		err  error
+	)
+	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
+	if nil != err || nil == user {
+		return &pb.UserBuyReply{
+			Status: "不存在用户",
+		}, nil
+	}
+
+	var (
+		configs []*Config
+		uPrice  float64
+	)
+
+	// 配置
+	configs, err = ac.userRepo.GetConfigByKeys(ctx,
+		"u_price",
+	)
+	if nil != err || nil == configs {
+		return &pb.UserBuyReply{
+			Status: "配置错误",
+		}, nil
+	}
+	for _, vConfig := range configs {
+		if "u_price" == vConfig.KeyName {
+			uPrice, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+	}
+
+	// 推荐
+	var (
+		userRecommend   *UserRecommend
+		myUserRecommend []*UserRecommend
+		users           map[uint64]*User
+	)
+	userRecommend, err = ac.userRepo.GetUserRecommendByUserId(ctx, user.ID)
+	if nil == userRecommend || nil != err {
+		return &pb.UserBuyReply{
+			Status: "推荐错误查询",
+		}, nil
+	}
+
+	myUserRecommend, err = ac.userRepo.GetUserRecommendByCode(ctx, userRecommend.RecommendCode+"D"+strconv.FormatUint(user.ID, 10))
+	if nil == myUserRecommend || nil != err {
+		return &pb.UserBuyReply{
+			Status: "推荐错误查询",
+		}, nil
+	}
+
+	userIds := make([]uint64, 0)
+	for _, v := range myUserRecommend {
+		userIds = append(userIds, v.UserId)
+	}
+
+	users, err = ac.userRepo.GetUserByUserIds(ctx, userIds)
+	if nil != err {
+		return &pb.UserBuyReply{
+			Status: "推荐用户错误查询",
+		}, nil
+	}
+
+	// 获取业绩
+	tmpAreaMax := float64(0)
+	tmpAreaMin := float64(0)
+	tmpMaxId := uint64(0)
+	tmpTwelve := float64(0)
+	tmpRecommendNum := uint64(0)
+	for _, vMyLowUser := range users {
+		tmpTwelve += vMyLowUser.MyTotalAmount
+		tmpRecommendNum += 1
+		if tmpAreaMax < vMyLowUser.MyTotalAmount+vMyLowUser.Amount {
+			tmpAreaMax = vMyLowUser.MyTotalAmount + vMyLowUser.Amount
+			tmpMaxId = vMyLowUser.ID
+		}
+	}
+
+	if 0 < tmpMaxId {
+		for _, vMyLowUser := range users {
+			if tmpMaxId != vMyLowUser.ID {
+				tmpAreaMin += vMyLowUser.MyTotalAmount + vMyLowUser.Amount
+			}
+		}
+	}
+
+	tmpFour := float64(0)
+	if user.Amount*2.5 <= user.AmountGet {
+		tmpFour = 0
+	} else {
+		tmpFour = user.Amount*2.5 - user.AmountGet
+	}
+
+	return &pb.UserBuyReply{
+		Status:       "ok",
+		One:          user.Amount,
+		Two:          2.5,
+		Three:        user.AmountGet,
+		Four:         tmpFour,
+		Five:         user.Location,
+		Six:          user.Recommend,
+		Seven:        user.RecommendTwo,
+		Eight:        user.Area,
+		Nine:         user.AreaTwo,
+		Ten:          user.All,
+		Elven:        user.MyTotalAmount,
+		Twelve:       tmpTwelve,
+		Thirteen:     tmpAreaMin,
+		Fourteen:     tmpAreaMax,
+		RecommendNum: tmpRecommendNum,
+		Usdt:         user.AmountUsdt,
+		Giw:          user.Giw,
+		Price:        uPrice,
+	}, nil
 }
 
 func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInfoReply, error) {
@@ -923,6 +1068,65 @@ func (ac *AppUsecase) UserRecommendL(ctx context.Context, address string, req *p
 	}
 
 	return &pb.UserRecommendLReply{
+		Status: "ok",
+		Count:  uint64(count),
+		List:   res,
+	}, nil
+}
+
+func (ac *AppUsecase) UserBuyL(ctx context.Context, address string, req *pb.UserBuyLRequest) (*pb.UserBuyLReply, error) {
+	res := make([]*pb.UserBuyLReply_List, 0)
+	var (
+		user  *User
+		err   error
+		count int64
+	)
+	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
+	if nil != err || nil == user {
+		return &pb.UserBuyLReply{
+			Status: "不存在用户",
+		}, nil
+	}
+
+	var (
+		reward []*RewardTwo
+	)
+	if 1 <= req.Num && req.Num <= 7 {
+
+	} else {
+		return &pb.UserBuyLReply{
+			Status: "参数错误",
+		}, nil
+	}
+
+	count, err = ac.userRepo.GetUserRewardTwoPageCount(ctx, user.ID, req.Num)
+	if nil != err {
+		return &pb.UserBuyLReply{
+			Status: "不存在数据L，count",
+		}, nil
+	}
+
+	reward, err = ac.userRepo.GetUserRewardTwoPage(ctx, user.ID, req.Num, &Pagination{
+		PageNum:  int(req.Page),
+		PageSize: 20,
+	})
+	if nil != err {
+		return &pb.UserBuyLReply{
+			Status: "不存在数据L",
+		}, nil
+	}
+
+	for _, v := range reward {
+		res = append(res, &pb.UserBuyLReply_List{
+			Amount:    v.Three,
+			AmountTwo: v.Amount,
+			Address:   v.Four,
+			Num:       v.One,
+			CreatedAt: v.CreatedAt.Add(8 * time.Hour).Format("2006-01-02 15:04:05"),
+		})
+	}
+
+	return &pb.UserBuyLReply{
 		Status: "ok",
 		Count:  uint64(count),
 		List:   res,
@@ -5290,6 +5494,311 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 	}
 
 	return &pb.ExchangeReply{
+		Status: "ok",
+	}, nil
+}
+
+var buyTwo sync.Mutex
+
+func (ac *AppUsecase) BuyTwo(ctx context.Context, address string, req *pb.BuyTwoRequest) (*pb.BuyTwoReply, error) {
+	buyTwo.Lock()
+	defer buyTwo.Unlock()
+
+	var (
+		user      *User
+		configs   []*Config
+		err       error
+		recommend float64
+		uPrice    float64
+	)
+
+	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
+	if nil != err || nil == user {
+		return &pb.BuyTwoReply{
+			Status: "不存在用户",
+		}, nil
+	}
+
+	// 配置
+	configs, err = ac.userRepo.GetConfigByKeys(ctx,
+		"u_price",
+		"recommend",
+	)
+	if nil != err || nil == configs {
+		return &pb.BuyTwoReply{
+			Status: "配置错误",
+		}, nil
+	}
+	for _, vConfig := range configs {
+		if "recommend" == vConfig.KeyName {
+			recommend, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+		if "u_price" == vConfig.KeyName {
+			uPrice, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+	}
+
+	tmpU := float64(0)
+	tmpB := float64(0)
+	amount := float64(0)
+	if 100 == req.SendBody.Amount {
+		tmpU = 50
+		tmpB = 50 / uPrice
+		amount = 100
+	} else if 300 == req.SendBody.Amount {
+		tmpU = 300
+		tmpB = 300 / uPrice
+		amount = 300
+	} else if 500 == req.SendBody.Amount {
+		tmpU = 500
+		tmpB = 500 / uPrice
+		amount = 500
+	} else if 1000 == req.SendBody.Amount {
+		tmpU = 1000
+		tmpB = 1000 / uPrice
+		amount = 1000
+	} else if 5000 == req.SendBody.Amount {
+		tmpU = 5000
+		tmpB = 5000 / uPrice
+		amount = 5000
+	} else if 10000 == req.SendBody.Amount {
+		tmpU = 10000
+		tmpB = 10000 / uPrice
+		amount = 10000
+	} else if 15000 == req.SendBody.Amount {
+		tmpU = 15000
+		tmpB = 15000 / uPrice
+		amount = 15000
+	} else if 30000 == req.SendBody.Amount {
+		tmpU = 30000
+		tmpB = 30000 / uPrice
+		amount = 30000
+	} else {
+		return &pb.BuyTwoReply{
+			Status: "金额错误",
+		}, nil
+	}
+
+	if tmpU > user.AmountUsdt {
+		return &pb.BuyTwoReply{
+			Status: "usdt余额不足",
+		}, nil
+	}
+
+	if tmpB > user.Giw {
+		return &pb.BuyTwoReply{
+			Status: "biw余额不足",
+		}, nil
+	}
+
+	var (
+		userRecommends    []*UserRecommend
+		userRecommendsMap map[uint64]*UserRecommend
+	)
+	userRecommends, err = ac.userRepo.GetUserRecommends(ctx)
+	if nil != err {
+		return &pb.BuyTwoReply{
+			Status: "错误",
+		}, nil
+	}
+
+	myLowUser := make(map[uint64][]*UserRecommend, 0)
+	userRecommendsMap = make(map[uint64]*UserRecommend, 0)
+	for _, vUr := range userRecommends {
+		userRecommendsMap[vUr.UserId] = vUr
+
+		// 我的直推
+		var (
+			myUserRecommendUserId uint64
+			tmpRecommendUserIds   []string
+		)
+
+		tmpRecommendUserIds = strings.Split(vUr.RecommendCode, "D")
+		if 2 <= len(tmpRecommendUserIds) {
+			myUserRecommendUserId, _ = strconv.ParseUint(tmpRecommendUserIds[len(tmpRecommendUserIds)-1], 10, 64) // 最后一位是直推人
+		}
+
+		if 0 >= myUserRecommendUserId {
+			continue
+		}
+
+		if _, ok := myLowUser[myUserRecommendUserId]; !ok {
+			myLowUser[myUserRecommendUserId] = make([]*UserRecommend, 0)
+		}
+
+		myLowUser[myUserRecommendUserId] = append(myLowUser[myUserRecommendUserId], vUr)
+	}
+
+	var (
+		users    []*User
+		usersMap map[uint64]*User
+	)
+	users, err = ac.userRepo.GetAllUsers(ctx)
+	if nil == users {
+		return &pb.BuyTwoReply{
+			Status: "错误",
+		}, nil
+	}
+
+	usersMap = make(map[uint64]*User, 0)
+	for _, vUsers := range users {
+		usersMap[vUsers.ID] = vUsers
+	}
+
+	if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+		err = ac.userRepo.UpdateUserNewTwoNew(ctx, user.ID, amount, tmpB, uint64(tmpU))
+		if nil != err {
+			return err
+		}
+
+		//err = ac.userRepo.CreateNotice(
+		//	ctx,
+		//	user.ID,
+		//	"认购金额"+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+"U",
+		//	"You've pay "+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" U",
+		//)
+		//if nil != err {
+		//	return err
+		//}
+
+		return nil
+	}); nil != err {
+		return &pb.BuyTwoReply{
+			Status: "认购错误",
+		}, nil
+	}
+
+	// 推荐
+	var (
+		userRecommend       *UserRecommend
+		tmpRecommendUserIds []string
+	)
+	userRecommend, err = ac.userRepo.GetUserRecommendByUserId(ctx, user.ID)
+	if nil == userRecommend || nil != err {
+		return &pb.BuyTwoReply{
+			Status: "上级查询错误",
+		}, nil
+	}
+	if "" != userRecommend.RecommendCode {
+		tmpRecommendUserIds = strings.Split(userRecommend.RecommendCode, "D")
+	}
+	if 0 >= len(tmpRecommendUserIds) {
+		return &pb.BuyTwoReply{
+			Status: "ok",
+		}, nil
+	}
+
+	totalTmp := len(tmpRecommendUserIds) - 1
+	for i := totalTmp; i >= 0; i-- {
+
+		tmpUserId, _ := strconv.ParseUint(tmpRecommendUserIds[i], 10, 64) // 最后一位是直推人
+		if 0 >= tmpUserId {
+			continue
+		}
+
+		if _, ok := usersMap[tmpUserId]; !ok {
+			fmt.Println("buy遍历，信息缺失,user：", err, tmpUserId, user)
+			continue
+		}
+
+		// 增加业绩
+		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+			err = ac.userRepo.UpdateUserMyTotalAmount(ctx, tmpUserId, amount)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		}); nil != err {
+			fmt.Println("遍历业绩：", err, tmpUserId, user)
+			continue
+		}
+
+		tmpRecommendUser := usersMap[tmpUserId]
+		if i == totalTmp {
+			// 入金
+			if 0 < tmpRecommendUser.Amount {
+				var (
+					num float64
+				)
+				num = 2.5
+
+				amountRecommendTmp := amount * recommend
+				var (
+					stopRecommend bool
+				)
+				if amountRecommendTmp+tmpRecommendUser.AmountGet >= tmpRecommendUser.Amount*num {
+					amountRecommendTmp = math.Abs(tmpRecommendUser.Amount*num - tmpRecommendUser.AmountGet)
+					stopRecommend = true
+				}
+				amountRecommendTmp = math.Round(amountRecommendTmp*10000000) / 10000000
+
+				amountRecommendTmp2 := amountRecommendTmp * 0.1
+				amountRecommendTmp2 = math.Round(amountRecommendTmp2*10000000) / 10000000
+
+				amountRecommendTmpBiw := amountRecommendTmp / uPrice * 0.9
+				amountRecommendTmpBiw = math.Round(amountRecommendTmpBiw*10000000) / 10000000
+
+				fmt.Println("直推奖奖励：", amount, uPrice, recommend, amountRecommendTmp, amountRecommendTmp2, amountRecommendTmpBiw, user, tmpRecommendUser)
+
+				if amountRecommendTmp > 0 && amountRecommendTmpBiw > 0 {
+					if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+						err = ac.userRepo.UpdateUserRewardRecommend2(ctx, tmpUserId, amountRecommendTmpBiw, amountRecommendTmp2, amountRecommendTmp, tmpRecommendUser.Amount, stopRecommend, user.Address)
+						if err != nil {
+							fmt.Println("错误分红直推：", err)
+						}
+
+						return nil
+					}); nil != err {
+						fmt.Println("err reward recommend", err, amount, amountRecommendTmp, user, tmpRecommendUser)
+					}
+
+					if stopRecommend {
+						// 推荐人
+						var (
+							userRecommendArea *UserRecommend
+						)
+						if _, ok := userRecommendsMap[tmpRecommendUser.ID]; ok {
+							userRecommendArea = userRecommendsMap[tmpRecommendUser.ID]
+						} else {
+							fmt.Println("错误分红业绩变更，信息缺失7：", err, amount, amountRecommendTmp, user, tmpRecommendUser)
+							continue
+						}
+
+						if nil != userRecommendArea && "" != userRecommendArea.RecommendCode {
+							var tmpRecommendAreaUserIds []string
+							tmpRecommendAreaUserIds = strings.Split(userRecommendArea.RecommendCode, "D")
+
+							for j := len(tmpRecommendAreaUserIds) - 1; j >= 0; j-- {
+								if 0 >= len(tmpRecommendAreaUserIds[j]) {
+									continue
+								}
+
+								myUserRecommendAreaUserId, _ := strconv.ParseInt(tmpRecommendAreaUserIds[j], 10, 64) // 最后一位是直推人
+								if 0 >= myUserRecommendAreaUserId {
+									continue
+								}
+								if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { //
+									// 减掉业绩
+									err = ac.userRepo.UpdateUserMyTotalAmountSub(ctx, myUserRecommendAreaUserId, tmpRecommendUser.AmountUsdt)
+									if err != nil {
+										fmt.Println("错误分红社区：", err, amount, amountRecommendTmp, user, tmpRecommendUser)
+									}
+
+									return nil
+								}); nil != err {
+									fmt.Println("err reward recommend 2", err, amount, amountRecommendTmp, user, tmpRecommendUser)
+								}
+							}
+						}
+					}
+
+				}
+			}
+		}
+	}
+
+	return &pb.BuyTwoReply{
 		Status: "ok",
 	}, nil
 }

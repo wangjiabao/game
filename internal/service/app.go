@@ -236,6 +236,40 @@ func (a *AppService) UserInfo(ctx context.Context, req *pb.UserInfoRequest) (*pb
 	return a.ac.UserInfo(ctx, address)
 }
 
+// UserBuy userBuy.
+func (a *AppService) UserBuy(ctx context.Context, req *pb.UserBuyRequest) (*pb.UserBuyReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		address string
+	)
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["Address"] == nil {
+			return &pb.UserBuyReply{Status: "无效token"}, nil
+		}
+
+		address = c["Address"].(string)
+
+		// 验证
+		var (
+			res bool
+			err error
+		)
+		res, err = addressCheck(address)
+		if nil != err {
+			return &pb.UserBuyReply{Status: "无效token"}, nil
+		}
+
+		if !res {
+			return &pb.UserBuyReply{Status: "无效token"}, nil
+		}
+	} else {
+		return &pb.UserBuyReply{Status: "无效token"}, nil
+	}
+
+	return a.ac.UserBuy(ctx, address)
+}
+
 // UserRecommend userRecommend.
 func (a *AppService) UserRecommend(ctx context.Context, req *pb.UserRecommendRequest) (*pb.UserRecommendReply, error) {
 	// 在上下文 context 中取出 claims 对象
@@ -302,6 +336,40 @@ func (a *AppService) UserRecommendL(ctx context.Context, req *pb.UserRecommendLR
 	}
 
 	return a.ac.UserRecommendL(ctx, address, req)
+}
+
+// UserBuyL UserBuyL.
+func (a *AppService) UserBuyL(ctx context.Context, req *pb.UserBuyLRequest) (*pb.UserBuyLReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		address string
+	)
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["Address"] == nil {
+			return &pb.UserBuyLReply{Status: "无效token"}, nil
+		}
+
+		address = c["Address"].(string)
+
+		// 验证
+		var (
+			res bool
+			err error
+		)
+		res, err = addressCheck(address)
+		if nil != err {
+			return &pb.UserBuyLReply{Status: "无效token"}, nil
+		}
+
+		if !res {
+			return &pb.UserBuyLReply{Status: "无效token"}, nil
+		}
+	} else {
+		return &pb.UserBuyLReply{Status: "无效token"}, nil
+	}
+
+	return a.ac.UserBuyL(ctx, address, req)
 }
 
 // UserLand userLand.
@@ -1614,6 +1682,50 @@ func (a *AppService) Exchange(ctx context.Context, req *pb.ExchangeRequest) (*pb
 	}
 
 	return a.ac.Exchange(ctx, address, req)
+}
+
+func (a *AppService) BuyTwo(ctx context.Context, req *pb.BuyTwoRequest) (*pb.BuyTwoReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		address string
+	)
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["Address"] == nil {
+			return &pb.BuyTwoReply{Status: "无效token"}, nil
+		}
+
+		address = c["Address"].(string)
+
+		// 验证
+		var (
+			res bool
+			err error
+		)
+		res, err = addressCheck(address)
+		if nil != err {
+			return &pb.BuyTwoReply{Status: "无效token"}, nil
+		}
+
+		if !res {
+			return &pb.BuyTwoReply{Status: "无效token"}, nil
+		}
+	} else {
+		return &pb.BuyTwoReply{Status: "无效token"}, nil
+	}
+
+	var (
+		res             bool
+		addressFromSign string
+	)
+	res, addressFromSign = verifySig(req.SendBody.Sign, []byte(address))
+	if !res || addressFromSign != address {
+		return &pb.BuyTwoReply{
+			Status: "地址签名错误",
+		}, nil
+	}
+
+	return a.ac.BuyTwo(ctx, address, req)
 }
 
 func (a *AppService) Withdraw(ctx context.Context, req *pb.WithdrawRequest) (*pb.WithdrawReply, error) {

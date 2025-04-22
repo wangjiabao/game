@@ -98,6 +98,31 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Status'
+    /api/app_server/buy_two:
+        post:
+            tags:
+                - App
+            description: 提现
+            operationId: App_BuyTwo
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/BuyTwoRequest_SendBody'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/BuyTwoReply'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
     /api/app_server/eth_authorize:
         post:
             tags:
@@ -739,6 +764,53 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Status'
+    /api/app_server/user_buy:
+        get:
+            tags:
+                - App
+            description: 认购信息
+            operationId: App_UserBuy
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UserBuyReply'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
+    /api/app_server/user_buy_l:
+        get:
+            tags:
+                - App
+            description: 认购奖励内容
+            operationId: App_UserBuyL
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: string
+                - name: num
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UserBuyLReply'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
     /api/app_server/user_index_list:
         get:
             tags:
@@ -1186,6 +1258,18 @@ components:
                     type: string
                 sign:
                     type: string
+        BuyTwoReply:
+            type: object
+            properties:
+                status:
+                    type: string
+        BuyTwoRequest_SendBody:
+            type: object
+            properties:
+                sign:
+                    type: string
+                amount:
+                    type: string
         EthAuthorizeReply:
             type: object
             properties:
@@ -1585,6 +1669,90 @@ components:
                     type: string
                 createdAt:
                     type: string
+        UserBuyLReply:
+            type: object
+            properties:
+                status:
+                    type: string
+                count:
+                    type: string
+                list:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/UserBuyLReply_List'
+        UserBuyLReply_List:
+            type: object
+            properties:
+                amount:
+                    type: number
+                    format: double
+                amountTwo:
+                    type: number
+                    format: double
+                address:
+                    type: string
+                num:
+                    type: string
+                createdAt:
+                    type: string
+        UserBuyReply:
+            type: object
+            properties:
+                status:
+                    type: string
+                one:
+                    type: number
+                    format: double
+                two:
+                    type: number
+                    format: double
+                three:
+                    type: number
+                    format: double
+                four:
+                    type: number
+                    format: double
+                five:
+                    type: number
+                    format: double
+                six:
+                    type: number
+                    format: double
+                seven:
+                    type: number
+                    format: double
+                eight:
+                    type: number
+                    format: double
+                nine:
+                    type: number
+                    format: double
+                ten:
+                    type: number
+                    format: double
+                elven:
+                    type: number
+                    format: double
+                twelve:
+                    type: number
+                    format: double
+                thirteen:
+                    type: number
+                    format: double
+                fourteen:
+                    type: number
+                    format: double
+                recommendNum:
+                    type: string
+                price:
+                    type: number
+                    format: double
+                giw:
+                    type: number
+                    format: double
+                usdt:
+                    type: number
+                    format: double
         UserIndexListReply:
             type: object
             properties:

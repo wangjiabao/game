@@ -36,6 +36,13 @@ type User struct {
 	Area             float64   `gorm:"type:decimal(65,20);default:0.00000000000000000000;"`
 	AreaTwo          float64   `gorm:"type:decimal(65,20);default:0.00000000000000000000;"`
 	All              float64   `gorm:"type:decimal(65,20);default:0.00000000000000000000;"`
+	Amount           float64   `gorm:"type:decimal(65,20);default:0.00000000000000000000;"`
+	AmountGet        float64   `gorm:"type:decimal(65,20);default:0.00000000000000000000;"`
+	AmountUsdt       float64   `gorm:"type:decimal(65,20);default:0.00000000000000000000;"`
+	MyTotalAmount    float64   `gorm:"type:decimal(65,20);default:0.00000000000000000000;"`
+	OutNum           uint64    `gorm:"type:int;"`
+	Vip              uint64    `gorm:"type:int;"`
+	VipAdmin         uint64    `gorm:"type:int;"`
 	CreatedAt        time.Time `gorm:"type:datetime;not null"`
 	UpdatedAt        time.Time `gorm:"type:datetime;not null"`
 }
@@ -76,6 +83,20 @@ type Reward struct {
 	Two       uint64    `gorm:"type:int;not null"`
 	Three     float64   `gorm:"type:decimal(65,20);not null"`
 	Amount    float64   `gorm:"type:decimal(65,20);not null"`
+	CreatedAt time.Time `gorm:"type:datetime;not null"`
+	UpdatedAt time.Time `gorm:"type:datetime;not null"`
+}
+
+type RewardTwo struct {
+	ID        uint64    `gorm:"primarykey;type:int"`
+	UserId    uint64    `gorm:"type:int;not null"`
+	Reason    uint64    `gorm:"type:int;not null"`
+	One       uint64    `gorm:"type:int;not null"`
+	Two       uint64    `gorm:"type:int;not null"`
+	Three     float64   `gorm:"type:decimal(65,20);not null"`
+	Amount    float64   `gorm:"type:decimal(65,20);not null"`
+	Four      string    `gorm:"type:varchar(45);not null"`
+	Five      float64   `gorm:"type:decimal(65,20);not null"`
 	CreatedAt time.Time `gorm:"type:datetime;not null"`
 	UpdatedAt time.Time `gorm:"type:datetime;not null"`
 }
@@ -390,6 +411,13 @@ func (u *UserRepo) GetAllUsers(ctx context.Context) ([]*biz.User, error) {
 			All:              user.All,
 			Area:             user.Area,
 			AreaTwo:          user.AreaTwo,
+			Amount:           user.Amount,
+			AmountGet:        user.AmountGet,
+			AmountUsdt:       user.AmountUsdt,
+			MyTotalAmount:    user.MyTotalAmount,
+			OutNum:           user.OutNum,
+			Vip:              user.Vip,
+			VipAdmin:         user.VipAdmin,
 		})
 	}
 
@@ -438,6 +466,13 @@ func (u *UserRepo) GetUserByUserIds(ctx context.Context, userIds []uint64) (map[
 			All:              user.All,
 			Area:             user.Area,
 			AreaTwo:          user.AreaTwo,
+			Amount:           user.Amount,
+			AmountGet:        user.AmountGet,
+			AmountUsdt:       user.AmountUsdt,
+			MyTotalAmount:    user.MyTotalAmount,
+			OutNum:           user.OutNum,
+			Vip:              user.Vip,
+			VipAdmin:         user.VipAdmin,
 		}
 	}
 	return res, nil
@@ -482,6 +517,13 @@ func (u *UserRepo) GetUserByAddress(ctx context.Context, address string) (*biz.U
 		All:              user.All,
 		Area:             user.Area,
 		AreaTwo:          user.AreaTwo,
+		Amount:           user.Amount,
+		AmountGet:        user.AmountGet,
+		AmountUsdt:       user.AmountUsdt,
+		MyTotalAmount:    user.MyTotalAmount,
+		OutNum:           user.OutNum,
+		Vip:              user.Vip,
+		VipAdmin:         user.VipAdmin,
 	}, nil
 }
 
@@ -597,6 +639,13 @@ func (u *UserRepo) CreateUser(ctx context.Context, uc *biz.User) (*biz.User, err
 		All:              user.All,
 		Area:             user.Area,
 		AreaTwo:          user.AreaTwo,
+		Amount:           user.Amount,
+		AmountGet:        user.AmountGet,
+		AmountUsdt:       user.AmountUsdt,
+		MyTotalAmount:    user.MyTotalAmount,
+		OutNum:           user.OutNum,
+		Vip:              user.Vip,
+		VipAdmin:         user.VipAdmin,
 	}, nil
 }
 
@@ -882,6 +931,44 @@ func (u *UserRepo) GetUserRecommendByCodePage(ctx context.Context, code string, 
 	return res, nil
 }
 
+// GetUserRewardTwoByCodePage .
+func (u *UserRepo) GetUserRewardTwoPage(ctx context.Context, userId uint64, reason uint64, b *biz.Pagination) ([]*biz.RewardTwo, error) {
+	var (
+		rewards []*RewardTwo
+	)
+
+	res := make([]*biz.RewardTwo, 0)
+	instance := u.data.DB(ctx).Table("reward_two").
+		Where("user_id=?", userId).
+		Where("reason=?", reason).
+		Order("id desc").
+		Scopes(Paginate(b.PageNum, b.PageSize))
+	if err := instance.Find(&rewards).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return res, nil
+		}
+
+		return nil, errors.New(500, "GetUserRewardByCodePage ERROR", err.Error())
+	}
+
+	for _, v := range rewards {
+		res = append(res, &biz.RewardTwo{
+			ID:        v.ID,
+			UserId:    v.UserId,
+			Amount:    v.Amount,
+			One:       v.One,
+			Two:       v.Two,
+			Three:     v.Three,
+			Five:      v.Five,
+			Four:      v.Four,
+			CreatedAt: v.CreatedAt,
+			UpdatedAt: v.UpdatedAt,
+		})
+	}
+
+	return res, nil
+}
+
 // GetUserRewardByCodePage .
 func (u *UserRepo) GetUserRewardPage(ctx context.Context, userId uint64, reason []uint64, b *biz.Pagination) ([]*biz.Reward, error) {
 	var (
@@ -924,6 +1011,20 @@ func (u *UserRepo) GetUserRewardPageCount(ctx context.Context, userId uint64, re
 	instance := u.data.DB(ctx).Table("reward").
 		Where("user_id = ?", userId).
 		Where("reason IN (?)", reason)
+
+	if err := instance.Count(&count).Error; err != nil {
+		return 0, errors.New(500, "GetUserRewardPageCount ERROR", err.Error())
+	}
+
+	return count, nil
+}
+
+func (u *UserRepo) GetUserRewardTwoPageCount(ctx context.Context, userId uint64, reason uint64) (int64, error) {
+	var count int64
+
+	instance := u.data.DB(ctx).Table("reward_two").
+		Where("user_id = ?", userId).
+		Where("reason=?", reason)
 
 	if err := instance.Count(&count).Error; err != nil {
 		return 0, errors.New(500, "GetUserRewardPageCount ERROR", err.Error())
@@ -1908,6 +2009,13 @@ func (u *UserRepo) GetUserOrder(ctx context.Context, b *biz.Pagination) ([]*biz.
 			All:              user.All,
 			Area:             user.Area,
 			AreaTwo:          user.AreaTwo,
+			Amount:           user.Amount,
+			AmountGet:        user.AmountGet,
+			AmountUsdt:       user.AmountUsdt,
+			MyTotalAmount:    user.MyTotalAmount,
+			OutNum:           user.OutNum,
+			Vip:              user.Vip,
+			VipAdmin:         user.VipAdmin,
 		})
 	}
 
@@ -3371,6 +3479,117 @@ func (u *UserRepo) SetBuyLandOver(ctx context.Context, id uint64) error {
 		})
 	if res.Error != nil {
 		return errors.New(500, "SetBuyLandOver", "用户信息修改失败")
+	}
+
+	return nil
+}
+
+// UpdateUserNewTwoNew .
+func (u *UserRepo) UpdateUserNewTwoNew(ctx context.Context, userId uint64, amount, giw float64, amountUsdt uint64) error {
+
+	res := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("amount_usdt>=?", amountUsdt).Where("giw>=?", giw).
+		Updates(map[string]interface{}{
+			"amount_usdt": gorm.Expr("amount_usdt - ?", amountUsdt),
+			"giw":         gorm.Expr("giw - ?", giw),
+			"amount":      amount,
+			"updated_at":  time.Now().Format("2006-01-02 15:04:05"),
+		})
+	if res.Error != nil {
+		return errors.New(500, "UPDATE_USER_ERROR", "用户信息修改失败")
+	}
+
+	var (
+		err    error
+		reward RewardTwo
+	)
+
+	reward.UserId = userId
+	reward.Amount = amount
+	reward.Reason = 1 // 认购
+	err = u.data.DB(ctx).Table("reward_two").Create(&reward).Error
+	if err != nil {
+		return errors.New(500, "CREATE_LOCATION_ERROR", "占位信息创建失败")
+	}
+	return nil
+}
+
+// UpdateUserMyTotalAmount .
+func (u *UserRepo) UpdateUserMyTotalAmount(ctx context.Context, userId uint64, amount float64) error {
+	res := u.data.DB(ctx).Table("user").Where("id=?", userId).
+		Updates(map[string]interface{}{"my_total_amount": gorm.Expr("my_total_amount + ?", amount)})
+	if res.Error != nil {
+		return errors.New(500, "UPDATE_USER_ERROR", "用户信息修改失败")
+	}
+
+	return nil
+}
+
+// UpdateUserMyTotalAmountSub .
+func (u *UserRepo) UpdateUserMyTotalAmountSub(ctx context.Context, userId int64, amount float64) error {
+	res := u.data.DB(ctx).Table("user").Where("id=?", userId).
+		Updates(map[string]interface{}{"my_total_amount": gorm.Expr("my_total_amount - ?", amount)})
+	if res.Error != nil {
+		return errors.New(500, "UPDATE_USER_ERROR", "用户信息修改失败")
+	}
+
+	return nil
+}
+
+// UpdateUserRewardRecommend2 .
+func (u *UserRepo) UpdateUserRewardRecommend2(ctx context.Context, userId uint64, giw, usdt2, usdt float64, amountOrigin float64, stop bool, address string) error {
+	var err error
+
+	if stop {
+		res := u.data.DB(ctx).Table("user").Where("id=?", userId).
+			Updates(map[string]interface{}{
+				"amount":        0,
+				"amount_get":    0,
+				"giw":           gorm.Expr("giw + ?", giw),
+				"out_num":       gorm.Expr("out_num + ?", 1),
+				"updated_at":    time.Now().Format("2006-01-02 15:04:05"),
+				"location":      0,
+				"recommend":     0,
+				"recommend_two": 0,
+				"area":          0,
+				"area_two":      0,
+				"all":           0,
+			})
+		if res.Error != nil {
+			return errors.New(500, "UPDATE_USER_ERROR", "用户信息修改失败")
+		}
+
+		var rewardStop RewardTwo
+		rewardStop.UserId = userId
+		rewardStop.Reason = 99 // 给我分红的理由
+		rewardStop.Three = amountOrigin
+		err = u.data.DB(ctx).Table("reward_two").Create(&rewardStop).Error
+		if err != nil {
+			return err
+		}
+	} else {
+		res := u.data.DB(ctx).Table("user").Where("id=?", userId).
+			Updates(map[string]interface{}{
+				"amount_get": gorm.Expr("amount_get + ?", usdt),
+				"recommend":  gorm.Expr("recommend + ?", usdt),
+				"giw":        gorm.Expr("giw + ?", giw),
+				"updated_at": time.Now().Format("2006-01-02 15:04:05"),
+			})
+		if res.Error != nil {
+			return errors.New(500, "UPDATE_USER_ERROR", "用户信息修改失败")
+		}
+	}
+
+	var reward RewardTwo
+	reward.UserId = userId
+	reward.Amount = giw
+	reward.Three = usdt
+	reward.One = 1
+	reward.Four = address
+	reward.Five = usdt2
+	reward.Reason = 2 // 直推
+	err = u.data.DB(ctx).Table("reward_two").Create(&reward).Error
+	if err != nil {
+		return err
 	}
 
 	return nil
