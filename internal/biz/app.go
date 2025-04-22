@@ -5787,7 +5787,7 @@ func (ac *AppUsecase) BuyTwo(ctx context.Context, address string, req *pb.BuyTwo
 								}
 								if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { //
 									// 减掉业绩
-									err = ac.userRepo.UpdateUserMyTotalAmountSub(ctx, myUserRecommendAreaUserId, tmpRecommendUser.AmountUsdt)
+									err = ac.userRepo.UpdateUserMyTotalAmountSub(ctx, myUserRecommendAreaUserId, tmpRecommendUser.Amount)
 									if err != nil {
 										fmt.Println("错误分红社区：", err, amount, amountRecommendTmp, user, tmpRecommendUser)
 									}
