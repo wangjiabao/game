@@ -5526,6 +5526,21 @@ func (ac *AppUsecase) BuyTwo(ctx context.Context, address string, req *pb.BuyTwo
 		}, nil
 	}
 
+	// 推荐
+	var (
+		userRecommend       *UserRecommend
+		tmpRecommendUserIds []string
+	)
+	userRecommend, err = ac.userRepo.GetUserRecommendByUserId(ctx, user.ID)
+	if nil == userRecommend || nil != err {
+		return &pb.BuyTwoReply{
+			Status: "上级查询错误",
+		}, nil
+	}
+	if "" != userRecommend.RecommendCode {
+		tmpRecommendUserIds = strings.Split(userRecommend.RecommendCode, "D")
+	}
+
 	// 配置
 	configs, err = ac.userRepo.GetConfigByKeys(ctx,
 		"u_price",
@@ -5616,13 +5631,13 @@ func (ac *AppUsecase) BuyTwo(ctx context.Context, address string, req *pb.BuyTwo
 
 		// 我的直推
 		var (
-			myUserRecommendUserId uint64
-			tmpRecommendUserIds   []string
+			myUserRecommendUserId  uint64
+			tmpRecommendUserIdsTmp []string
 		)
 
-		tmpRecommendUserIds = strings.Split(vUr.RecommendCode, "D")
-		if 2 <= len(tmpRecommendUserIds) {
-			myUserRecommendUserId, _ = strconv.ParseUint(tmpRecommendUserIds[len(tmpRecommendUserIds)-1], 10, 64) // 最后一位是直推人
+		tmpRecommendUserIdsTmp = strings.Split(vUr.RecommendCode, "D")
+		if 2 <= len(tmpRecommendUserIdsTmp) {
+			myUserRecommendUserId, _ = strconv.ParseUint(tmpRecommendUserIdsTmp[len(tmpRecommendUserIdsTmp)-1], 10, 64) // 最后一位是直推人
 		}
 
 		if 0 >= myUserRecommendUserId {
@@ -5652,6 +5667,19 @@ func (ac *AppUsecase) BuyTwo(ctx context.Context, address string, req *pb.BuyTwo
 		usersMap[vUsers.ID] = vUsers
 	}
 
+	if 0 < len(tmpRecommendUserIds) {
+		tmpUserId, _ := strconv.ParseUint(tmpRecommendUserIds[0], 10, 64) // 最后一位是直推人
+		if 0 < tmpUserId {
+			if _, ok := usersMap[tmpUserId]; ok {
+				if 0 >= usersMap[tmpUserId].Amount && 0 >= usersMap[tmpUserId].OutNum {
+					return &pb.BuyTwoReply{
+						Status: "上级未激活",
+					}, nil
+				}
+			}
+		}
+	}
+
 	if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 		err = ac.userRepo.UpdateUserNewTwoNew(ctx, user.ID, amount, tmpB, uint64(tmpU))
 		if nil != err {
@@ -5675,20 +5703,6 @@ func (ac *AppUsecase) BuyTwo(ctx context.Context, address string, req *pb.BuyTwo
 		}, nil
 	}
 
-	// 推荐
-	var (
-		userRecommend       *UserRecommend
-		tmpRecommendUserIds []string
-	)
-	userRecommend, err = ac.userRepo.GetUserRecommendByUserId(ctx, user.ID)
-	if nil == userRecommend || nil != err {
-		return &pb.BuyTwoReply{
-			Status: "上级查询错误",
-		}, nil
-	}
-	if "" != userRecommend.RecommendCode {
-		tmpRecommendUserIds = strings.Split(userRecommend.RecommendCode, "D")
-	}
 	if 0 >= len(tmpRecommendUserIds) {
 		return &pb.BuyTwoReply{
 			Status: "ok",
