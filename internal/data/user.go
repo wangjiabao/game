@@ -29,7 +29,13 @@ type User struct {
 	RewardTwoThree   float64   `gorm:"type:decimal(65,20);not null"`
 	RewardThreeOne   float64   `gorm:"type:decimal(65,20);not null"`
 	RewardThreeTwo   float64   `gorm:"type:decimal(65,20);not null"`
-	RewardThreeThree float64   `gorm:"type:decimal(65,20);not null"`
+	RewardThreeThree float64   `gorm:"type:decimal(65,20);default:0.00000000000000000000;"`
+	Location         float64   `gorm:"type:decimal(65,20);default:0.00000000000000000000;"`
+	Recommend        float64   `gorm:"type:decimal(65,20);default:0.00000000000000000000;"`
+	RecommendTwo     float64   `gorm:"type:decimal(65,20);default:0.00000000000000000000;"`
+	Area             float64   `gorm:"type:decimal(65,20);default:0.00000000000000000000;"`
+	AreaTwo          float64   `gorm:"type:decimal(65,20);default:0.00000000000000000000;"`
+	All              float64   `gorm:"type:decimal(65,20);default:0.00000000000000000000;"`
 	CreatedAt        time.Time `gorm:"type:datetime;not null"`
 	UpdatedAt        time.Time `gorm:"type:datetime;not null"`
 }
@@ -378,6 +384,12 @@ func (u *UserRepo) GetAllUsers(ctx context.Context) ([]*biz.User, error) {
 			RewardThreeOne:   user.RewardThreeOne,
 			RewardThreeTwo:   user.RewardThreeTwo,
 			RewardThreeThree: user.RewardThreeThree,
+			Location:         user.Location,
+			Recommend:        user.Recommend,
+			RecommendTwo:     user.RecommendTwo,
+			All:              user.All,
+			Area:             user.Area,
+			AreaTwo:          user.AreaTwo,
 		})
 	}
 
@@ -420,6 +432,12 @@ func (u *UserRepo) GetUserByUserIds(ctx context.Context, userIds []uint64) (map[
 			RewardThreeOne:   user.RewardThreeOne,
 			RewardThreeTwo:   user.RewardThreeTwo,
 			RewardThreeThree: user.RewardThreeThree,
+			Location:         user.Location,
+			Recommend:        user.Recommend,
+			RecommendTwo:     user.RecommendTwo,
+			All:              user.All,
+			Area:             user.Area,
+			AreaTwo:          user.AreaTwo,
 		}
 	}
 	return res, nil
@@ -458,6 +476,12 @@ func (u *UserRepo) GetUserByAddress(ctx context.Context, address string) (*biz.U
 		RewardThreeThree: user.RewardThreeThree,
 		CreatedAt:        user.CreatedAt,
 		UpdatedAt:        user.UpdatedAt,
+		Location:         user.Location,
+		Recommend:        user.Recommend,
+		RecommendTwo:     user.RecommendTwo,
+		All:              user.All,
+		Area:             user.Area,
+		AreaTwo:          user.AreaTwo,
 	}, nil
 }
 
@@ -567,6 +591,12 @@ func (u *UserRepo) CreateUser(ctx context.Context, uc *biz.User) (*biz.User, err
 		RewardThreeThree: user.RewardThreeThree,
 		CreatedAt:        user.CreatedAt,
 		UpdatedAt:        user.UpdatedAt,
+		Location:         user.Location,
+		Recommend:        user.Recommend,
+		RecommendTwo:     user.RecommendTwo,
+		All:              user.All,
+		Area:             user.Area,
+		AreaTwo:          user.AreaTwo,
 	}, nil
 }
 
@@ -1872,6 +1902,12 @@ func (u *UserRepo) GetUserOrder(ctx context.Context, b *biz.Pagination) ([]*biz.
 			RewardThreeOne:   user.RewardThreeOne,
 			RewardThreeTwo:   user.RewardThreeTwo,
 			RewardThreeThree: user.RewardThreeThree,
+			Location:         user.Location,
+			Recommend:        user.Recommend,
+			RecommendTwo:     user.RecommendTwo,
+			All:              user.All,
+			Area:             user.Area,
+			AreaTwo:          user.AreaTwo,
 		})
 	}
 

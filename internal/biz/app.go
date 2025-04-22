@@ -40,6 +40,12 @@ type User struct {
 	RewardThreeOne   float64
 	RewardThreeTwo   float64
 	RewardThreeThree float64
+	Location         float64
+	Recommend        float64
+	RecommendTwo     float64
+	Area             float64
+	AreaTwo          float64
+	All              float64
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
 }
