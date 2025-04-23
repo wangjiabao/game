@@ -5568,32 +5568,32 @@ func (ac *AppUsecase) BuyTwo(ctx context.Context, address string, req *pb.BuyTwo
 		tmpB = 50 / uPrice
 		amount = 100
 	} else if 300 == req.SendBody.Amount {
-		tmpU = 300
-		tmpB = 300 / uPrice
+		tmpU = 150
+		tmpB = 150 / uPrice
 		amount = 300
 	} else if 500 == req.SendBody.Amount {
-		tmpU = 500
-		tmpB = 500 / uPrice
+		tmpU = 250
+		tmpB = 250 / uPrice
 		amount = 500
 	} else if 1000 == req.SendBody.Amount {
-		tmpU = 1000
-		tmpB = 1000 / uPrice
+		tmpU = 500
+		tmpB = 500 / uPrice
 		amount = 1000
 	} else if 5000 == req.SendBody.Amount {
-		tmpU = 5000
-		tmpB = 5000 / uPrice
+		tmpU = 2500
+		tmpB = 2500 / uPrice
 		amount = 5000
 	} else if 10000 == req.SendBody.Amount {
-		tmpU = 10000
-		tmpB = 10000 / uPrice
+		tmpU = 5000
+		tmpB = 5000 / uPrice
 		amount = 10000
 	} else if 15000 == req.SendBody.Amount {
-		tmpU = 15000
-		tmpB = 15000 / uPrice
+		tmpU = 7500
+		tmpB = 7500 / uPrice
 		amount = 15000
 	} else if 30000 == req.SendBody.Amount {
-		tmpU = 30000
-		tmpB = 30000 / uPrice
+		tmpU = 15000
+		tmpB = 15000 / uPrice
 		amount = 30000
 	} else {
 		return &pb.BuyTwoReply{
