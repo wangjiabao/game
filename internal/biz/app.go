@@ -2750,7 +2750,7 @@ func (ac *AppUsecase) LandPlayOne(ctx context.Context, address string, req *pb.L
 	land, err = ac.userRepo.GetLandByID(ctx, req.SendBody.LandId)
 	if nil != err || nil == land {
 		return &pb.LandPlayOneReply{
-			Status: "土地过期，请撤销土地布置",
+			Status: "土地不存在或已失效，撤销布置",
 		}, nil
 	}
 
@@ -4906,7 +4906,7 @@ func (ac *AppUsecase) LandAddOutRate(ctx context.Context, address string, req *p
 	land, err = ac.userRepo.GetLandByID(ctx, req.SendBody.LandId)
 	if nil != err || nil == land {
 		return &pb.LandAddOutRateReply{
-			Status: "不存在土地",
+			Status: "土地不存在或已失效，撤销布置",
 		}, nil
 	}
 
