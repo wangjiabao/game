@@ -961,6 +961,7 @@ func (u *UserRepo) GetUserRewardTwoPage(ctx context.Context, userId uint64, reas
 			Three:     v.Three,
 			Five:      v.Five,
 			Four:      v.Four,
+			Reason:    v.Reason,
 			CreatedAt: v.CreatedAt,
 			UpdatedAt: v.UpdatedAt,
 		})
