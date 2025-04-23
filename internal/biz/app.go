@@ -1118,13 +1118,25 @@ func (ac *AppUsecase) UserBuyL(ctx context.Context, address string, req *pb.User
 	}
 
 	for _, v := range reward {
-		res = append(res, &pb.UserBuyLReply_List{
-			Amount:    v.Three,
-			AmountTwo: v.Amount,
-			Address:   v.Four,
-			Num:       v.One,
-			CreatedAt: v.CreatedAt.Add(8 * time.Hour).Format("2006-01-02 15:04:05"),
-		})
+
+		if 1 == v.Reason {
+			res = append(res, &pb.UserBuyLReply_List{
+				AmountThree: v.Amount,
+				Amount:      v.Five,
+				AmountTwo:   v.Three,
+				Address:     v.Four,
+				Num:         v.One,
+				CreatedAt:   v.CreatedAt.Add(8 * time.Hour).Format("2006-01-02 15:04:05"),
+			})
+		} else {
+			res = append(res, &pb.UserBuyLReply_List{
+				Amount:    v.Three,
+				AmountTwo: v.Amount,
+				Address:   v.Four,
+				Num:       v.One,
+				CreatedAt: v.CreatedAt.Add(8 * time.Hour).Format("2006-01-02 15:04:05"),
+			})
+		}
 	}
 
 	return &pb.UserBuyLReply{
@@ -5391,7 +5403,7 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 		}
 
 		return &pb.StakeGetPlayReply{Status: "ok", PlayStatus: 1, Amount: tmpGit}, nil
-	} else { // 输：下注金额加入池子
+	} else {                                                         // 输：下注金额加入池子
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 			err = ac.userRepo.SetStakeGetPlaySub(ctx, user.ID, float64(req.SendBody.Amount))
 			if nil != err {

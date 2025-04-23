@@ -3505,6 +3505,8 @@ func (u *UserRepo) UpdateUserNewTwoNew(ctx context.Context, userId uint64, amoun
 
 	reward.UserId = userId
 	reward.Amount = amount
+	reward.Three = giw
+	reward.Five = float64(amountUsdt)
 	reward.Reason = 1 // 认购
 	err = u.data.DB(ctx).Table("reward_two").Create(&reward).Error
 	if err != nil {
