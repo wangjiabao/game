@@ -465,6 +465,9 @@ message UserBuyReply {
 	double price = 17; // 价格 biw的数量=usdt的数量/price
 	double giw = 18; // biw余额
 	double usdt = 19; // usdt余额
+	uint64 buyNum  = 20;
+	uint64 teamNum = 21;
+	uint64 level = 22;
 }
 
 message UserRecommendRequest {

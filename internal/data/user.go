@@ -576,6 +576,35 @@ func (u *UserRepo) GetUserRecommendByCode(ctx context.Context, code string) ([]*
 	return res, nil
 }
 
+// GetUserRecommendLikeCode .
+func (u *UserRepo) GetUserRecommendLikeCode(ctx context.Context, code string) ([]*biz.UserRecommend, error) {
+	var (
+		userRecommends []*UserRecommend
+	)
+
+	res := make([]*biz.UserRecommend, 0)
+	instance := u.data.DB(ctx).Table("user_recommend").Where("recommend_code Like ?", code+"%")
+	if err := instance.Find(&userRecommends).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return res, nil
+		}
+
+		return nil, errors.New(500, "USER RECOMMEND ERROR", err.Error())
+	}
+
+	for _, userRecommend := range userRecommends {
+		res = append(res, &biz.UserRecommend{
+			ID:            userRecommend.ID,
+			UserId:        userRecommend.UserId,
+			RecommendCode: userRecommend.RecommendCode,
+			CreatedAt:     userRecommend.CreatedAt,
+			UpdatedAt:     userRecommend.UpdatedAt,
+		})
+	}
+
+	return res, nil
+}
+
 // GetUserRecommends .
 func (u *UserRepo) GetUserRecommends(ctx context.Context) ([]*biz.UserRecommend, error) {
 	var userRecommends []*UserRecommend
@@ -1238,7 +1267,7 @@ func (u *UserRepo) GetLandByUserIDUsing(ctx context.Context, userID uint64, stat
 	res := make([]*biz.Land, 0)
 	instance := u.data.DB(ctx).Table("land").
 		Where("user_id = ?", userID).
-		Where("limit_date>=?", time.Now().Unix()).
+		//Where("limit_date>=?", time.Now().Unix()).
 		Where("status in (?)", status).
 		Where("location_num >?", 0).
 		Order("id asc")
