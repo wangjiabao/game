@@ -2750,7 +2750,7 @@ func (ac *AppUsecase) LandPlayOne(ctx context.Context, address string, req *pb.L
 	land, err = ac.userRepo.GetLandByID(ctx, req.SendBody.LandId)
 	if nil != err || nil == land {
 		return &pb.LandPlayOneReply{
-			Status: "土地信息错误",
+			Status: "土地过期，请撤销土地布置",
 		}, nil
 	}
 
@@ -4445,7 +4445,7 @@ func (ac *AppUsecase) Sell(ctx context.Context, address string, req *pb.SellRequ
 			//var (
 			//	land *Land
 			//)
-			//land, err = ac.userRepo.GetLandByID(ctx, req.SendBody.Id)
+			//land, err = ac.userRepo.GetLandByIDTwo(ctx, req.SendBody.Id)
 			//if nil != err || nil == land {
 			//	return &pb.SellReply{
 			//		Status: "不存在土地",
