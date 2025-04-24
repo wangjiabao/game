@@ -1756,6 +1756,12 @@ components:
                 usdt:
                     type: number
                     format: double
+                buyNum:
+                    type: string
+                teamNum:
+                    type: string
+                level:
+                    type: string
         UserIndexListReply:
             type: object
             properties:

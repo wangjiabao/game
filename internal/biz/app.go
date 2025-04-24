@@ -372,6 +372,7 @@ type UserRepo interface {
 	GetUserByAddress(ctx context.Context, address string) (*User, error)
 	GetUserRecommendByUserId(ctx context.Context, userId uint64) (*UserRecommend, error)
 	GetUserRecommendByCode(ctx context.Context, code string) ([]*UserRecommend, error)
+	GetUserRecommendLikeCode(ctx context.Context, code string) ([]*UserRecommend, error)
 	GetUserRecommends(ctx context.Context) ([]*UserRecommend, error)
 	CreateUser(ctx context.Context, uc *User) (*User, error)
 	CreateStakeGet(ctx context.Context, sg *StakeGet) error
@@ -612,7 +613,7 @@ func (ac *AppUsecase) UserBuy(ctx context.Context, address string) (*pb.UserBuyR
 	var (
 		userRecommend   *UserRecommend
 		myUserRecommend []*UserRecommend
-		users           map[uint64]*User
+		team            []*UserRecommend
 	)
 	userRecommend, err = ac.userRepo.GetUserRecommendByUserId(ctx, user.ID)
 	if nil == userRecommend || nil != err {
@@ -628,16 +629,27 @@ func (ac *AppUsecase) UserBuy(ctx context.Context, address string) (*pb.UserBuyR
 		}, nil
 	}
 
-	userIds := make([]uint64, 0)
-	for _, v := range myUserRecommend {
-		userIds = append(userIds, v.UserId)
-	}
-
-	users, err = ac.userRepo.GetUserByUserIds(ctx, userIds)
+	team, err = ac.userRepo.GetUserRecommendLikeCode(ctx, userRecommend.RecommendCode+"D"+strconv.FormatUint(user.ID, 10))
 	if nil != err {
 		return &pb.UserBuyReply{
-			Status: "推荐用户错误查询",
+			Status: "推荐错误查询",
 		}, nil
+	}
+
+	var (
+		users    []*User
+		usersMap map[uint64]*User
+	)
+	users, err = ac.userRepo.GetAllUsers(ctx)
+	if nil == users {
+		return &pb.UserBuyReply{
+			Status: "错误",
+		}, nil
+	}
+
+	usersMap = make(map[uint64]*User, 0)
+	for _, vUsers := range users {
+		usersMap[vUsers.ID] = vUsers
 	}
 
 	// 获取业绩
@@ -646,21 +658,55 @@ func (ac *AppUsecase) UserBuy(ctx context.Context, address string) (*pb.UserBuyR
 	tmpMaxId := uint64(0)
 	tmpTwelve := float64(0)
 	tmpRecommendNum := uint64(0)
-	for _, vMyLowUser := range users {
-		tmpTwelve += vMyLowUser.MyTotalAmount
+	for _, vMyLowUser := range myUserRecommend {
+		if _, ok := usersMap[vMyLowUser.ID]; !ok {
+			continue
+		}
+
+		tmpTwelve += usersMap[vMyLowUser.UserId].MyTotalAmount
 		tmpRecommendNum += 1
-		if tmpAreaMax < vMyLowUser.MyTotalAmount+vMyLowUser.Amount {
-			tmpAreaMax = vMyLowUser.MyTotalAmount + vMyLowUser.Amount
+		if tmpAreaMax < usersMap[vMyLowUser.UserId].MyTotalAmount+usersMap[vMyLowUser.UserId].Amount {
+			tmpAreaMax = usersMap[vMyLowUser.UserId].MyTotalAmount + usersMap[vMyLowUser.UserId].Amount
 			tmpMaxId = vMyLowUser.ID
 		}
 	}
 
 	if 0 < tmpMaxId {
-		for _, vMyLowUser := range users {
+		for _, vMyLowUser := range myUserRecommend {
+			if _, ok := usersMap[vMyLowUser.ID]; !ok {
+				continue
+			}
+
 			if tmpMaxId != vMyLowUser.ID {
-				tmpAreaMin += vMyLowUser.MyTotalAmount + vMyLowUser.Amount
+				tmpAreaMin += usersMap[vMyLowUser.UserId].MyTotalAmount + usersMap[vMyLowUser.UserId].Amount
 			}
 		}
+	}
+
+	tmpLevel := uint64(0)
+	if 1000000 <= tmpAreaMin {
+		tmpLevel = 5
+	} else if 500000 <= tmpAreaMin {
+		tmpLevel = 4
+	} else if 150000 <= tmpAreaMin {
+		tmpLevel = 3
+	} else if 50000 <= tmpAreaMin {
+		tmpLevel = 2
+	} else if 10000 <= tmpAreaMin {
+		tmpLevel = 1
+	}
+
+	tmpBuyNum := uint64(0)
+	for _, v := range team {
+		if _, ok := usersMap[v.UserId]; !ok {
+			continue
+		}
+
+		if 0 >= usersMap[v.UserId].OutNum && 0 >= usersMap[v.UserId].Amount {
+			continue
+		}
+
+		tmpBuyNum++
 	}
 
 	tmpFour := float64(0)
@@ -690,6 +736,9 @@ func (ac *AppUsecase) UserBuy(ctx context.Context, address string) (*pb.UserBuyR
 		Usdt:         user.AmountUsdt,
 		Giw:          user.Giw,
 		Price:        uPrice,
+		TeamNum:      uint64(len(team)),
+		BuyNum:       tmpBuyNum,
+		Level:        tmpLevel,
 	}, nil
 }
 
@@ -2701,7 +2750,7 @@ func (ac *AppUsecase) LandPlayOne(ctx context.Context, address string, req *pb.L
 	land, err = ac.userRepo.GetLandByID(ctx, req.SendBody.LandId)
 	if nil != err || nil == land {
 		return &pb.LandPlayOneReply{
-			Status: "土地信息错误",
+			Status: "土地不存在或已失效，撤销布置",
 		}, nil
 	}
 
@@ -4396,7 +4445,7 @@ func (ac *AppUsecase) Sell(ctx context.Context, address string, req *pb.SellRequ
 			//var (
 			//	land *Land
 			//)
-			//land, err = ac.userRepo.GetLandByID(ctx, req.SendBody.Id)
+			//land, err = ac.userRepo.GetLandByIDTwo(ctx, req.SendBody.Id)
 			//if nil != err || nil == land {
 			//	return &pb.SellReply{
 			//		Status: "不存在土地",
@@ -4608,7 +4657,7 @@ func (ac *AppUsecase) RentLand(ctx context.Context, address string, req *pb.Rent
 		var (
 			land *Land
 		)
-		land, err = ac.userRepo.GetLandByID(ctx, req.SendBody.LandId)
+		land, err = ac.userRepo.GetLandByIDTwo(ctx, req.SendBody.LandId)
 		if nil != err || nil == land {
 			return &pb.RentLandReply{
 				Status: "不存在土地",
@@ -4857,7 +4906,7 @@ func (ac *AppUsecase) LandAddOutRate(ctx context.Context, address string, req *p
 	land, err = ac.userRepo.GetLandByID(ctx, req.SendBody.LandId)
 	if nil != err || nil == land {
 		return &pb.LandAddOutRateReply{
-			Status: "不存在土地",
+			Status: "土地不存在或已失效，撤销布置",
 		}, nil
 	}
 
@@ -5403,7 +5452,7 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 		}
 
 		return &pb.StakeGetPlayReply{Status: "ok", PlayStatus: 1, Amount: tmpGit}, nil
-	} else {                                                         // 输：下注金额加入池子
+	} else { // 输：下注金额加入池子
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 			err = ac.userRepo.SetStakeGetPlaySub(ctx, user.ID, float64(req.SendBody.Amount))
 			if nil != err {
