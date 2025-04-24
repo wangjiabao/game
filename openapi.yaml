@@ -957,6 +957,10 @@ paths:
             description: 市场 出租
             operationId: App_UserMarketRentLandList
             parameters:
+                - name: rentType
+                  in: query
+                  schema:
+                    type: string
                 - name: page
                   in: query
                   schema:

@@ -393,6 +393,7 @@ type UserRepo interface {
 	GetLandByUserIDUsing(ctx context.Context, userID uint64, status []uint64) ([]*Land, error)
 	GetLandByUserID(ctx context.Context, userID uint64, status []uint64, b *Pagination) ([]*Land, error)
 	GetLandByExUserID(ctx context.Context, userID uint64, status []uint64, b *Pagination) ([]*Land, error)
+	GetLandByExUserIDByIds(ctx context.Context, ids []uint64, b *Pagination) ([]*Land, error)
 	GetUserRewardPage(ctx context.Context, userId uint64, reason []uint64, b *Pagination) ([]*Reward, error)
 	GetUserRewardTwoPage(ctx context.Context, userId uint64, reason uint64, b *Pagination) ([]*RewardTwo, error)
 	GetUserRewardPageCount(ctx context.Context, userId uint64, reason []uint64) (int64, error)
@@ -419,6 +420,7 @@ type UserRepo interface {
 	GetUserOrderCount(ctx context.Context) (int64, error)
 	GetUserOrder(ctx context.Context, b *Pagination) ([]*User, error)
 	GetLandUserUseByLandIDsMapUsing(ctx context.Context, userId uint64, landIDs []uint64) (map[uint64]*LandUserUse, error)
+	GetLandUserUseByLandIDsUsing(ctx context.Context, userId uint64) ([]*LandUserUse, error)
 	BuyBox(ctx context.Context, giw float64, originValue, value string, uc *BoxRecord) (uint64, error)
 	GetUserBoxRecordById(ctx context.Context, id uint64) (*BoxRecord, error)
 	OpenBoxSeed(ctx context.Context, id uint64, content string, seedInfo *Seed) (uint64, error)
@@ -1544,6 +1546,14 @@ func (ac *AppUsecase) UserMarketSeedList(ctx context.Context, address string, re
 		}, nil
 	}
 
+	if 0 >= len(seed) {
+		return &pb.UserMarketSeedListReply{
+			Status: "ok",
+			Count:  0,
+			List:   res,
+		}, nil
+	}
+
 	userIds := make([]uint64, 0)
 	for _, vSeed := range seed {
 		userIds = append(userIds, vSeed.UserId)
@@ -1604,6 +1614,14 @@ func (ac *AppUsecase) UserMarketLandList(ctx context.Context, address string, re
 	if nil != err {
 		return &pb.UserMarketLandListReply{
 			Status: "错误查询",
+		}, nil
+	}
+
+	if 0 >= len(land) {
+		return &pb.UserMarketLandListReply{
+			Status: "ok",
+			Count:  0,
+			List:   res,
 		}, nil
 	}
 
@@ -1669,6 +1687,14 @@ func (ac *AppUsecase) UserMarketPropList(ctx context.Context, address string, re
 	if nil != err {
 		return &pb.UserMarketPropListReply{
 			Status: "错误查询",
+		}, nil
+	}
+
+	if 0 >= len(prop) {
+		return &pb.UserMarketPropListReply{
+			Status: "ok",
+			Count:  0,
+			List:   res,
 		}, nil
 	}
 
@@ -1753,11 +1779,58 @@ func (ac *AppUsecase) UserMarketRentLandList(ctx context.Context, address string
 	var (
 		land []*Land
 	)
-	landStatus := []uint64{3}
-	land, err = ac.userRepo.GetLandByExUserID(ctx, user.ID, landStatus, nil)
-	if nil != err {
+
+	if 2 == req.RentType {
+		var (
+			landUserUse []*LandUserUse
+		)
+
+		landUserUse, err = ac.userRepo.GetLandUserUseByLandIDsUsing(ctx, user.ID)
+		if nil != err {
+			return &pb.UserMarketRentLandListReply{
+				Status: "错误查询",
+			}, nil
+		}
+
+		// 找出租用的种植信息
+		landIds := make([]uint64, 0)
+		for _, v := range landUserUse {
+			if user.ID == v.OwnerUserId {
+				continue
+			}
+
+			landIds = append(landIds, v.LandId)
+		}
+
+		if 0 >= len(landIds) {
+			return &pb.UserMarketRentLandListReply{
+				Status: "ok",
+				Count:  0,
+				List:   res,
+			}, nil
+		}
+
+		land, err = ac.userRepo.GetLandByExUserIDByIds(ctx, landIds, nil)
+		if nil != err {
+			return &pb.UserMarketRentLandListReply{
+				Status: "错误查询",
+			}, nil
+		}
+	} else {
+		landStatus := []uint64{3}
+		land, err = ac.userRepo.GetLandByExUserID(ctx, user.ID, landStatus, nil)
+		if nil != err {
+			return &pb.UserMarketRentLandListReply{
+				Status: "错误查询",
+			}, nil
+		}
+	}
+
+	if 0 >= len(land) {
 		return &pb.UserMarketRentLandListReply{
-			Status: "错误查询",
+			Status: "ok",
+			Count:  0,
+			List:   res,
 		}, nil
 	}
 
@@ -5452,7 +5525,7 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 		}
 
 		return &pb.StakeGetPlayReply{Status: "ok", PlayStatus: 1, Amount: tmpGit}, nil
-	} else { // 输：下注金额加入池子
+	} else {                                                         // 输：下注金额加入池子
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 			err = ac.userRepo.SetStakeGetPlaySub(ctx, user.ID, float64(req.SendBody.Amount))
 			if nil != err {

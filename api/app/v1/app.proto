@@ -684,6 +684,7 @@ message UserMarketPropListReply {
 }
 
 message UserMarketRentLandListRequest {
+	uint64 rentType = 2;
 	uint64 page = 1; // 页数
 }
 

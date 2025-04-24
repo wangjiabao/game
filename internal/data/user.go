@@ -1305,6 +1305,52 @@ func (u *UserRepo) GetLandByUserIDUsing(ctx context.Context, userID uint64, stat
 	return res, nil
 }
 
+// GetLandByExUserIDByIds getLandByExUserIDByIds
+func (u *UserRepo) GetLandByExUserIDByIds(ctx context.Context, ids []uint64, b *biz.Pagination) ([]*biz.Land, error) {
+	var (
+		lands []*Land
+	)
+
+	res := make([]*biz.Land, 0)
+	instance := u.data.DB(ctx).Table("land").Where("id in (?)", ids).
+		Order("id asc")
+
+	if nil != b {
+		instance = instance.Scopes(Paginate(b.PageNum, b.PageSize))
+	}
+
+	if err := instance.Find(&lands).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return res, nil
+		}
+
+		return nil, errors.New(500, "LAND ERROR", err.Error())
+	}
+
+	for _, land := range lands {
+		res = append(res, &biz.Land{
+			ID:             land.ID,
+			UserId:         land.UserId,
+			Level:          land.Level,
+			OutPutRate:     land.OutPutRate,
+			RentOutPutRate: land.RentOutPutRate,
+			MaxHealth:      land.MaxHealth,
+			PerHealth:      land.PerHealth,
+			LimitDate:      land.LimitDate,
+			Status:         land.Status,
+			LocationNum:    land.LocationNum,
+			CreatedAt:      land.CreatedAt,
+			UpdatedAt:      land.UpdatedAt,
+			One:            land.One,
+			Two:            land.Two,
+			Three:          land.Three,
+			SellAmount:     land.SellAmount,
+		})
+	}
+
+	return res, nil
+}
+
 // GetLandByExUserID getLandByExUserID
 func (u *UserRepo) GetLandByExUserID(ctx context.Context, userID uint64, status []uint64, b *biz.Pagination) ([]*biz.Land, error) {
 	var (
@@ -2047,6 +2093,55 @@ func (u *UserRepo) GetUserOrder(ctx context.Context, b *biz.Pagination) ([]*biz.
 			OutNum:           user.OutNum,
 			Vip:              user.Vip,
 			VipAdmin:         user.VipAdmin,
+		})
+	}
+
+	return res, nil
+}
+
+func (u *UserRepo) GetLandUserUseByLandIDsUsing(ctx context.Context, userId uint64) ([]*biz.LandUserUse, error) {
+	var landUserUses []*LandUserUse
+	res := make([]*biz.LandUserUse, 0)
+
+	instance := u.data.DB(ctx).Table("land_user_use").
+		Where("user_id = ?", userId).
+		Where("status = ?", 1).
+		Order("id desc")
+
+	if err := instance.Find(&landUserUses).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return res, nil
+		}
+		return nil, errors.New(500, "LAND USER USE ERROR", err.Error())
+	}
+
+	// 归类数据到 map
+	for _, landUserUse := range landUserUses {
+		res = append(res, &biz.LandUserUse{
+			ID:           landUserUse.ID,
+			LandId:       landUserUse.LandId,
+			Level:        landUserUse.Level,
+			UserId:       landUserUse.UserId,
+			OwnerUserId:  landUserUse.OwnerUserId,
+			SeedId:       landUserUse.SeedId,
+			SeedTypeId:   landUserUse.SeedTypeId,
+			Status:       landUserUse.Status,
+			BeginTime:    landUserUse.BeginTime,
+			TotalTime:    landUserUse.TotalTime,
+			OverTime:     landUserUse.OverTime,
+			OutMaxNum:    landUserUse.OutMaxNum,
+			OutNum:       landUserUse.OutNum,
+			InsectStatus: landUserUse.InsectStatus,
+			OutSubNum:    landUserUse.OutSubNum,
+			StealNum:     landUserUse.StealNum,
+			StopStatus:   landUserUse.StopStatus,
+			StopTime:     landUserUse.StopTime,
+			SubTime:      landUserUse.SubTime,
+			UseChan:      landUserUse.UseChan,
+			CreatedAt:    landUserUse.CreatedAt,
+			UpdatedAt:    landUserUse.UpdatedAt,
+			One:          landUserUse.One,
+			Two:          landUserUse.Two,
 		})
 	}
 
