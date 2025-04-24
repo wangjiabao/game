@@ -36,6 +36,7 @@ type User struct {
 	Area             float64   `gorm:"type:decimal(65,20);default:0.00000000000000000000;"`
 	AreaTwo          float64   `gorm:"type:decimal(65,20);default:0.00000000000000000000;"`
 	All              float64   `gorm:"type:decimal(65,20);default:0.00000000000000000000;"`
+	AllNum           float64   `gorm:"type:decimal(65,20);default:0.00000000000000000000;"`
 	Amount           float64   `gorm:"type:decimal(65,20);default:0.00000000000000000000;"`
 	AmountGet        float64   `gorm:"type:decimal(65,20);default:0.00000000000000000000;"`
 	AmountUsdt       float64   `gorm:"type:decimal(65,20);default:0.00000000000000000000;"`
@@ -408,7 +409,7 @@ func (u *UserRepo) GetAllUsers(ctx context.Context) ([]*biz.User, error) {
 			Location:         user.Location,
 			Recommend:        user.Recommend,
 			RecommendTwo:     user.RecommendTwo,
-			All:              user.All,
+			All:              user.AllNum,
 			Area:             user.Area,
 			AreaTwo:          user.AreaTwo,
 			Amount:           user.Amount,
@@ -463,7 +464,7 @@ func (u *UserRepo) GetUserByUserIds(ctx context.Context, userIds []uint64) (map[
 			Location:         user.Location,
 			Recommend:        user.Recommend,
 			RecommendTwo:     user.RecommendTwo,
-			All:              user.All,
+			All:              user.AllNum,
 			Area:             user.Area,
 			AreaTwo:          user.AreaTwo,
 			Amount:           user.Amount,
@@ -514,7 +515,7 @@ func (u *UserRepo) GetUserByAddress(ctx context.Context, address string) (*biz.U
 		Location:         user.Location,
 		Recommend:        user.Recommend,
 		RecommendTwo:     user.RecommendTwo,
-		All:              user.All,
+		All:              user.AllNum,
 		Area:             user.Area,
 		AreaTwo:          user.AreaTwo,
 		Amount:           user.Amount,
@@ -636,7 +637,7 @@ func (u *UserRepo) CreateUser(ctx context.Context, uc *biz.User) (*biz.User, err
 		Location:         user.Location,
 		Recommend:        user.Recommend,
 		RecommendTwo:     user.RecommendTwo,
-		All:              user.All,
+		All:              user.AllNum,
 		Area:             user.Area,
 		AreaTwo:          user.AreaTwo,
 		Amount:           user.Amount,
@@ -2006,7 +2007,7 @@ func (u *UserRepo) GetUserOrder(ctx context.Context, b *biz.Pagination) ([]*biz.
 			Location:         user.Location,
 			Recommend:        user.Recommend,
 			RecommendTwo:     user.RecommendTwo,
-			All:              user.All,
+			All:              user.AllNum,
 			Area:             user.Area,
 			AreaTwo:          user.AreaTwo,
 			Amount:           user.Amount,
@@ -3554,7 +3555,7 @@ func (u *UserRepo) UpdateUserRewardRecommend2(ctx context.Context, userId uint64
 				"recommend_two": 0,
 				"area":          0,
 				"area_two":      0,
-				"all":           0,
+				"all_num":       0,
 			})
 		if res.Error != nil {
 			return errors.New(500, "UPDATE_USER_ERROR", "用户信息修改失败")
