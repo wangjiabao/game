@@ -458,6 +458,7 @@ type UserRepo interface {
 	RentLand(ctx context.Context, landId uint64, userId uint64, rentRate float64) error
 	UnRentLand(ctx context.Context, landId uint64, userId uint64) error
 	LandPull(ctx context.Context, landId uint64, userId uint64) error
+	LandPullTwo(ctx context.Context, landId uint64, userId uint64) error
 	LandPush(ctx context.Context, landId uint64, userId, locationNum uint64) error
 	LandAddOutRate(ctx context.Context, id, landId, userId uint64) error
 	CreateLand(ctx context.Context, lc *Land) (*Land, error)
@@ -2260,6 +2261,19 @@ func (ac *AppUsecase) UserIndexList(ctx context.Context, address string, req *pb
 				LandStatus:       vLand.Status,
 			}
 		} else {
+			// 过期的从放置在移除
+			if 1 == vLand.Status || 3 == vLand.Status {
+				if vLand.LimitDate <= uint64(time.Now().Unix()) {
+					if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+						return ac.userRepo.LandPullTwo(ctx, vLand.ID, user.ID)
+					}); nil != err {
+						fmt.Println(err, "首页触发的，过期土地回收", user)
+					}
+
+					continue
+				}
+			}
+
 			resTmp[vLand.LocationNum] = &pb.UserIndexListReply_List{
 				LocationNum:      vLand.LocationNum,
 				LandId:           vLand.ID,
@@ -5525,7 +5539,7 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 		}
 
 		return &pb.StakeGetPlayReply{Status: "ok", PlayStatus: 1, Amount: tmpGit}, nil
-	} else {                                                         // 输：下注金额加入池子
+	} else { // 输：下注金额加入池子
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 			err = ac.userRepo.SetStakeGetPlaySub(ctx, user.ID, float64(req.SendBody.Amount))
 			if nil != err {
