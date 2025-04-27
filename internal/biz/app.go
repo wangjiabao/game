@@ -776,6 +776,7 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 	configs, err = ac.userRepo.GetConfigByKeys(ctx,
 		"box_num",
 		"b_price",
+		"u_price",
 		"exchange_fee_rate",
 		"reward_stake_rate",
 		"box_max",
