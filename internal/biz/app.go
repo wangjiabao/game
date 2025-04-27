@@ -988,6 +988,7 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		WithdrawMax:               withdrawMax,
 		WithdrawMin:               withdrawMin,
 		Usdt:                      user.AmountUsdt,
+		CreatedAt:                 user.CreatedAt.Add(8 * time.Hour).Format("2006-01-02 15:04:05"),
 	}, nil
 }
 

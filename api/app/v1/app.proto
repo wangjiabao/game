@@ -438,6 +438,8 @@ message UserInfoReply {
 
 	uint64 withdrawMin = 29; // 提现最小
 	uint64 withdrawMax = 30; // 提现最大
+
+	string createdAt = 31;
 }
 
 message UserBuyRequest {

@@ -1900,6 +1900,8 @@ components:
                     type: string
                 withdrawMax:
                     type: string
+                createdAt:
+                    type: string
         UserLandReply:
             type: object
             properties:
