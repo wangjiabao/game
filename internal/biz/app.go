@@ -752,6 +752,7 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		boxSellNum      uint64
 		configs         []*Config
 		bPrice          float64
+		uPrice          float64
 		exchangeFeeRate float64
 		rewardStakeRate float64
 		boxMax          uint64
@@ -833,6 +834,21 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		if "sell_fee_rate" == vConfig.KeyName {
 			sellFeeRate, _ = strconv.ParseFloat(vConfig.Value, 10)
 		}
+		if "u_price" == vConfig.KeyName {
+			uPrice, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+	}
+
+	if 0 >= bPrice {
+		return &pb.UserInfoReply{
+			Status: "币价biw:giw错误",
+		}, nil
+	}
+
+	if 0 >= uPrice {
+		return &pb.UserInfoReply{
+			Status: "币价biw:u错误",
+		}, nil
 	}
 
 	// 推荐
@@ -962,7 +978,7 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		BoxSell:                   boxSellNum,
 		Start:                     boxStart,
 		End:                       boxEnd,
-		BoxSellAmount:             boxAmount,
+		BoxSellAmount:             boxAmount / uPrice,
 		ExchangeRate:              bPrice,
 		ExchangeFeeRate:           exchangeFeeRate,
 		StakeGetTotal:             stakeGetTotalAmount,
@@ -2393,6 +2409,7 @@ func (ac *AppUsecase) BuyBox(ctx context.Context, address string, req *pb.BuyBox
 		boxAmount        float64
 		boxStart         string
 		boxEnd           string
+		uPrice           float64
 	)
 	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
 	if nil != err || nil == user {
@@ -2409,6 +2426,7 @@ func (ac *AppUsecase) BuyBox(ctx context.Context, address string, req *pb.BuyBox
 		"box_start",
 		"box_end",
 		"box_amount",
+		"u_price",
 	)
 	if nil != err || nil == configs {
 		return &pb.BuyBoxReply{
@@ -2479,6 +2497,13 @@ func (ac *AppUsecase) BuyBox(ctx context.Context, address string, req *pb.BuyBox
 		}, nil
 	}
 
+	if 0 >= uPrice {
+		return &pb.BuyBoxReply{
+			Status: "价格biw:u错误",
+		}, nil
+	}
+
+	boxAmount = boxAmount / uPrice
 	if boxAmount >= user.Giw {
 		return &pb.BuyBoxReply{
 			Status: "余额不足",
@@ -2983,12 +3008,14 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 	defer rngMutexPlantTwo.Unlock()
 
 	var (
-		configs   []*Config
-		user      *User
-		oneRate   float64
-		twoRate   float64
-		threeRate float64
-		err       error
+		configs    []*Config
+		user       *User
+		oneRate    float64
+		twoRate    float64
+		threeRate  float64
+		uPrice     float64
+		lowRewardU float64
+		err        error
 	)
 
 	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
@@ -3000,7 +3027,7 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 
 	// 配置
 	configs, err = ac.userRepo.GetConfigByKeys(ctx,
-		"one_rate", "two_rate", "three_rate",
+		"one_rate", "two_rate", "three_rate", "u_price", "low_reward_u",
 	)
 	if nil != err || nil == configs {
 		return &pb.LandPlayTwoReply{
@@ -3020,6 +3047,20 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 		if "three_rate" == vConfig.KeyName {
 			threeRate, _ = strconv.ParseFloat(vConfig.Value, 10)
 		}
+
+		if "u_price" == vConfig.KeyName {
+			uPrice, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+
+		if "low_reward_u" == vConfig.KeyName {
+			lowRewardU, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+	}
+
+	if 0 >= uPrice {
+		return &pb.LandPlayTwoReply{
+			Status: "币价biw:u错误",
+		}, nil
 	}
 
 	var (
@@ -3130,6 +3171,47 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 		}
 	}
 
+	userIds := make([]uint64, 0)
+	tmpIi := 0
+	for i := len(tmpRecommendUserIds) - 1; i >= 0; i-- {
+		if 3 <= tmpIi {
+			break
+		}
+		tmpIi++
+
+		tmpUserId, _ := strconv.ParseUint(tmpRecommendUserIds[i], 10, 64) // 最后一位是直推人
+		if 0 >= tmpUserId {
+			continue
+		}
+
+		userIds = append(userIds, tmpUserId)
+	}
+
+	tmpIj := 0
+	for i := len(tmpRecommendUserIdsRent) - 1; i >= 0; i-- {
+		if 3 <= tmpIj {
+			break
+		}
+		tmpIj++
+
+		tmpUserId, _ := strconv.ParseUint(tmpRecommendUserIdsRent[i], 10, 64) // 最后一位是直推人
+		if 0 >= tmpUserId {
+			continue
+		}
+
+		userIds = append(userIds, tmpUserId)
+	}
+
+	usersMap := make(map[uint64]*User, 0)
+	if 0 < len(userIds) {
+		usersMap, err = ac.userRepo.GetUserByUserIds(ctx, userIds)
+		if nil != err {
+			return &pb.LandPlayTwoReply{
+				Status: "查询推荐错误",
+			}, nil
+		}
+	}
+
 	// 分红，状态变更
 	if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 		// 资源释放
@@ -3173,10 +3255,19 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 				}
 				tmpI++
 
-				tmpUserId, _ := strconv.ParseInt(tmpRecommendUserIds[i], 10, 64) // 最后一位是直推人
+				tmpUserId, _ := strconv.ParseUint(tmpRecommendUserIds[i], 10, 64) // 最后一位是直推人
 				if 0 >= tmpUserId {
 					continue
 				}
+
+				if _, ok := usersMap[tmpUserId]; !ok {
+					continue
+				}
+
+				if lowRewardU > usersMap[tmpUserId].Giw/uPrice {
+					continue
+				}
+
 				tmpReward := float64(0)
 
 				tmpNum := uint64(4)
@@ -3194,14 +3285,14 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 				}
 
 				// 奖励
-				err = ac.userRepo.PlantPlatTwoTwoL(ctx, landUserUse.ID, uint64(tmpUserId), landUserUse.UserId, tmpNum, tmpReward)
+				err = ac.userRepo.PlantPlatTwoTwoL(ctx, landUserUse.ID, tmpUserId, landUserUse.UserId, tmpNum, tmpReward)
 				if nil != err {
 					return err
 				}
 
 				err = ac.userRepo.CreateNotice(
 					ctx,
-					uint64(tmpUserId),
+					tmpUserId,
 					"您收获了"+fmt.Sprintf("%.2f", tmpReward)+"GIW",
 					"You've harvest "+fmt.Sprintf("%.2f", tmpReward)+" GIW",
 				)
@@ -3213,22 +3304,33 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 
 		// l1-l3，奖励发放
 		if rentReward > 0 {
-			tmpI := 1
+			tmpI := 0
 			for i := len(tmpRecommendUserIdsRent) - 1; i >= 0; i-- {
-				if 4 <= tmpI {
+				if 3 <= tmpI {
 					break
 				}
 				tmpI++
 
-				tmpUserId, _ := strconv.ParseInt(tmpRecommendUserIdsRent[i], 10, 64) // 最后一位是直推人
+				tmpUserId, _ := strconv.ParseUint(tmpRecommendUserIdsRent[i], 10, 64) // 最后一位是直推人
 				if 0 >= tmpUserId {
 					continue
 				}
+
+				if _, ok := usersMap[tmpUserId]; !ok {
+					continue
+				}
+
+				if lowRewardU > usersMap[tmpUserId].Giw/uPrice {
+					continue
+				}
+
 				tmpReward := float64(0)
 
 				tmpNum := uint64(5)
 				tmpReward = rentReward * oneRate
-				if 2 == tmpI {
+				if 1 == tmpI {
+
+				} else if 2 == tmpI {
 					tmpReward = rentReward * twoRate
 					tmpNum = 8
 				} else if 3 == tmpI {
@@ -3239,14 +3341,14 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 				}
 
 				// 奖励
-				err = ac.userRepo.PlantPlatTwoTwoL(ctx, landUserUse.ID, uint64(tmpUserId), landUserUse.OwnerUserId, tmpNum, tmpReward)
+				err = ac.userRepo.PlantPlatTwoTwoL(ctx, landUserUse.ID, tmpUserId, landUserUse.OwnerUserId, tmpNum, tmpReward)
 				if nil != err {
 					return err
 				}
 
 				err = ac.userRepo.CreateNotice(
 					ctx,
-					uint64(tmpUserId),
+					tmpUserId,
 					"您收获了"+fmt.Sprintf("%.2f", tmpReward)+"GIW",
 					"You've harvest "+fmt.Sprintf("%.2f", tmpReward)+" GIW",
 				)
@@ -3767,15 +3869,58 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 		}
 	}
 
+	userIds := make([]uint64, 0)
+	tmpIi := 0
+	for i := len(tmpRecommendUserIds) - 1; i >= 0; i-- {
+		if 3 <= tmpIi {
+			break
+		}
+		tmpIi++
+
+		tmpUserId, _ := strconv.ParseUint(tmpRecommendUserIds[i], 10, 64) // 最后一位是直推人
+		if 0 >= tmpUserId {
+			continue
+		}
+
+		userIds = append(userIds, tmpUserId)
+	}
+
+	tmpIj := 0
+	for i := len(tmpRecommendUserIdsRent) - 1; i >= 0; i-- {
+		if 3 <= tmpIj {
+			break
+		}
+		tmpIj++
+
+		tmpUserId, _ := strconv.ParseUint(tmpRecommendUserIdsRent[i], 10, 64) // 最后一位是直推人
+		if 0 >= tmpUserId {
+			continue
+		}
+
+		userIds = append(userIds, tmpUserId)
+	}
+
+	usersMap := make(map[uint64]*User, 0)
+	if 0 < len(userIds) {
+		usersMap, err = ac.userRepo.GetUserByUserIds(ctx, userIds)
+		if nil != err {
+			return &pb.LandPlaySixReply{
+				Status: "查询推荐错误",
+			}, nil
+		}
+	}
+
 	// 配置
 	var (
-		configs   []*Config
-		oneRate   float64
-		twoRate   float64
-		threeRate float64
+		configs    []*Config
+		oneRate    float64
+		twoRate    float64
+		threeRate  float64
+		uPrice     float64
+		lowRewardU float64
 	)
 	configs, err = ac.userRepo.GetConfigByKeys(ctx,
-		"one_rate", "two_rate", "three_rate",
+		"one_rate", "two_rate", "three_rate", "u_price", "low_reward_u",
 	)
 	if nil != err || nil == configs {
 		return &pb.LandPlaySixReply{
@@ -3795,6 +3940,20 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 		if "three_rate" == vConfig.KeyName {
 			threeRate, _ = strconv.ParseFloat(vConfig.Value, 10)
 		}
+
+		if "u_price" == vConfig.KeyName {
+			uPrice, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+
+		if "low_reward_u" == vConfig.KeyName {
+			lowRewardU, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+	}
+
+	if 0 >= uPrice {
+		return &pb.LandPlaySixReply{
+			Status: "币价biw:u错误",
+		}, nil
 	}
 
 	if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
@@ -3835,10 +3994,19 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 				}
 				tmpI++
 
-				tmpUserId, _ := strconv.ParseInt(tmpRecommendUserIds[i], 10, 64) // 最后一位是直推人
+				tmpUserId, _ := strconv.ParseUint(tmpRecommendUserIds[i], 10, 64) // 最后一位是直推人
 				if 0 >= tmpUserId {
 					continue
 				}
+
+				if _, ok := usersMap[tmpUserId]; !ok {
+					continue
+				}
+
+				if lowRewardU > usersMap[tmpUserId].Giw/uPrice {
+					continue
+				}
+
 				tmpReward := float64(0)
 
 				tmpNum := uint64(4)
@@ -3856,14 +4024,14 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 				}
 
 				// 奖励
-				err = ac.userRepo.PlantPlatTwoTwoL(ctx, landUserUse.ID, uint64(tmpUserId), landUserUse.UserId, tmpNum, tmpReward)
+				err = ac.userRepo.PlantPlatTwoTwoL(ctx, landUserUse.ID, tmpUserId, landUserUse.UserId, tmpNum, tmpReward)
 				if nil != err {
 					return err
 				}
 
 				err = ac.userRepo.CreateNotice(
 					ctx,
-					uint64(tmpUserId),
+					tmpUserId,
 					"您收获了"+fmt.Sprintf("%.2f", tmpReward)+"GIW",
 					"You've harvest "+fmt.Sprintf("%.2f", tmpReward)+" GIW",
 				)
@@ -3875,22 +4043,33 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 
 		// l1-l3，奖励发放
 		if tmpOverMaxTwo > 0 {
-			tmpI := 1
+			tmpI := 0
 			for i := len(tmpRecommendUserIdsRent) - 1; i >= 0; i-- {
-				if 4 <= tmpI {
+				if 3 <= tmpI {
 					break
 				}
 				tmpI++
 
-				tmpUserId, _ := strconv.ParseInt(tmpRecommendUserIdsRent[i], 10, 64) // 最后一位是直推人
+				tmpUserId, _ := strconv.ParseUint(tmpRecommendUserIdsRent[i], 10, 64) // 最后一位是直推人
 				if 0 >= tmpUserId {
 					continue
 				}
+
+				if _, ok := usersMap[tmpUserId]; !ok {
+					continue
+				}
+
+				if lowRewardU > usersMap[tmpUserId].Giw/uPrice {
+					continue
+				}
+
 				tmpReward := float64(0)
 
 				tmpNum := uint64(5)
 				tmpReward = tmpOverMaxTwo * oneRate
-				if 2 == tmpI {
+				if 1 == tmpI {
+
+				} else if 2 == tmpI {
 					tmpReward = tmpOverMaxTwo * twoRate
 					tmpNum = 8
 				} else if 3 == tmpI {
@@ -3901,14 +4080,14 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 				}
 
 				// 奖励
-				err = ac.userRepo.PlantPlatTwoTwoL(ctx, landUserUse.ID, uint64(tmpUserId), landUserUse.OwnerUserId, tmpNum, tmpReward)
+				err = ac.userRepo.PlantPlatTwoTwoL(ctx, landUserUse.ID, tmpUserId, landUserUse.OwnerUserId, tmpNum, tmpReward)
 				if nil != err {
 					return err
 				}
 
 				err = ac.userRepo.CreateNotice(
 					ctx,
-					uint64(tmpUserId),
+					tmpUserId,
 					"您收获了"+fmt.Sprintf("%.2f", tmpReward)+"GIW",
 					"You've harvest "+fmt.Sprintf("%.2f", tmpReward)+" GIW",
 				)
