@@ -3705,29 +3705,33 @@ func (u *UserRepo) UpdateUserRewardRecommend2(ctx context.Context, userId uint64
 			return err
 		}
 	} else {
-		res := u.data.DB(ctx).Table("user").Where("id=?", userId).
-			Updates(map[string]interface{}{
-				"amount_get": gorm.Expr("amount_get + ?", usdt),
-				"recommend":  gorm.Expr("recommend + ?", usdt),
-				"giw":        gorm.Expr("giw + ?", giw),
-				"updated_at": time.Now().Format("2006-01-02 15:04:05"),
-			})
-		if res.Error != nil {
-			return errors.New(500, "UPDATE_USER_ERROR", "用户信息修改失败")
+		if 0 < usdt {
+			res := u.data.DB(ctx).Table("user").Where("id=?", userId).
+				Updates(map[string]interface{}{
+					"amount_get": gorm.Expr("amount_get + ?", usdt),
+					"recommend":  gorm.Expr("recommend + ?", usdt),
+					"giw":        gorm.Expr("giw + ?", giw),
+					"updated_at": time.Now().Format("2006-01-02 15:04:05"),
+				})
+			if res.Error != nil {
+				return errors.New(500, "UPDATE_USER_ERROR", "用户信息修改失败")
+			}
 		}
 	}
 
-	var reward RewardTwo
-	reward.UserId = userId
-	reward.Amount = giw
-	reward.Three = usdt
-	reward.One = 1
-	reward.Four = address
-	reward.Five = usdt2
-	reward.Reason = 2 // 直推
-	err = u.data.DB(ctx).Table("reward_two").Create(&reward).Error
-	if err != nil {
-		return err
+	if 0 < usdt {
+		var reward RewardTwo
+		reward.UserId = userId
+		reward.Amount = giw
+		reward.Three = usdt
+		reward.One = 1
+		reward.Four = address
+		reward.Five = usdt2
+		reward.Reason = 2 // 直推
+		err = u.data.DB(ctx).Table("reward_two").Create(&reward).Error
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

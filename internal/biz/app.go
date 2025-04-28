@@ -5745,7 +5745,7 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 		}
 
 		return &pb.StakeGetPlayReply{Status: "ok", PlayStatus: 1, Amount: tmpGit}, nil
-	} else {                                                         // 输：下注金额加入池子
+	} else { // 输：下注金额加入池子
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 			err = ac.userRepo.SetStakeGetPlaySub(ctx, user.ID, float64(req.SendBody.Amount))
 			if nil != err {
@@ -6125,7 +6125,10 @@ func (ac *AppUsecase) BuyTwo(ctx context.Context, address string, req *pb.BuyTwo
 				tmpMaxB := tmpRecommendUser.Amount * num / uPrice
 				tmpCurrentB := amountRecommendTmp / uPrice
 
-				if tmpCurrentB+tmpRecommendUser.AmountGet >= tmpMaxB {
+				if tmpRecommendUser.AmountGet >= tmpMaxB {
+					tmpCurrentB = 0
+					stopRecommend = true
+				} else if tmpCurrentB+tmpRecommendUser.AmountGet >= tmpMaxB {
 					tmpCurrentB = math.Abs(tmpMaxB - tmpRecommendUser.AmountGet)
 					stopRecommend = true
 				}
@@ -6141,54 +6144,52 @@ func (ac *AppUsecase) BuyTwo(ctx context.Context, address string, req *pb.BuyTwo
 
 				fmt.Println("直推奖奖励：", amount, uPrice, recommend, amountRecommendTmp, tmpCurrentB, amountRecommendTmp2, amountRecommendTmpBiw, user, tmpRecommendUser)
 
-				if tmpCurrentB > 0 && amountRecommendTmpBiw > 0 {
-					if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-						err = ac.userRepo.UpdateUserRewardRecommend2(ctx, tmpUserId, amountRecommendTmpBiw, amountRecommendTmp2, tmpCurrentB, tmpRecommendUser.Amount, stopRecommend, user.Address)
-						if err != nil {
-							fmt.Println("错误分红直推：", err)
-						}
-
-						return nil
-					}); nil != err {
-						fmt.Println("err reward recommend", err, amount, amountRecommendTmp, tmpCurrentB, user, tmpRecommendUser)
+				if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+					err = ac.userRepo.UpdateUserRewardRecommend2(ctx, tmpUserId, amountRecommendTmpBiw, amountRecommendTmp2, tmpCurrentB, tmpRecommendUser.Amount, stopRecommend, user.Address)
+					if err != nil {
+						fmt.Println("错误分红直推：", err)
 					}
 
-					if stopRecommend {
-						// 推荐人
-						var (
-							userRecommendArea *UserRecommend
-						)
-						if _, ok := userRecommendsMap[tmpRecommendUser.ID]; ok {
-							userRecommendArea = userRecommendsMap[tmpRecommendUser.ID]
-						} else {
-							fmt.Println("错误分红业绩变更，信息缺失7：", err, amount, amountRecommendTmp, tmpCurrentB, user, tmpRecommendUser)
-							continue
-						}
+					return nil
+				}); nil != err {
+					fmt.Println("err reward recommend", err, amount, amountRecommendTmp, tmpCurrentB, user, tmpRecommendUser)
+				}
 
-						if nil != userRecommendArea && "" != userRecommendArea.RecommendCode {
-							var tmpRecommendAreaUserIds []string
-							tmpRecommendAreaUserIds = strings.Split(userRecommendArea.RecommendCode, "D")
+				if stopRecommend {
+					// 推荐人
+					var (
+						userRecommendArea *UserRecommend
+					)
+					if _, ok := userRecommendsMap[tmpRecommendUser.ID]; ok {
+						userRecommendArea = userRecommendsMap[tmpRecommendUser.ID]
+					} else {
+						fmt.Println("错误分红业绩变更，信息缺失7：", err, amount, amountRecommendTmp, tmpCurrentB, user, tmpRecommendUser)
+						continue
+					}
 
-							for j := len(tmpRecommendAreaUserIds) - 1; j >= 0; j-- {
-								if 0 >= len(tmpRecommendAreaUserIds[j]) {
-									continue
+					if nil != userRecommendArea && "" != userRecommendArea.RecommendCode {
+						var tmpRecommendAreaUserIds []string
+						tmpRecommendAreaUserIds = strings.Split(userRecommendArea.RecommendCode, "D")
+
+						for j := len(tmpRecommendAreaUserIds) - 1; j >= 0; j-- {
+							if 0 >= len(tmpRecommendAreaUserIds[j]) {
+								continue
+							}
+
+							myUserRecommendAreaUserId, _ := strconv.ParseInt(tmpRecommendAreaUserIds[j], 10, 64) // 最后一位是直推人
+							if 0 >= myUserRecommendAreaUserId {
+								continue
+							}
+							if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { //
+								// 减掉业绩
+								err = ac.userRepo.UpdateUserMyTotalAmountSub(ctx, myUserRecommendAreaUserId, tmpRecommendUser.Amount)
+								if err != nil {
+									fmt.Println("错误分红社区：", err, amount, amountRecommendTmp, tmpCurrentB, user, tmpRecommendUser)
 								}
 
-								myUserRecommendAreaUserId, _ := strconv.ParseInt(tmpRecommendAreaUserIds[j], 10, 64) // 最后一位是直推人
-								if 0 >= myUserRecommendAreaUserId {
-									continue
-								}
-								if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { //
-									// 减掉业绩
-									err = ac.userRepo.UpdateUserMyTotalAmountSub(ctx, myUserRecommendAreaUserId, tmpRecommendUser.Amount)
-									if err != nil {
-										fmt.Println("错误分红社区：", err, amount, amountRecommendTmp, tmpCurrentB, user, tmpRecommendUser)
-									}
-
-									return nil
-								}); nil != err {
-									fmt.Println("err reward recommend 2", err, amount, amountRecommendTmp, tmpCurrentB, user, tmpRecommendUser)
-								}
+								return nil
+							}); nil != err {
+								fmt.Println("err reward recommend 2", err, amount, amountRecommendTmp, tmpCurrentB, user, tmpRecommendUser)
 							}
 						}
 					}
