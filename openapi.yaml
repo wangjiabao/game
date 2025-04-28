@@ -1902,6 +1902,9 @@ components:
                     type: string
                 createdAt:
                     type: string
+                biwPrice:
+                    type: number
+                    format: double
         UserLandReply:
             type: object
             properties:

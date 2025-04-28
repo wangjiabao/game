@@ -440,6 +440,8 @@ message UserInfoReply {
 	uint64 withdrawMax = 30; // 提现最大
 
 	string createdAt = 31;
+
+	double biwPrice = 32;
 }
 
 message UserBuyRequest {

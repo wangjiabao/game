@@ -981,6 +981,7 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		End:                       boxEnd,
 		BoxSellAmount:             boxAmount / uPrice,
 		ExchangeRate:              bPrice / uPrice,
+		BiwPrice:                  uPrice,
 		ExchangeFeeRate:           exchangeFeeRate,
 		StakeGetTotal:             stakeGetTotalAmount,
 		MyStakeGetTotal:           stakeGetTotalMy,
