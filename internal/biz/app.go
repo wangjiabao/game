@@ -422,6 +422,7 @@ type UserRepo interface {
 	GetLandUserUseByLandIDsMapUsing(ctx context.Context, userId uint64, landIDs []uint64) (map[uint64]*LandUserUse, error)
 	GetLandUserUseByLandIDsUsing(ctx context.Context, userId uint64) ([]*LandUserUse, error)
 	BuyBox(ctx context.Context, giw float64, originValue, value string, uc *BoxRecord) (uint64, error)
+	BuyLandReward(ctx context.Context, userId, landId uint64, giw float64) error
 	GetUserBoxRecordById(ctx context.Context, id uint64) (*BoxRecord, error)
 	OpenBoxSeed(ctx context.Context, id uint64, content string, seedInfo *Seed) (uint64, error)
 	OpenBoxProp(ctx context.Context, id uint64, content string, propInfo *Prop) (uint64, error)
@@ -6460,9 +6461,11 @@ func (ac *AppUsecase) SetBuyLand(ctx context.Context, req *pb.SetBuyLandRequest)
 		}
 
 		userIdTmp := uint64(0)
+		tmpAmount := float64(0)
 		for _, v := range landRecord {
 			if 3 == v.Status {
 				userIdTmp = v.UserID
+				tmpAmount = v.Amount
 				continue
 			}
 
@@ -6516,7 +6519,10 @@ func (ac *AppUsecase) SetBuyLand(ctx context.Context, req *pb.SetBuyLandRequest)
 		randomNumber := outMin + rngTmp.Int63n(tmpNum)
 
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-			_, err = ac.userRepo.CreateLand(ctx, &Land{
+			var (
+				land *Land
+			)
+			land, err = ac.userRepo.CreateLand(ctx, &Land{
 				UserId:     userIdTmp,
 				Level:      landInfos[tmpLevel].Level,
 				OutPutRate: float64(randomNumber),
@@ -6528,6 +6534,11 @@ func (ac *AppUsecase) SetBuyLand(ctx context.Context, req *pb.SetBuyLandRequest)
 				Two:        1,
 				Three:      1,
 			})
+			if nil != err {
+				return err
+			}
+
+			err = ac.userRepo.BuyLandReward(ctx, userIdTmp, land.ID, tmpAmount)
 			if nil != err {
 				return err
 			}
@@ -6569,9 +6580,11 @@ func (ac *AppUsecase) SetBuyLand(ctx context.Context, req *pb.SetBuyLandRequest)
 		}
 
 		userIdTmp := uint64(0)
+		tmpAmount := float64(0)
 		for k, v := range landRecord {
 			if 0 == k {
 				userIdTmp = v.UserID
+				tmpAmount = v.Amount
 				continue
 			}
 
@@ -6625,7 +6638,10 @@ func (ac *AppUsecase) SetBuyLand(ctx context.Context, req *pb.SetBuyLandRequest)
 		randomNumber := outMin + rngTmp.Int63n(tmpNum)
 
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-			_, err = ac.userRepo.CreateLand(ctx, &Land{
+			var (
+				land *Land
+			)
+			land, err = ac.userRepo.CreateLand(ctx, &Land{
 				UserId:     userIdTmp,
 				Level:      landInfos[tmpLevel].Level,
 				OutPutRate: float64(randomNumber),
@@ -6637,6 +6653,11 @@ func (ac *AppUsecase) SetBuyLand(ctx context.Context, req *pb.SetBuyLandRequest)
 				Two:        1,
 				Three:      1,
 			})
+			if nil != err {
+				return err
+			}
+
+			err = ac.userRepo.BuyLandReward(ctx, userIdTmp, land.ID, tmpAmount)
 			if nil != err {
 				return err
 			}

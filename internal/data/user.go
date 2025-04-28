@@ -2222,7 +2222,35 @@ func (u *UserRepo) BuyBox(ctx context.Context, giw float64, originValue, value s
 		return 0, errors.New(500, "BuyBox", "创建失败")
 	}
 
+	var reward Reward
+
+	reward.Reason = 21
+	reward.UserId = uc.UserId
+	reward.Amount = giw
+	reward.One = box.ID
+
+	res = u.data.DB(ctx).Table("reward").Create(&reward)
+	if res.Error != nil {
+		return 0, errors.New(500, "PlantPlatTwoTwo", "用户信息修改失败")
+	}
+
 	return box.ID, nil
+}
+
+func (u *UserRepo) BuyLandReward(ctx context.Context, userId, landId uint64, giw float64) error {
+	var reward Reward
+
+	reward.Reason = 22
+	reward.UserId = userId
+	reward.Amount = giw
+	reward.One = landId
+
+	res := u.data.DB(ctx).Table("reward").Create(&reward)
+	if res.Error != nil {
+		return errors.New(500, "PlantPlatTwoTwo", "用户信息修改失败")
+	}
+
+	return nil
 }
 
 // GetUserBoxRecordById .
