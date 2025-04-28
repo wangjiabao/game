@@ -2457,6 +2457,9 @@ func (ac *AppUsecase) BuyBox(ctx context.Context, address string, req *pb.BuyBox
 		if "box_max" == vConfig.KeyName {
 			boxMax, _ = strconv.ParseUint(vConfig.Value, 10, 64)
 		}
+		if "u_price" == vConfig.KeyName {
+			uPrice, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
 	}
 	// 解析时间字符串
 
