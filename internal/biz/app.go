@@ -2443,8 +2443,8 @@ func (ac *AppUsecase) BuyBox(ctx context.Context, address string, req *pb.BuyBox
 		}
 		if "box_sell_num" == vConfig.KeyName {
 			boxSellNum, _ = strconv.ParseUint(vConfig.Value, 10, 64)
+			boxSellNumOrigin = vConfig.Value
 		}
-		boxSellNumOrigin = vConfig.Value
 		if "box_start" == vConfig.KeyName {
 			boxStart = vConfig.Value
 		}
@@ -2517,7 +2517,7 @@ func (ac *AppUsecase) BuyBox(ctx context.Context, address string, req *pb.BuyBox
 	}
 
 	tmpSellNumNew := strconv.FormatUint(boxSellNum+1, 10)
-	fmt.Println(boxSellNum, tmpSellNumNew)
+	//fmt.Println(boxSellNum, tmpSellNumNew)
 	boxId := uint64(0)
 	if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 		boxId, err = ac.userRepo.BuyBox(ctx, boxAmount, boxSellNumOrigin, tmpSellNumNew, &BoxRecord{
