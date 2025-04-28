@@ -980,7 +980,7 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		Start:                     boxStart,
 		End:                       boxEnd,
 		BoxSellAmount:             boxAmount / uPrice,
-		ExchangeRate:              bPrice,
+		ExchangeRate:              bPrice / uPrice,
 		ExchangeFeeRate:           exchangeFeeRate,
 		StakeGetTotal:             stakeGetTotalAmount,
 		MyStakeGetTotal:           stakeGetTotalMy,
@@ -5783,6 +5783,7 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 	var (
 		configs []*Config
 		bPrice  float64
+		uPrice  float64
 		rate    float64
 	)
 
@@ -5790,6 +5791,7 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 	configs, err = ac.userRepo.GetConfigByKeys(ctx,
 		"exchange_fee_rate",
 		"b_price",
+		"u_price",
 	)
 	if nil != err || nil == configs {
 		return &pb.ExchangeReply{
@@ -5804,9 +5806,13 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 		if "b_price" == vConfig.KeyName {
 			bPrice, _ = strconv.ParseFloat(vConfig.Value, 10)
 		}
+
+		if "u_price" == vConfig.KeyName {
+			uPrice, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
 	}
 
-	tmp := float64(req.SendBody.Amount) * bPrice
+	tmp := float64(req.SendBody.Amount) * (bPrice / uPrice)
 	giw := tmp - tmp*rate
 	if 0 >= giw {
 		return &pb.ExchangeReply{
