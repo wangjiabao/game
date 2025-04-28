@@ -713,24 +713,24 @@ func (ac *AppUsecase) UserBuy(ctx context.Context, address string) (*pb.UserBuyR
 	}
 
 	tmpFour := float64(0)
-	if user.Amount*2.5 <= user.AmountGet {
+	if user.Amount*2.5 <= user.AmountGet*uPrice {
 		tmpFour = 0
 	} else {
-		tmpFour = user.Amount*2.5 - user.AmountGet
+		tmpFour = user.Amount*2.5 - user.AmountGet*uPrice
 	}
 
 	return &pb.UserBuyReply{
 		Status:       "ok",
 		One:          user.Amount,
 		Two:          2.5,
-		Three:        user.AmountGet,
+		Three:        user.AmountGet * uPrice,
 		Four:         tmpFour,
-		Five:         user.Location,
-		Six:          user.Recommend,
-		Seven:        user.RecommendTwo,
-		Eight:        user.Area,
-		Nine:         user.AreaTwo,
-		Ten:          user.All,
+		Five:         user.Location * uPrice,
+		Six:          user.Recommend * uPrice,
+		Seven:        user.RecommendTwo * uPrice,
+		Eight:        user.Area * uPrice,
+		Nine:         user.AreaTwo * uPrice,
+		Ten:          user.All * uPrice,
 		Elven:        user.MyTotalAmount,
 		Twelve:       tmpTwelve,
 		Thirteen:     tmpAreaMax,
@@ -1161,6 +1161,26 @@ func (ac *AppUsecase) UserBuyL(ctx context.Context, address string, req *pb.User
 	}
 
 	var (
+		configs []*Config
+		uPrice  float64
+	)
+
+	// 配置
+	configs, err = ac.userRepo.GetConfigByKeys(ctx,
+		"u_price",
+	)
+	if nil != err || nil == configs {
+		return &pb.UserBuyLReply{
+			Status: "配置错误",
+		}, nil
+	}
+	for _, vConfig := range configs {
+		if "u_price" == vConfig.KeyName {
+			uPrice, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+	}
+
+	var (
 		reward []*RewardTwo
 	)
 	if 1 <= req.Num && req.Num <= 7 {
@@ -1201,7 +1221,7 @@ func (ac *AppUsecase) UserBuyL(ctx context.Context, address string, req *pb.User
 			})
 		} else {
 			res = append(res, &pb.UserBuyLReply_List{
-				Amount:    v.Three,
+				Amount:    v.Three * uPrice,
 				AmountTwo: v.Amount,
 				Address:   v.Four,
 				Num:       v.One,
@@ -5725,7 +5745,7 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 		}
 
 		return &pb.StakeGetPlayReply{Status: "ok", PlayStatus: 1, Amount: tmpGit}, nil
-	} else { // 输：下注金额加入池子
+	} else {                                                         // 输：下注金额加入池子
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 			err = ac.userRepo.SetStakeGetPlaySub(ctx, user.ID, float64(req.SendBody.Amount))
 			if nil != err {
@@ -6101,30 +6121,36 @@ func (ac *AppUsecase) BuyTwo(ctx context.Context, address string, req *pb.BuyTwo
 				var (
 					stopRecommend bool
 				)
-				if amountRecommendTmp+tmpRecommendUser.AmountGet >= tmpRecommendUser.Amount*num {
-					amountRecommendTmp = math.Abs(tmpRecommendUser.Amount*num - tmpRecommendUser.AmountGet)
+
+				tmpMaxB := tmpRecommendUser.Amount * num / uPrice
+				tmpCurrentB := amountRecommendTmp / uPrice
+
+				if tmpCurrentB+tmpRecommendUser.AmountGet >= tmpMaxB {
+					tmpCurrentB = math.Abs(tmpMaxB - tmpRecommendUser.AmountGet)
 					stopRecommend = true
 				}
+
 				amountRecommendTmp = math.Round(amountRecommendTmp*10000000) / 10000000
+				tmpCurrentB = math.Round(tmpCurrentB*10000000) / 10000000
 
 				amountRecommendTmp2 := amountRecommendTmp * 0.1
 				amountRecommendTmp2 = math.Round(amountRecommendTmp2*10000000) / 10000000
 
-				amountRecommendTmpBiw := amountRecommendTmp / uPrice * 0.9
+				amountRecommendTmpBiw := tmpCurrentB * 0.9
 				amountRecommendTmpBiw = math.Round(amountRecommendTmpBiw*10000000) / 10000000
 
-				fmt.Println("直推奖奖励：", amount, uPrice, recommend, amountRecommendTmp, amountRecommendTmp2, amountRecommendTmpBiw, user, tmpRecommendUser)
+				fmt.Println("直推奖奖励：", amount, uPrice, recommend, amountRecommendTmp, tmpCurrentB, amountRecommendTmp2, amountRecommendTmpBiw, user, tmpRecommendUser)
 
-				if amountRecommendTmp > 0 && amountRecommendTmpBiw > 0 {
+				if tmpCurrentB > 0 && amountRecommendTmpBiw > 0 {
 					if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-						err = ac.userRepo.UpdateUserRewardRecommend2(ctx, tmpUserId, amountRecommendTmpBiw, amountRecommendTmp2, amountRecommendTmp, tmpRecommendUser.Amount, stopRecommend, user.Address)
+						err = ac.userRepo.UpdateUserRewardRecommend2(ctx, tmpUserId, amountRecommendTmpBiw, amountRecommendTmp2, tmpCurrentB, tmpRecommendUser.Amount, stopRecommend, user.Address)
 						if err != nil {
 							fmt.Println("错误分红直推：", err)
 						}
 
 						return nil
 					}); nil != err {
-						fmt.Println("err reward recommend", err, amount, amountRecommendTmp, user, tmpRecommendUser)
+						fmt.Println("err reward recommend", err, amount, amountRecommendTmp, tmpCurrentB, user, tmpRecommendUser)
 					}
 
 					if stopRecommend {
@@ -6135,7 +6161,7 @@ func (ac *AppUsecase) BuyTwo(ctx context.Context, address string, req *pb.BuyTwo
 						if _, ok := userRecommendsMap[tmpRecommendUser.ID]; ok {
 							userRecommendArea = userRecommendsMap[tmpRecommendUser.ID]
 						} else {
-							fmt.Println("错误分红业绩变更，信息缺失7：", err, amount, amountRecommendTmp, user, tmpRecommendUser)
+							fmt.Println("错误分红业绩变更，信息缺失7：", err, amount, amountRecommendTmp, tmpCurrentB, user, tmpRecommendUser)
 							continue
 						}
 
@@ -6156,12 +6182,12 @@ func (ac *AppUsecase) BuyTwo(ctx context.Context, address string, req *pb.BuyTwo
 									// 减掉业绩
 									err = ac.userRepo.UpdateUserMyTotalAmountSub(ctx, myUserRecommendAreaUserId, tmpRecommendUser.Amount)
 									if err != nil {
-										fmt.Println("错误分红社区：", err, amount, amountRecommendTmp, user, tmpRecommendUser)
+										fmt.Println("错误分红社区：", err, amount, amountRecommendTmp, tmpCurrentB, user, tmpRecommendUser)
 									}
 
 									return nil
 								}); nil != err {
-									fmt.Println("err reward recommend 2", err, amount, amountRecommendTmp, user, tmpRecommendUser)
+									fmt.Println("err reward recommend 2", err, amount, amountRecommendTmp, tmpCurrentB, user, tmpRecommendUser)
 								}
 							}
 						}
