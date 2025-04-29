@@ -599,6 +599,12 @@ func (ac *AppUsecase) UserBuy(ctx context.Context, address string) (*pb.UserBuyR
 		}, nil
 	}
 
+	if 1 == user.LockUse {
+		return &pb.UserBuyReply{
+			Status: "锁定用户",
+		}, nil
+	}
+
 	var (
 		configs []*Config
 		uPrice  float64
@@ -2429,9 +2435,6 @@ func (ac *AppUsecase) UserOrderList(ctx context.Context, address string, req *pb
 var rngMutexBuyBox sync.Mutex
 
 func (ac *AppUsecase) BuyBox(ctx context.Context, address string, req *pb.BuyBoxRequest) (*pb.BuyBoxReply, error) {
-	rngMutexBuyBox.Lock()
-	defer rngMutexBuyBox.Unlock()
-
 	var (
 		user             *User
 		err              error
@@ -2451,6 +2454,15 @@ func (ac *AppUsecase) BuyBox(ctx context.Context, address string, req *pb.BuyBox
 			Status: "不存在用户",
 		}, nil
 	}
+
+	if 1 == user.LockUse {
+		return &pb.BuyBoxReply{
+			Status: "锁定用户",
+		}, nil
+	}
+
+	rngMutexBuyBox.Lock()
+	defer rngMutexBuyBox.Unlock()
 
 	// 配置
 	configs, err = ac.userRepo.GetConfigByKeys(ctx,
@@ -2591,9 +2603,6 @@ var rngPlant *rand2.Rand
 var rngMutexBox sync.Mutex
 
 func (ac *AppUsecase) OpenBox(ctx context.Context, address string, req *pb.OpenBoxRequest) (*pb.OpenBoxReply, error) {
-	rngMutexBox.Lock()
-	defer rngMutexBox.Unlock()
-
 	var (
 		user *User
 		box  *BoxRecord
@@ -2606,6 +2615,15 @@ func (ac *AppUsecase) OpenBox(ctx context.Context, address string, req *pb.OpenB
 			Status: "不存在用户",
 		}, nil
 	}
+
+	if 1 == user.LockUse {
+		return &pb.OpenBoxReply{
+			Status: "锁定用户",
+		}, nil
+	}
+
+	rngMutexBox.Lock()
+	defer rngMutexBox.Unlock()
 
 	box, err = ac.userRepo.GetUserBoxRecordById(ctx, req.SendBody.Id)
 	if nil != err || nil == box {
@@ -2869,9 +2887,6 @@ var rngMutexPlant sync.Mutex
 
 // LandPlayOne 种植
 func (ac *AppUsecase) LandPlayOne(ctx context.Context, address string, req *pb.LandPlayOneRequest) (*pb.LandPlayOneReply, error) {
-	rngMutexPlant.Lock()
-	defer rngMutexPlant.Unlock()
-
 	var (
 		user *User
 		err  error
@@ -2883,6 +2898,15 @@ func (ac *AppUsecase) LandPlayOne(ctx context.Context, address string, req *pb.L
 			Status: "不存在用户",
 		}, nil
 	}
+
+	if 1 == user.LockUse {
+		return &pb.LandPlayOneReply{
+			Status: "锁定用户",
+		}, nil
+	}
+
+	rngMutexPlant.Lock()
+	defer rngMutexPlant.Unlock()
 
 	var (
 		seed *Seed
@@ -3042,9 +3066,6 @@ var rngMutexPlantTwo sync.Mutex
 
 // LandPlayTwo 收果实
 func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.LandPlayTwoRequest) (*pb.LandPlayTwoReply, error) {
-	rngMutexPlantTwo.Lock()
-	defer rngMutexPlantTwo.Unlock()
-
 	var (
 		configs    []*Config
 		user       *User
@@ -3062,6 +3083,15 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 			Status: "不存在用户",
 		}, nil
 	}
+
+	if 1 == user.LockUse {
+		return &pb.LandPlayTwoReply{
+			Status: "锁定用户",
+		}, nil
+	}
+
+	rngMutexPlantTwo.Lock()
+	defer rngMutexPlantTwo.Unlock()
 
 	// 配置
 	configs, err = ac.userRepo.GetConfigByKeys(ctx,
@@ -3423,6 +3453,12 @@ func (ac *AppUsecase) LandPlayThree(ctx context.Context, address string, req *pb
 		}, nil
 	}
 
+	if 1 == user.LockUse {
+		return &pb.LandPlayThreeReply{
+			Status: "锁定用户",
+		}, nil
+	}
+
 	var (
 		prop *Prop
 	)
@@ -3528,6 +3564,12 @@ func (ac *AppUsecase) LandPlayFour(ctx context.Context, address string, req *pb.
 	if nil != err || nil == user {
 		return &pb.LandPlayFourReply{
 			Status: "不存在用户",
+		}, nil
+	}
+
+	if 1 == user.LockUse {
+		return &pb.LandPlayFourReply{
+			Status: "锁定用户",
 		}, nil
 	}
 
@@ -3650,6 +3692,12 @@ func (ac *AppUsecase) LandPlayFive(ctx context.Context, address string, req *pb.
 		}, nil
 	}
 
+	if 1 == user.LockUse {
+		return &pb.LandPlayFiveReply{
+			Status: "锁定用户",
+		}, nil
+	}
+
 	var (
 		prop *Prop
 	)
@@ -3759,6 +3807,12 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 	if nil != err || nil == user {
 		return &pb.LandPlaySixReply{
 			Status: "不存在用户",
+		}, nil
+	}
+
+	if 1 == user.LockUse {
+		return &pb.LandPlaySixReply{
+			Status: "锁定用户",
 		}, nil
 	}
 
@@ -4162,6 +4216,12 @@ func (ac *AppUsecase) LandPlaySeven(ctx context.Context, address string, req *pb
 		}, nil
 	}
 
+	if 1 == user.LockUse {
+		return &pb.LandPlaySevenReply{
+			Status: "锁定用户",
+		}, nil
+	}
+
 	var (
 		prop *Prop
 	)
@@ -4320,6 +4380,12 @@ func (ac *AppUsecase) Buy(ctx context.Context, address string, req *pb.BuyReques
 	if nil != err || nil == user {
 		return &pb.BuyReply{
 			Status: "不存在用户",
+		}, nil
+	}
+
+	if 1 == user.LockUse {
+		return &pb.BuyReply{
+			Status: "锁定用户",
 		}, nil
 	}
 
@@ -4580,6 +4646,12 @@ func (ac *AppUsecase) Sell(ctx context.Context, address string, req *pb.SellRequ
 		}, nil
 	}
 
+	if 1 == user.LockUse {
+		return &pb.SellReply{
+			Status: "锁定用户",
+		}, nil
+	}
+
 	tmpSellAmount := float64(req.SendBody.Amount)
 	if 1 == req.SendBody.Num {
 		if 0 >= tmpSellAmount {
@@ -4807,6 +4879,12 @@ func (ac *AppUsecase) StakeGit(ctx context.Context, address string, req *pb.Stak
 		}, nil
 	}
 
+	if 1 == user.LockUse {
+		return &pb.StakeGitReply{
+			Status: "锁定用户",
+		}, nil
+	}
+
 	if 1 == req.SendBody.Num {
 		if 100 > req.SendBody.Amount {
 			return &pb.StakeGitReply{
@@ -4892,6 +4970,12 @@ func (ac *AppUsecase) RentLand(ctx context.Context, address string, req *pb.Rent
 	if nil != err || nil == user {
 		return &pb.RentLandReply{
 			Status: "不存在用户",
+		}, nil
+	}
+
+	if 1 == user.LockUse {
+		return &pb.RentLandReply{
+			Status: "锁定用户",
 		}, nil
 	}
 
@@ -5008,6 +5092,12 @@ func (ac *AppUsecase) LandPlay(ctx context.Context, address string, req *pb.Land
 	if nil != err || nil == user {
 		return &pb.LandPlayReply{
 			Status: "不存在用户",
+		}, nil
+	}
+
+	if 1 == user.LockUse {
+		return &pb.LandPlayReply{
+			Status: "锁定用户",
 		}, nil
 	}
 
@@ -5204,6 +5294,12 @@ func (ac *AppUsecase) LandAddOutRate(ctx context.Context, address string, req *p
 		}, nil
 	}
 
+	if 1 == user.LockUse {
+		return &pb.LandAddOutRateReply{
+			Status: "锁定用户",
+		}, nil
+	}
+
 	var (
 		land *Land
 	)
@@ -5272,6 +5368,12 @@ func (ac *AppUsecase) GetLand(ctx context.Context, address string, req *pb.GetLa
 	if nil != err || nil == user {
 		return &pb.GetLandReply{
 			Status: "不存在用户",
+		}, nil
+	}
+
+	if 1 == user.LockUse {
+		return &pb.GetLandReply{
+			Status: "锁定用户",
 		}, nil
 	}
 
@@ -5498,9 +5600,6 @@ func (ac *AppUsecase) GetLand(ctx context.Context, address string, req *pb.GetLa
 var stakeAndPlay sync.Mutex
 
 func (ac *AppUsecase) StakeGet(ctx context.Context, address string, req *pb.StakeGetRequest) (*pb.StakeGetReply, error) {
-	stakeAndPlay.Lock()
-	defer stakeAndPlay.Unlock()
-
 	var (
 		user *User
 		err  error
@@ -5512,6 +5611,15 @@ func (ac *AppUsecase) StakeGet(ctx context.Context, address string, req *pb.Stak
 			Status: "不存在用户",
 		}, nil
 	}
+
+	if 1 == user.LockUse {
+		return &pb.StakeGetReply{
+			Status: "锁定用户",
+		}, nil
+	}
+
+	stakeAndPlay.Lock()
+	defer stakeAndPlay.Unlock()
 
 	var (
 		stakeGetTotal *StakeGetTotal
@@ -5658,9 +5766,6 @@ func (ac *AppUsecase) StakeGet(ctx context.Context, address string, req *pb.Stak
 }
 
 func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.StakeGetPlayRequest) (*pb.StakeGetPlayReply, error) {
-	stakeAndPlay.Lock()
-	defer stakeAndPlay.Unlock()
-
 	var (
 		user *User
 		err  error
@@ -5672,6 +5777,15 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 			Status: "不存在用户",
 		}, nil
 	}
+
+	if 1 == user.LockUse {
+		return &pb.StakeGetPlayReply{
+			Status: "锁定用户",
+		}, nil
+	}
+
+	stakeAndPlay.Lock()
+	defer stakeAndPlay.Unlock()
 
 	if req.SendBody.Amount > uint64(user.Git) {
 		return &pb.StakeGetPlayReply{
@@ -5756,7 +5870,7 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 		}
 
 		return &pb.StakeGetPlayReply{Status: "ok", PlayStatus: 1, Amount: tmpGit}, nil
-	} else { // 输：下注金额加入池子
+	} else {                                                         // 输：下注金额加入池子
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 			err = ac.userRepo.SetStakeGetPlaySub(ctx, user.ID, float64(req.SendBody.Amount))
 			if nil != err {
@@ -5801,6 +5915,12 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 	if nil != err || nil == user {
 		return &pb.ExchangeReply{
 			Status: "不存在用户",
+		}, nil
+	}
+
+	if 1 == user.LockUse {
+		return &pb.ExchangeReply{
+			Status: "锁定用户",
 		}, nil
 	}
 
@@ -5886,9 +6006,6 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 var buyTwo sync.Mutex
 
 func (ac *AppUsecase) BuyTwo(ctx context.Context, address string, req *pb.BuyTwoRequest) (*pb.BuyTwoReply, error) {
-	buyTwo.Lock()
-	defer buyTwo.Unlock()
-
 	var (
 		user      *User
 		configs   []*Config
@@ -5903,6 +6020,15 @@ func (ac *AppUsecase) BuyTwo(ctx context.Context, address string, req *pb.BuyTwo
 			Status: "不存在用户",
 		}, nil
 	}
+
+	if 1 == user.LockUse {
+		return &pb.BuyTwoReply{
+			Status: "锁定用户",
+		}, nil
+	}
+
+	buyTwo.Lock()
+	defer buyTwo.Unlock()
 
 	if 0 < user.Amount {
 		return &pb.BuyTwoReply{
@@ -6233,6 +6359,12 @@ func (ac *AppUsecase) Withdraw(ctx context.Context, address string, req *pb.With
 	if nil != err || nil == user {
 		return &pb.WithdrawReply{
 			Status: "不存在用户",
+		}, nil
+	}
+
+	if 1 == user.LockUse {
+		return &pb.WithdrawReply{
+			Status: "锁定用户",
 		}, nil
 	}
 
@@ -6784,8 +6916,6 @@ func (ac *AppUsecase) BuyLandRecord(ctx context.Context, addreses string, req *p
 var BuyLandR sync.Mutex
 
 func (ac *AppUsecase) BuyLand(ctx context.Context, addreses string, req *pb.BuyLandRequest) (*pb.BuyLandReply, error) {
-	BuyLandR.Lock()
-	defer BuyLandR.Unlock()
 	var (
 		user          *User
 		err           error
@@ -6801,6 +6931,15 @@ func (ac *AppUsecase) BuyLand(ctx context.Context, addreses string, req *pb.BuyL
 	if nil == user {
 		return &pb.BuyLandReply{Status: "地址不存在用户"}, nil
 	}
+
+	if 1 == user.LockUse {
+		return &pb.BuyLandReply{
+			Status: "锁定用户",
+		}, nil
+	}
+
+	BuyLandR.Lock()
+	defer BuyLandR.Unlock()
 
 	landBuy, err = ac.userRepo.GetBuyLandById(ctx)
 	if nil != err {
