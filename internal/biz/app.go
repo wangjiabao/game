@@ -54,6 +54,8 @@ type User struct {
 	OutNum           uint64
 	Vip              uint64
 	VipAdmin         uint64
+	LockUse          uint64
+	LockReward       uint64
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
 }
@@ -6114,6 +6116,10 @@ func (ac *AppUsecase) BuyTwo(ctx context.Context, address string, req *pb.BuyTwo
 			return nil
 		}); nil != err {
 			fmt.Println("遍历业绩：", err, tmpUserId, user)
+			continue
+		}
+
+		if 1 == user.LockReward {
 			continue
 		}
 

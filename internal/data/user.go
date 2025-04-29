@@ -44,6 +44,8 @@ type User struct {
 	OutNum           uint64    `gorm:"type:int;"`
 	Vip              uint64    `gorm:"type:int;"`
 	VipAdmin         uint64    `gorm:"type:int;"`
+	LockUse          uint64    `gorm:"type:int;"`
+	LockReward       uint64    `gorm:"type:int;"`
 	CreatedAt        time.Time `gorm:"type:datetime;not null"`
 	UpdatedAt        time.Time `gorm:"type:datetime;not null"`
 }
@@ -525,6 +527,8 @@ func (u *UserRepo) GetUserByAddress(ctx context.Context, address string) (*biz.U
 		OutNum:           user.OutNum,
 		Vip:              user.Vip,
 		VipAdmin:         user.VipAdmin,
+		LockUse:          user.LockUse,
+		LockReward:       user.LockReward,
 	}, nil
 }
 
