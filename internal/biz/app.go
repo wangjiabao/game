@@ -520,6 +520,10 @@ func (ac *AppUsecase) GetExistUserByAddressOrCreate(ctx context.Context, address
 	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
 	if nil == user || nil != err {
 		code := req.SendBody.Code
+		if 0 >= len(code) {
+			return nil, errors.New(500, "USER_ERROR", "errcode"), "errcode"
+		}
+
 		if "abf00dd52c08a9213f225827bc3fb100" != code {
 			if 1 >= len(code) {
 				return nil, errors.New(500, "USER_ERROR", "无效的推荐码1"), "无效的推荐码"
@@ -5750,7 +5754,7 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 		}
 
 		return &pb.StakeGetPlayReply{Status: "ok", PlayStatus: 1, Amount: tmpGit}, nil
-	} else { // 输：下注金额加入池子
+	} else {                                                         // 输：下注金额加入池子
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 			err = ac.userRepo.SetStakeGetPlaySub(ctx, user.ID, float64(req.SendBody.Amount))
 			if nil != err {
