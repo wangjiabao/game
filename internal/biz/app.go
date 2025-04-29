@@ -476,7 +476,7 @@ type UserRepo interface {
 	SetStakeGit(ctx context.Context, userId uint64, amount float64) error
 	SetUnStakeGit(ctx context.Context, id, userId uint64, amount float64) error
 	Exchange(ctx context.Context, userId uint64, git, giw float64) error
-	Withdraw(ctx context.Context, userId uint64, giw float64) error
+	Withdraw(ctx context.Context, userId uint64, giw, relGiw float64) error
 	GetAllBuyLandRecords(ctx context.Context, id uint64) ([]*BuyLandRecord, error)
 	GetBuyLandById(ctx context.Context) (*BuyLand, error)
 	CreateBuyLandRecord(ctx context.Context, limit uint64, bl *BuyLandRecord) error
@@ -5754,7 +5754,7 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 		}
 
 		return &pb.StakeGetPlayReply{Status: "ok", PlayStatus: 1, Amount: tmpGit}, nil
-	} else {                                                         // 输：下注金额加入池子
+	} else { // 输：下注金额加入池子
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 			err = ac.userRepo.SetStakeGetPlaySub(ctx, user.ID, float64(req.SendBody.Amount))
 			if nil != err {
@@ -6215,11 +6215,12 @@ func (ac *AppUsecase) BuyTwo(ctx context.Context, address string, req *pb.BuyTwo
 
 func (ac *AppUsecase) Withdraw(ctx context.Context, address string, req *pb.WithdrawRequest) (*pb.WithdrawReply, error) {
 	var (
-		user        *User
-		configs     []*Config
-		err         error
-		withdrawMin uint64
-		withdrawMax uint64
+		user         *User
+		configs      []*Config
+		err          error
+		withdrawMin  uint64
+		withdrawMax  uint64
+		withdrawRate float64
 	)
 
 	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
@@ -6233,6 +6234,7 @@ func (ac *AppUsecase) Withdraw(ctx context.Context, address string, req *pb.With
 	configs, err = ac.userRepo.GetConfigByKeys(ctx,
 		"withdraw_amount_min",
 		"withdraw_amount_max",
+		"withdraw_rate",
 	)
 	if nil != err || nil == configs {
 		return &pb.WithdrawReply{
@@ -6245,6 +6247,9 @@ func (ac *AppUsecase) Withdraw(ctx context.Context, address string, req *pb.With
 		}
 		if "withdraw_amount_max" == vConfig.KeyName {
 			withdrawMax, _ = strconv.ParseUint(vConfig.Value, 10, 64)
+		}
+		if "withdraw_rate" == vConfig.KeyName {
+			withdrawRate, _ = strconv.ParseFloat(vConfig.Value, 10)
 		}
 	}
 
@@ -6262,12 +6267,25 @@ func (ac *AppUsecase) Withdraw(ctx context.Context, address string, req *pb.With
 
 	if withdrawMax < req.SendBody.Amount {
 		return &pb.WithdrawReply{
-			Status: "高于最大值",
+			Status: "大于最大值",
+		}, nil
+	}
+
+	if 0 >= withdrawRate {
+		return &pb.WithdrawReply{
+			Status: "手续费错误",
+		}, nil
+	}
+
+	tmpAmount := float64(req.SendBody.Amount) - float64(req.SendBody.Amount)*withdrawRate
+	if 0 >= tmpAmount {
+		return &pb.WithdrawReply{
+			Status: "手续费错误",
 		}, nil
 	}
 
 	if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-		err = ac.userRepo.Withdraw(ctx, user.ID, float64(req.SendBody.Amount))
+		err = ac.userRepo.Withdraw(ctx, user.ID, float64(req.SendBody.Amount), tmpAmount)
 		if nil != err {
 			return err
 		}

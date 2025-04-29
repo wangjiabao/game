@@ -3460,7 +3460,7 @@ func (u *UserRepo) Exchange(ctx context.Context, userId uint64, git, giw float64
 }
 
 // Withdraw .
-func (u *UserRepo) Withdraw(ctx context.Context, userId uint64, giw float64) error {
+func (u *UserRepo) Withdraw(ctx context.Context, userId uint64, giw, relGiw float64) error {
 	res := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("giw>=?", giw).
 		Updates(map[string]interface{}{"giw": gorm.Expr("giw - ?", giw), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil {
@@ -3471,7 +3471,7 @@ func (u *UserRepo) Withdraw(ctx context.Context, userId uint64, giw float64) err
 
 	withdraw.UserId = userId
 	withdraw.Amount = uint64(giw)
-	withdraw.RelAmount = uint64(giw)
+	withdraw.RelAmount = uint64(relGiw)
 	withdraw.Status = "rewarded"
 	res = u.data.DB(ctx).Table("withdraw").Create(&withdraw)
 	if res.Error != nil {
