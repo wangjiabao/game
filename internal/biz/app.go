@@ -838,7 +838,7 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		if "withdraw_amount_min_two" == vConfig.KeyName {
 			withdrawMinTwo, _ = strconv.ParseUint(vConfig.Value, 10, 64)
 		}
-		if "withdraw_amount_max_tqo" == vConfig.KeyName {
+		if "withdraw_amount_max_two" == vConfig.KeyName {
 			withdrawMaxTwo, _ = strconv.ParseUint(vConfig.Value, 10, 64)
 		}
 		if "b_price" == vConfig.KeyName {
