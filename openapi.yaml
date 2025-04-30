@@ -1922,6 +1922,8 @@ components:
                 usdtTwo:
                     type: number
                     format: double
+                addressThree:
+                    type: string
         UserLandReply:
             type: object
             properties:

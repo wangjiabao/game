@@ -373,6 +373,7 @@ type UserRepo interface {
 	GetAllUsers(ctx context.Context) ([]*User, error)
 	GetUserByUserIds(ctx context.Context, userIds []uint64) (map[uint64]*User, error)
 	GetUserByAddress(ctx context.Context, address string) (*User, error)
+	GetUserById(ctx context.Context, id uint64) (*User, error)
 	GetUserRecommendByUserId(ctx context.Context, userId uint64) (*UserRecommend, error)
 	GetUserRecommendByCode(ctx context.Context, code string) ([]*UserRecommend, error)
 	GetUserRecommendLikeCode(ctx context.Context, code string) ([]*UserRecommend, error)
@@ -900,6 +901,34 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		}, nil
 	}
 
+	var (
+		myUserRecommendUserId  uint64
+		tmpRecommendUserIdsTmp []string
+		addressThree           string
+	)
+
+	if 0 < len(userRecommend.RecommendCode) {
+		tmpRecommendUserIdsTmp = strings.Split(userRecommend.RecommendCode, "D")
+		if 2 <= len(tmpRecommendUserIdsTmp) {
+			myUserRecommendUserId, _ = strconv.ParseUint(tmpRecommendUserIdsTmp[len(tmpRecommendUserIdsTmp)-1], 10, 64) // 最后一位是直推人
+		}
+
+		if 0 < myUserRecommendUserId {
+			var (
+				myTopUser *User
+			)
+			myTopUser, err = ac.userRepo.GetUserById(ctx, myUserRecommendUserId)
+			if nil != err {
+				return &pb.UserInfoReply{
+					Status: "上级查询错误",
+				}, nil
+			}
+
+			addressThree = myTopUser.Address
+		}
+
+	}
+
 	myUserRecommend, err = ac.userRepo.GetUserRecommendByCode(ctx, userRecommend.RecommendCode+"D"+strconv.FormatUint(user.ID, 10))
 	if nil == myUserRecommend || nil != err {
 		return &pb.UserInfoReply{
@@ -1032,6 +1061,7 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		WithdrawMinTwo:            withdrawMinTwo,
 		Usdt:                      user.AmountUsdt,
 		CreatedAt:                 user.CreatedAt.Add(8 * time.Hour).Format("2006-01-02 15:04:05"),
+		AddressThree:              addressThree,
 	}, nil
 }
 

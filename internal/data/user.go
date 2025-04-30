@@ -483,6 +483,58 @@ func (u *UserRepo) GetUserByUserIds(ctx context.Context, userIds []uint64) (map[
 	return res, nil
 }
 
+// GetUserById .
+func (u *UserRepo) GetUserById(ctx context.Context, id uint64) (*biz.User, error) {
+	var user *User
+	if err := u.data.DB(ctx).Where("id=?", id).Table("user").First(&user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+
+		return nil, errors.New(500, "USER ERROR", err.Error())
+	}
+
+	return &biz.User{
+		ID:               user.ID,
+		Address:          user.Address,
+		Level:            user.Level,
+		Giw:              user.Giw,
+		GiwAdd:           user.GiwAdd,
+		Git:              user.Git,
+		Total:            user.Total,
+		TotalOne:         user.TotalOne,
+		TotalTwo:         user.TotalTwo,
+		TotalThree:       user.TotalThree,
+		RewardOne:        user.RewardOne,
+		RewardTwo:        user.RewardTwo,
+		RewardThree:      user.RewardThree,
+		RewardTwoOne:     user.RewardTwoOne,
+		RewardTwoTwo:     user.RewardTwoTwo,
+		RewardTwoThree:   user.RewardTwoThree,
+		RewardThreeOne:   user.RewardThreeOne,
+		RewardThreeTwo:   user.RewardThreeTwo,
+		RewardThreeThree: user.RewardThreeThree,
+		CreatedAt:        user.CreatedAt,
+		UpdatedAt:        user.UpdatedAt,
+		Location:         user.Location,
+		Recommend:        user.Recommend,
+		RecommendTwo:     user.RecommendTwo,
+		All:              user.AllNum,
+		Area:             user.Area,
+		AreaTwo:          user.AreaTwo,
+		Amount:           user.Amount,
+		AmountGet:        user.AmountGet,
+		AmountUsdt:       user.AmountUsdt,
+		MyTotalAmount:    user.MyTotalAmount,
+		OutNum:           user.OutNum,
+		Vip:              user.Vip,
+		VipAdmin:         user.VipAdmin,
+		LockUse:          user.LockUse,
+		LockReward:       user.LockReward,
+		UsdtTwo:          user.UsdtTwo,
+	}, nil
+}
+
 // GetUserByAddress .
 func (u *UserRepo) GetUserByAddress(ctx context.Context, address string) (*biz.User, error) {
 	var user *User
