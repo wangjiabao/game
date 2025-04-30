@@ -331,13 +331,15 @@ type StakeGitRecord struct {
 }
 
 type Withdraw struct {
-	ID        uint64
-	UserID    uint64
-	Amount    uint64
-	RelAmount uint64
-	Status    string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID             uint64
+	UserID         uint64
+	Amount         uint64
+	RelAmount      uint64
+	AmountFloat    float64
+	RelAmountFloat float64
+	Status         string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
 }
 
 type BuyLand struct {

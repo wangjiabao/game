@@ -293,14 +293,16 @@ type StakeGitRecord struct {
 }
 
 type Withdraw struct {
-	ID        uint64    `gorm:"primarykey;type:int;comment:主键"`
-	UserId    uint64    `gorm:"type:int;not null;comment:用户id"`
-	Amount    uint64    `gorm:"type:bigint(20);not null;comment:金额"`
-	RelAmount uint64    `gorm:"type:bigint(20);not null;comment:实际提现金额"`
-	Status    string    `gorm:"type:varchar(45);not null;default:'default';comment:状态"`
-	Coin      string    `gorm:"type:varchar(45);`
-	CreatedAt time.Time `gorm:"type:datetime;not null"`
-	UpdatedAt time.Time `gorm:"type:datetime;not null"`
+	ID             uint64    `gorm:"primarykey;type:int;comment:主键"`
+	UserId         uint64    `gorm:"type:int;not null;comment:用户id"`
+	Amount         uint64    `gorm:"type:bigint(20);not null;comment:金额"`
+	RelAmount      uint64    `gorm:"type:bigint(20);not null;comment:实际提现金额"`
+	Status         string    `gorm:"type:varchar(45);not null;default:'default';comment:状态"`
+	AmountFloat    float64   `gorm:"type:decimal(65,18);"`
+	RelAmountFloat float64   `gorm:"type:decimal(65,18);"`
+	Coin           string    `gorm:"type:varchar(45);`
+	CreatedAt      time.Time `gorm:"type:datetime;not null"`
+	UpdatedAt      time.Time `gorm:"type:datetime;not null"`
 }
 
 type SeedInfo struct {
@@ -2072,13 +2074,15 @@ func (u *UserRepo) GetWithdrawRecordsByUserID(ctx context.Context, userID int64,
 
 	for _, record := range records {
 		res = append(res, &biz.Withdraw{
-			ID:        record.ID,
-			UserID:    record.UserId,
-			Amount:    record.Amount,
-			RelAmount: record.RelAmount,
-			Status:    record.Status,
-			CreatedAt: record.CreatedAt,
-			UpdatedAt: record.UpdatedAt,
+			ID:             record.ID,
+			UserID:         record.UserId,
+			Amount:         record.Amount,
+			RelAmount:      record.RelAmount,
+			Status:         record.Status,
+			CreatedAt:      record.CreatedAt,
+			UpdatedAt:      record.UpdatedAt,
+			RelAmountFloat: record.RelAmountFloat,
+			AmountFloat:    record.AmountFloat,
 		})
 	}
 
@@ -3544,6 +3548,8 @@ func (u *UserRepo) Withdraw(ctx context.Context, userId uint64, giw, relGiw floa
 	withdraw.UserId = userId
 	withdraw.Amount = uint64(giw)
 	withdraw.RelAmount = uint64(relGiw)
+	withdraw.AmountFloat = giw
+	withdraw.RelAmountFloat = relGiw
 	withdraw.Status = "rewarded"
 	withdraw.Coin = "biw"
 	res = u.data.DB(ctx).Table("withdraw").Create(&withdraw)
@@ -3567,6 +3573,8 @@ func (u *UserRepo) WithdrawTwo(ctx context.Context, userId uint64, usdt, relUsdt
 	withdraw.UserId = userId
 	withdraw.Amount = uint64(usdt)
 	withdraw.RelAmount = uint64(relUsdt)
+	withdraw.AmountFloat = usdt
+	withdraw.RelAmountFloat = relUsdt
 	withdraw.Status = "rewarded"
 	withdraw.Coin = "usdt"
 	res = u.data.DB(ctx).Table("withdraw").Create(&withdraw)
