@@ -46,6 +46,7 @@ type User struct {
 	VipAdmin         uint64    `gorm:"type:int;"`
 	LockUse          uint64    `gorm:"type:int;"`
 	LockReward       uint64    `gorm:"type:int;"`
+	UsdtTwo          float64   `gorm:"type:decimal(65,20);"`
 	CreatedAt        time.Time `gorm:"type:datetime;not null"`
 	UpdatedAt        time.Time `gorm:"type:datetime;not null"`
 }
@@ -297,6 +298,7 @@ type Withdraw struct {
 	Amount    uint64    `gorm:"type:bigint(20);not null;comment:金额"`
 	RelAmount uint64    `gorm:"type:bigint(20);not null;comment:实际提现金额"`
 	Status    string    `gorm:"type:varchar(45);not null;default:'default';comment:状态"`
+	Coin      string    `gorm:"type:varchar(45);`
 	CreatedAt time.Time `gorm:"type:datetime;not null"`
 	UpdatedAt time.Time `gorm:"type:datetime;not null"`
 }
@@ -529,6 +531,7 @@ func (u *UserRepo) GetUserByAddress(ctx context.Context, address string) (*biz.U
 		VipAdmin:         user.VipAdmin,
 		LockUse:          user.LockUse,
 		LockReward:       user.LockReward,
+		UsdtTwo:          user.UsdtTwo,
 	}, nil
 }
 
@@ -2033,7 +2036,7 @@ func (u *UserRepo) GetWithdrawRecordsByUserID(ctx context.Context, userID int64,
 func (u *UserRepo) GetUserOrderCount(ctx context.Context) (int64, error) {
 	var count int64
 	err := u.data.DB(ctx).Table("user").
-		Where("git > ?", 0).
+		//Where("git > ?", 0).
 		Count(&count).Error
 
 	if err != nil {
@@ -2047,7 +2050,9 @@ func (u *UserRepo) GetUserOrder(ctx context.Context, b *biz.Pagination) ([]*biz.
 	var users []*User
 
 	res := make([]*biz.User, 0)
-	instance := u.data.DB(ctx).Table("user").Where("git>?", 0).Order("git desc")
+	instance := u.data.DB(ctx).Table("user").
+		//Where("git>?", 0).
+		Order("git desc")
 
 	if nil != b {
 		instance = instance.Scopes(Paginate(b.PageNum, b.PageSize))
@@ -3463,6 +3468,17 @@ func (u *UserRepo) Exchange(ctx context.Context, userId uint64, git, giw float64
 	return nil
 }
 
+// ExchangeTwo .
+func (u *UserRepo) ExchangeTwo(ctx context.Context, userId uint64, git, giw float64) error {
+	res := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("git>=?", git).
+		Updates(map[string]interface{}{"git": gorm.Expr("git - ?", git), "usdt_two": gorm.Expr("usdt_two + ?", giw), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "SetStakeGet", "用户信息修改失败")
+	}
+
+	return nil
+}
+
 // Withdraw .
 func (u *UserRepo) Withdraw(ctx context.Context, userId uint64, giw, relGiw float64) error {
 	res := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("giw>=?", giw).
@@ -3477,6 +3493,30 @@ func (u *UserRepo) Withdraw(ctx context.Context, userId uint64, giw, relGiw floa
 	withdraw.Amount = uint64(giw)
 	withdraw.RelAmount = uint64(relGiw)
 	withdraw.Status = "rewarded"
+	withdraw.Coin = "biw"
+	res = u.data.DB(ctx).Table("withdraw").Create(&withdraw)
+	if res.Error != nil {
+		return errors.New(500, "CREATE_STAKE_GET_ERROR", "创建提现记录失败")
+	}
+
+	return nil
+}
+
+// WithdrawTwo .
+func (u *UserRepo) WithdrawTwo(ctx context.Context, userId uint64, usdt, relUsdt float64) error {
+	res := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("usdt_two>=?", usdt).
+		Updates(map[string]interface{}{"usdt_two": gorm.Expr("usdt_two - ?", usdt), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "SetStakeGet", "用户信息修改失败")
+	}
+
+	var withdraw Withdraw
+
+	withdraw.UserId = userId
+	withdraw.Amount = uint64(usdt)
+	withdraw.RelAmount = uint64(relUsdt)
+	withdraw.Status = "rewarded"
+	withdraw.Coin = "usdt"
 	res = u.data.DB(ctx).Table("withdraw").Create(&withdraw)
 	if res.Error != nil {
 		return errors.New(500, "CREATE_STAKE_GET_ERROR", "创建提现记录失败")

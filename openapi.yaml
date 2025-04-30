@@ -1302,6 +1302,8 @@ components:
                     type: string
                 sign:
                     type: string
+                exchangeType:
+                    type: string
         GetBuyLandReply:
             type: object
             properties:
@@ -1810,6 +1812,8 @@ components:
                 reward:
                     type: number
                     format: double
+                oneOne:
+                    type: string
                 rewardStatus:
                     type: string
                 plantUserAddress:
@@ -1884,6 +1888,12 @@ components:
                 exchangeFeeRate:
                     type: number
                     format: double
+                exchangeRateTwo:
+                    type: number
+                    format: double
+                exchangeFeeRateTwo:
+                    type: number
+                    format: double
                 stakeGetTotal:
                     type: number
                     format: double
@@ -1900,9 +1910,16 @@ components:
                     type: string
                 withdrawMax:
                     type: string
+                withdrawMinTwo:
+                    type: string
+                withdrawMaxTwo:
+                    type: string
                 createdAt:
                     type: string
                 biwPrice:
+                    type: number
+                    format: double
+                usdtTwo:
                     type: number
                     format: double
         UserLandReply:
@@ -2282,6 +2299,8 @@ components:
                 amount:
                     type: string
                 sign:
+                    type: string
+                withdrawType:
                     type: string
 tags:
     - name: App

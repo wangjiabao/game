@@ -430,6 +430,9 @@ message UserInfoReply {
 	double exchangeRate = 23; // 兑换 兑换价格
 	double exchangeFeeRate = 24; // 兑换 兑换手续费用系数
 
+	double exchangeRateTwo = 123; // 兑换 兑换价格
+	double exchangeFeeRateTwo = 124; // 兑换 兑换手续费用系数
+
 	double stakeGetTotal = 25; // 果实放大器的 质押总数
 	double myStakeGetTotal = 26; // 果实放大器的 我的质押
 	double stakeGetOverFeeRate = 27; // 果实放大器的 赎回手续费用系数
@@ -438,10 +441,14 @@ message UserInfoReply {
 
 	uint64 withdrawMin = 29; // 提现最小
 	uint64 withdrawMax = 30; // 提现最大
+	uint64 withdrawMinTwo = 129; // 提现最小
+	uint64 withdrawMaxTwo = 130; // 提现最大
 
 	string createdAt = 31;
 
 	double biwPrice = 32;
+
+	double usdtTwo = 33;
 }
 
 message UserBuyRequest {
@@ -804,6 +811,7 @@ message UserIndexListReply {
 
 		uint64 status = 10; // 当前种植状态，1表示正常，2表示虫子，3表示缺水，显示对应的图片
 		double reward = 5; // 种植了，结束时间<=当前时间戳, 如果=0没成熟，>0成熟后奖励数量，如果是别人农场，当>0时可以显示手套可以偷
+		uint64 oneOne = 16;
 		uint64 rewardStatus = 17; // 成熟1,未成熟2
 
 		string plantUserAddress = 18;
@@ -830,6 +838,7 @@ message WithdrawRequest {
 	message SendBody{
 		uint64 amount = 1; // 必须在userinfo接口的withdrawMin和withdrawMax之间的正整数
 		string sign = 2; // 签名
+		uint64 withdrawType = 3;
 	}
 
 	SendBody send_body = 1;
@@ -843,6 +852,7 @@ message ExchangeRequest {
 	message SendBody{
 		uint64 amount = 1; // 1和userinfo接口的git余额之间的正整数，注意手续费的显示，需要乘以userinfo的兑换手续费字段，第二个数字就是减去手续费的值
 		string sign = 2; // 签名
+		uint64 exchangeType = 3;
 	}
 
 	SendBody send_body = 1;
