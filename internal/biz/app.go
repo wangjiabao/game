@@ -468,6 +468,7 @@ type UserRepo interface {
 	LandPullTwo(ctx context.Context, landId uint64, userId uint64) error
 	LandPush(ctx context.Context, landId uint64, userId, locationNum uint64) error
 	LandAddOutRate(ctx context.Context, id, landId, userId uint64) error
+	PropStatusThree(ctx context.Context, id uint64) error
 	CreateLand(ctx context.Context, lc *Land) (*Land, error)
 	GetLand(ctx context.Context, id, id2, userId uint64) error
 	GetLandInfoByLevels(ctx context.Context) (map[uint64]*LandInfo, error)
@@ -3257,12 +3258,12 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 	// 租的
 	rentReward := float64(0)
 	if landUserUse.UserId != landUserUse.OwnerUserId {
-		if 0 < reward {
-			rentReward = reward * land.RentOutPutRate
-			if reward > rentReward {
-				reward = reward - rentReward
-			}
-		}
+		//if 0 < reward {
+		//	rentReward = reward * land.RentOutPutRate
+		//	if reward > rentReward {
+		//		reward = reward - rentReward
+		//	}
+		//}
 	}
 
 	// 推荐
@@ -3366,14 +3367,16 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 			return err
 		}
 
-		err = ac.userRepo.CreateNotice(
-			ctx,
-			rentUserId,
-			"您收获了"+fmt.Sprintf("%.2f", rentReward)+"GIW",
-			"You've harvest "+fmt.Sprintf("%.2f", rentReward)+" GIW",
-		)
-		if nil != err {
-			return err
+		if 0 < rentReward {
+			err = ac.userRepo.CreateNotice(
+				ctx,
+				rentUserId,
+				"您收获了"+fmt.Sprintf("%.2f", rentReward)+"GIW",
+				"You've harvest "+fmt.Sprintf("%.2f", rentReward)+" GIW",
+			)
+			if nil != err {
+				return err
+			}
 		}
 
 		// l1-l3，奖励发放
@@ -5422,6 +5425,8 @@ func (ac *AppUsecase) LandAddOutRate(ctx context.Context, address string, req *p
 	return &pb.LandAddOutRateReply{Status: "ok"}, nil
 }
 
+var GetLandLock sync.Mutex
+
 func (ac *AppUsecase) GetLand(ctx context.Context, address string, req *pb.GetLandRequest) (*pb.GetLandReply, error) {
 	var (
 		user      *User
@@ -5441,6 +5446,9 @@ func (ac *AppUsecase) GetLand(ctx context.Context, address string, req *pb.GetLa
 			Status: "锁定用户",
 		}, nil
 	}
+
+	GetLandLock.Lock()
+	defer GetLandLock.Unlock()
 
 	landInfos, err = ac.userRepo.GetLandInfoByLevels(ctx)
 	if nil != err {
@@ -5472,12 +5480,22 @@ func (ac *AppUsecase) GetLand(ctx context.Context, address string, req *pb.GetLa
 
 		one := uint64(0)
 		two := make([]uint64, 0)
+		propIds := make([]uint64, 0)
 		for _, vProp := range prop {
 			if vProp.PropType == 17 {
 				one = vProp.ID
+				propIds = append(propIds, vProp.ID)
+				break
 			}
+		}
+
+		for _, vProp := range prop {
 			if vProp.PropType == 11 {
 				two = append(two, vProp.ID)
+				if 5 <= len(two) {
+					propIds = append(propIds, vProp.ID)
+					break
+				}
 			}
 		}
 
@@ -5490,6 +5508,12 @@ func (ac *AppUsecase) GetLand(ctx context.Context, address string, req *pb.GetLa
 		if 5 > len(two) {
 			return &pb.GetLandReply{
 				Status: "缺少化肥",
+			}, nil
+		}
+
+		if 6 > len(propIds) {
+			return &pb.GetLandReply{
+				Status: "缺少化肥和地契",
 			}, nil
 		}
 
@@ -5514,6 +5538,14 @@ func (ac *AppUsecase) GetLand(ctx context.Context, address string, req *pb.GetLa
 		randomNumber := outMin + rngTmp.Int63n(tmpNum)
 
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+			// 地契和化肥扣除
+			for _, vPropIds := range propIds {
+				err = ac.userRepo.PropStatusThree(ctx, vPropIds)
+				if nil != err {
+					return err
+				}
+			}
+
 			_, err = ac.userRepo.CreateLand(ctx, &Land{
 				UserId:     user.ID,
 				Level:      landInfos[tmpLevel].Level,
@@ -5537,6 +5569,18 @@ func (ac *AppUsecase) GetLand(ctx context.Context, address string, req *pb.GetLa
 			}, nil
 		}
 	} else if 2 == req.SendBody.Num {
+		if 0 >= req.SendBody.LandOneId || 0 >= req.SendBody.LandTwoId {
+			return &pb.GetLandReply{
+				Status: "不存在土地",
+			}, nil
+		}
+
+		if req.SendBody.LandOneId == req.SendBody.LandTwoId {
+			return &pb.GetLandReply{
+				Status: "请选择两块土地",
+			}, nil
+		}
+
 		var (
 			land *Land
 		)

@@ -3191,13 +3191,25 @@ func (u *UserRepo) PlantPlatTwoTwoL(ctx context.Context, id, userId, lowUserId, 
 
 // LandAddOutRate .
 func (u *UserRepo) LandAddOutRate(ctx context.Context, id, landId, userId uint64) error {
-	res := u.data.DB(ctx).Table("land").Where("id=?", landId).Where("user_id=?", userId).
+	res := u.data.DB(ctx).Table("land").Where("id=?", landId).
 		Updates(map[string]interface{}{"max_health": gorm.Expr("max_health + ?", 20), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil {
 		return errors.New(500, "LandAddOutRate", "用户信息修改失败")
 	}
 
-	res = u.data.DB(ctx).Table("prop").Where("id=?", id).Where("user_id=?", userId).
+	res = u.data.DB(ctx).Table("prop").Where("id=?", id).
+		Updates(map[string]interface{}{"status": 3, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "LandAddOutRate", "用户信息修改失败")
+	}
+
+	return nil
+}
+
+// PropStatusThree .
+func (u *UserRepo) PropStatusThree(ctx context.Context, id uint64) error {
+
+	res := u.data.DB(ctx).Table("prop").Where("id=?", id).
 		Updates(map[string]interface{}{"status": 3, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil {
 		return errors.New(500, "LandAddOutRate", "用户信息修改失败")
@@ -3208,13 +3220,13 @@ func (u *UserRepo) LandAddOutRate(ctx context.Context, id, landId, userId uint64
 
 // GetLand .
 func (u *UserRepo) GetLand(ctx context.Context, id, id2, userId uint64) error {
-	res := u.data.DB(ctx).Table("land").Where("id=?", id).Where("user_id=?", userId).Where("status=?", 0).
+	res := u.data.DB(ctx).Table("land").Where("id=?", id).
 		Updates(map[string]interface{}{"status": 10, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil {
 		return errors.New(500, "GetLand", "用户信息修改失败")
 	}
 
-	res = u.data.DB(ctx).Table("land").Where("id=?", id2).Where("user_id=?", userId).Where("status=?", 0).
+	res = u.data.DB(ctx).Table("land").Where("id=?", id2).
 		Updates(map[string]interface{}{"status": 10, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil {
 		return errors.New(500, "GetLand", "用户信息修改失败")
