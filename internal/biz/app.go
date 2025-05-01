@@ -4811,7 +4811,7 @@ func (ac *AppUsecase) Sell(ctx context.Context, address string, req *pb.SellRequ
 			//	}, nil
 			//}
 			//
-			//if 1 != land.Three {
+			//if 1 != land.Two {
 			//	return &pb.SellReply{
 			//		Status: "不可出售土地",
 			//	}, nil
@@ -5603,7 +5603,7 @@ func (ac *AppUsecase) GetLand(ctx context.Context, address string, req *pb.GetLa
 			}, nil
 		}
 
-		if 1 != land.Two {
+		if 1 != land.Three {
 			return &pb.GetLandReply{
 				Status: "不可合成土地类型",
 			}, nil
@@ -5631,7 +5631,7 @@ func (ac *AppUsecase) GetLand(ctx context.Context, address string, req *pb.GetLa
 			}, nil
 		}
 
-		if 1 != land2.Two {
+		if 1 != land2.Three {
 			return &pb.GetLandReply{
 				Status: "不可合成土地类型",
 			}, nil
