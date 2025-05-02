@@ -3258,12 +3258,12 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 	// 租的
 	rentReward := float64(0)
 	if landUserUse.UserId != landUserUse.OwnerUserId {
-		//if 0 < reward {
-		//	rentReward = reward * land.RentOutPutRate
-		//	if reward > rentReward {
-		//		reward = reward - rentReward
-		//	}
-		//}
+		if 0 < reward {
+			rentReward = reward * land.RentOutPutRate
+			if reward > rentReward {
+				reward = reward - rentReward
+			}
+		}
 	}
 
 	// 推荐
@@ -5028,6 +5028,8 @@ func (ac *AppUsecase) StakeGit(ctx context.Context, address string, req *pb.Stak
 	return &pb.StakeGitReply{Status: "ok"}, nil
 }
 
+var rentLock sync.Mutex
+
 func (ac *AppUsecase) RentLand(ctx context.Context, address string, req *pb.RentLandRequest) (*pb.RentLandReply, error) {
 	var (
 		user *User
@@ -5047,24 +5049,27 @@ func (ac *AppUsecase) RentLand(ctx context.Context, address string, req *pb.Rent
 		}, nil
 	}
 
-	rentRate := 0.05
-	if 1 == req.SendBody.Rate {
-		rentRate = 0.05
-	} else if 2 == req.SendBody.Rate {
-		rentRate = 0.1
-	} else if 3 == req.SendBody.Rate {
-		rentRate = 0.2
-	} else if 4 == req.SendBody.Rate {
-		rentRate = 0.3
-	} else if 5 == req.SendBody.Rate {
-		rentRate = 0.4
-	} else if 6 == req.SendBody.Rate {
-		rentRate = 0.5
-	} else {
-		return &pb.RentLandReply{
-			Status: "比例错误",
-		}, nil
-	}
+	rentLock.Lock()
+	defer rentLock.Unlock()
+
+	rentRate := float64(0)
+	//if 1 == req.SendBody.Rate {
+	//	rentRate = 0.05
+	//} else if 2 == req.SendBody.Rate {
+	//	rentRate = 0.1
+	//} else if 3 == req.SendBody.Rate {
+	//	rentRate = 0.2
+	//} else if 4 == req.SendBody.Rate {
+	//	rentRate = 0.3
+	//} else if 5 == req.SendBody.Rate {
+	//	rentRate = 0.4
+	//} else if 6 == req.SendBody.Rate {
+	//	rentRate = 0.5
+	//} else {
+	//	return &pb.RentLandReply{
+	//		Status: "比例错误",
+	//	}, nil
+	//}
 
 	if 1 == req.SendBody.Num {
 		var (
