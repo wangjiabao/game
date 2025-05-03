@@ -47,6 +47,7 @@ type User struct {
 	LockUse          uint64    `gorm:"type:int;"`
 	LockReward       uint64    `gorm:"type:int;"`
 	UsdtTwo          float64   `gorm:"type:decimal(65,20);"`
+	GiwTwo           float64   `gorm:"type:decimal(65,20);"`
 	CreatedAt        time.Time `gorm:"type:datetime;not null"`
 	UpdatedAt        time.Time `gorm:"type:datetime;not null"`
 }
@@ -586,6 +587,7 @@ func (u *UserRepo) GetUserByAddress(ctx context.Context, address string) (*biz.U
 		LockUse:          user.LockUse,
 		LockReward:       user.LockReward,
 		UsdtTwo:          user.UsdtTwo,
+		GiwTwo:           user.GiwTwo,
 	}, nil
 }
 
@@ -3767,10 +3769,10 @@ func (u *UserRepo) SetBuyLandOver(ctx context.Context, id uint64) error {
 // UpdateUserNewTwoNew .
 func (u *UserRepo) UpdateUserNewTwoNew(ctx context.Context, userId uint64, amount, giw float64, amountUsdt uint64) error {
 
-	res := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("amount_usdt>=?", amountUsdt).Where("giw>=?", giw).
+	res := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("amount_usdt>=?", amountUsdt).Where("giw_two>=?", giw).
 		Updates(map[string]interface{}{
 			"amount_usdt": gorm.Expr("amount_usdt - ?", amountUsdt),
-			"giw":         gorm.Expr("giw - ?", giw),
+			"giw_two":     gorm.Expr("giw_two - ?", giw),
 			"amount":      amount,
 			"updated_at":  time.Now().Format("2006-01-02 15:04:05"),
 		})

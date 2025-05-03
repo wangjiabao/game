@@ -26,6 +26,7 @@ type User struct {
 	Address          string
 	Level            uint64
 	Giw              float64
+	GiwTwo           float64
 	GiwAdd           float64
 	Git              float64
 	Total            float64
@@ -761,7 +762,7 @@ func (ac *AppUsecase) UserBuy(ctx context.Context, address string) (*pb.UserBuyR
 		Fourteen:     tmpAreaMin,
 		RecommendNum: tmpRecommendNum,
 		Usdt:         user.AmountUsdt,
-		Giw:          user.Giw,
+		Giw:          user.GiwTwo,
 		Price:        uPrice,
 		TeamNum:      uint64(len(team)),
 		BuyNum:       tmpBuyNum,
@@ -2527,6 +2528,13 @@ func (ac *AppUsecase) BuyBox(ctx context.Context, address string, req *pb.BuyBox
 	rngMutexBuyBox.Lock()
 	defer rngMutexBuyBox.Unlock()
 
+	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
+	if nil != err || nil == user {
+		return &pb.BuyBoxReply{
+			Status: "不存在用户",
+		}, nil
+	}
+
 	// 配置
 	configs, err = ac.userRepo.GetConfigByKeys(ctx,
 		"box_num",
@@ -2687,6 +2695,13 @@ func (ac *AppUsecase) OpenBox(ctx context.Context, address string, req *pb.OpenB
 
 	rngMutexBox.Lock()
 	defer rngMutexBox.Unlock()
+
+	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
+	if nil != err || nil == user {
+		return &pb.OpenBoxReply{
+			Status: "不存在用户",
+		}, nil
+	}
 
 	box, err = ac.userRepo.GetUserBoxRecordById(ctx, req.SendBody.Id)
 	if nil != err || nil == box {
@@ -2971,6 +2986,13 @@ func (ac *AppUsecase) LandPlayOne(ctx context.Context, address string, req *pb.L
 	rngMutexPlant.Lock()
 	defer rngMutexPlant.Unlock()
 
+	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
+	if nil != err || nil == user {
+		return &pb.LandPlayOneReply{
+			Status: "不存在用户",
+		}, nil
+	}
+
 	var (
 		seed *Seed
 	)
@@ -3155,6 +3177,13 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 
 	rngMutexPlantTwo.Lock()
 	defer rngMutexPlantTwo.Unlock()
+
+	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
+	if nil != err || nil == user {
+		return &pb.LandPlayTwoReply{
+			Status: "不存在用户",
+		}, nil
+	}
 
 	// 配置
 	configs, err = ac.userRepo.GetConfigByKeys(ctx,
@@ -4434,9 +4463,6 @@ func (ac *AppUsecase) LandPlaySeven(ctx context.Context, address string, req *pb
 var rngMutexBuy sync.Mutex
 
 func (ac *AppUsecase) Buy(ctx context.Context, address string, req *pb.BuyRequest) (*pb.BuyReply, error) {
-	rngMutexBuy.Lock()
-	defer rngMutexBuy.Unlock()
-
 	var (
 		user    *User
 		feeRate float64
@@ -4454,6 +4480,16 @@ func (ac *AppUsecase) Buy(ctx context.Context, address string, req *pb.BuyReques
 	if 1 == user.LockUse {
 		return &pb.BuyReply{
 			Status: "锁定用户",
+		}, nil
+	}
+
+	rngMutexBuy.Lock()
+	defer rngMutexBuy.Unlock()
+
+	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
+	if nil != err || nil == user {
+		return &pb.BuyReply{
+			Status: "不存在用户",
 		}, nil
 	}
 
@@ -5052,6 +5088,13 @@ func (ac *AppUsecase) RentLand(ctx context.Context, address string, req *pb.Rent
 	rentLock.Lock()
 	defer rentLock.Unlock()
 
+	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
+	if nil != err || nil == user {
+		return &pb.RentLandReply{
+			Status: "不存在用户",
+		}, nil
+	}
+
 	rentRate := float64(0)
 	//if 1 == req.SendBody.Rate {
 	//	rentRate = 0.05
@@ -5455,6 +5498,13 @@ func (ac *AppUsecase) GetLand(ctx context.Context, address string, req *pb.GetLa
 	GetLandLock.Lock()
 	defer GetLandLock.Unlock()
 
+	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
+	if nil != err || nil == user {
+		return &pb.GetLandReply{
+			Status: "不存在用户",
+		}, nil
+	}
+
 	landInfos, err = ac.userRepo.GetLandInfoByLevels(ctx)
 	if nil != err {
 		return &pb.GetLandReply{
@@ -5735,6 +5785,13 @@ func (ac *AppUsecase) StakeGet(ctx context.Context, address string, req *pb.Stak
 	stakeAndPlay.Lock()
 	defer stakeAndPlay.Unlock()
 
+	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
+	if nil != err || nil == user {
+		return &pb.StakeGetReply{
+			Status: "不存在用户",
+		}, nil
+	}
+
 	var (
 		stakeGetTotal *StakeGetTotal
 	)
@@ -5900,6 +5957,13 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 
 	stakeAndPlay.Lock()
 	defer stakeAndPlay.Unlock()
+
+	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
+	if nil != err || nil == user {
+		return &pb.StakeGetPlayReply{
+			Status: "不存在用户",
+		}, nil
+	}
 
 	if req.SendBody.Amount > uint64(user.Git) {
 		return &pb.StakeGetPlayReply{
@@ -6196,6 +6260,13 @@ func (ac *AppUsecase) BuyTwo(ctx context.Context, address string, req *pb.BuyTwo
 	buyTwo.Lock()
 	defer buyTwo.Unlock()
 
+	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
+	if nil != err || nil == user {
+		return &pb.BuyTwoReply{
+			Status: "不存在用户",
+		}, nil
+	}
+
 	if 0 < user.Amount {
 		return &pb.BuyTwoReply{
 			Status: "已认购",
@@ -6283,9 +6354,9 @@ func (ac *AppUsecase) BuyTwo(ctx context.Context, address string, req *pb.BuyTwo
 		}, nil
 	}
 
-	if tmpB > user.Giw {
+	if tmpB > user.GiwTwo {
 		return &pb.BuyTwoReply{
-			Status: "biw余额不足",
+			Status: "充值biw余额不足",
 		}, nil
 	}
 
@@ -7178,6 +7249,14 @@ func (ac *AppUsecase) BuyLand(ctx context.Context, addreses string, req *pb.BuyL
 
 	BuyLandR.Lock()
 	defer BuyLandR.Unlock()
+
+	user, err = ac.userRepo.GetUserByAddress(ctx, addreses)
+	if nil != err {
+		return &pb.BuyLandReply{Status: "地址不存在用户"}, nil
+	}
+	if nil == user {
+		return &pb.BuyLandReply{Status: "地址不存在用户"}, nil
+	}
 
 	landBuy, err = ac.userRepo.GetBuyLandById(ctx)
 	if nil != err {
