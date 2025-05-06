@@ -451,6 +451,8 @@ message UserInfoReply {
 	double usdtTwo = 33;
 
 	string addressThree = 34;
+
+	double giwTwo = 35;
 }
 
 message UserBuyRequest {

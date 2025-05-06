@@ -485,6 +485,7 @@ type UserRepo interface {
 	SetUnStakeGit(ctx context.Context, id, userId uint64, amount float64) error
 	Exchange(ctx context.Context, userId uint64, git, giw float64) error
 	ExchangeTwo(ctx context.Context, userId uint64, git, giw float64) error
+	ExchangeThree(ctx context.Context, userId uint64, git, giw float64) error
 	Withdraw(ctx context.Context, userId uint64, giw, relGiw float64) error
 	WithdrawTwo(ctx context.Context, userId uint64, usdt, relUsdt float64) error
 	GetAllBuyLandRecords(ctx context.Context, id uint64) ([]*BuyLandRecord, error)
@@ -1066,6 +1067,7 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		Usdt:                      user.AmountUsdt,
 		CreatedAt:                 user.CreatedAt.Add(8 * time.Hour).Format("2006-01-02 15:04:05"),
 		AddressThree:              addressThree,
+		GiwTwo:                    user.GiwTwo,
 	}, nil
 }
 
@@ -6114,6 +6116,18 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 				Status: "最少1",
 			}, nil
 		}
+	} else if 3 == req.SendBody.ExchangeType {
+		if req.SendBody.Amount > uint64(user.Giw) {
+			return &pb.ExchangeReply{
+				Status: "giw余额不足",
+			}, nil
+		}
+
+		if 1 > req.SendBody.Amount {
+			return &pb.ExchangeReply{
+				Status: "最少1",
+			}, nil
+		}
 	} else {
 		if req.SendBody.Amount > uint64(user.Git) {
 			return &pb.ExchangeReply{
@@ -6129,17 +6143,19 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 	}
 
 	var (
-		configs []*Config
-		bPrice  float64
-		uPrice  float64
-		rate    float64
-		rateTwo float64
+		configs   []*Config
+		bPrice    float64
+		uPrice    float64
+		rate      float64
+		rateTwo   float64
+		rateThree float64
 	)
 
 	// 配置
 	configs, err = ac.userRepo.GetConfigByKeys(ctx,
 		"exchange_fee_rate",
 		"exchange_fee_rate_two",
+		"exchange_fee_rate_three",
 		"b_price",
 		"u_price",
 	)
@@ -6155,6 +6171,10 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 
 		if "exchange_fee_rate_two" == vConfig.KeyName {
 			rateTwo, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+
+		if "exchange_fee_rate_three" == vConfig.KeyName {
+			rateThree, _ = strconv.ParseFloat(vConfig.Value, 10)
 		}
 
 		if "b_price" == vConfig.KeyName {
@@ -6186,6 +6206,36 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 				user.ID,
 				"兑换"+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" GIW 获得 "+strconv.FormatFloat(usdt, 'f', -1, 64)+" USDT",
 				"exchange "+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" GIW for "+strconv.FormatFloat(usdt, 'f', -1, 64)+" USDT",
+			)
+			if nil != err {
+				return err
+			}
+			return nil
+		}); nil != err {
+			return &pb.ExchangeReply{
+				Status: "兑换错误",
+			}, nil
+		}
+	} else if 3 == req.SendBody.ExchangeType {
+		tmp := float64(req.SendBody.Amount) * bPrice
+		usdt := tmp - tmp*rateThree
+		if 0 >= usdt {
+			return &pb.ExchangeReply{
+				Status: "配置错误",
+			}, nil
+		}
+
+		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+			err = ac.userRepo.ExchangeThree(ctx, user.ID, float64(req.SendBody.Amount), usdt)
+			if nil != err {
+				return err
+			}
+
+			err = ac.userRepo.CreateNotice(
+				ctx,
+				user.ID,
+				"兑换"+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" BIW 获得 "+strconv.FormatFloat(usdt, 'f', -1, 64)+" USDT",
+				"exchange "+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" BIW for "+strconv.FormatFloat(usdt, 'f', -1, 64)+" USDT",
 			)
 			if nil != err {
 				return err

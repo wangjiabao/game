@@ -1924,6 +1924,9 @@ components:
                     format: double
                 addressThree:
                     type: string
+                giwTwo:
+                    type: number
+                    format: double
         UserLandReply:
             type: object
             properties:

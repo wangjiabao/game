@@ -3549,6 +3549,17 @@ func (u *UserRepo) ExchangeTwo(ctx context.Context, userId uint64, git, giw floa
 	return nil
 }
 
+// ExchangeThree .
+func (u *UserRepo) ExchangeThree(ctx context.Context, userId uint64, git, giw float64) error {
+	res := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("giw>=?", git).
+		Updates(map[string]interface{}{"giw": gorm.Expr("giw - ?", git), "usdt_two": gorm.Expr("usdt_two + ?", giw), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil {
+		return errors.New(500, "SetStakeGet", "用户信息修改失败")
+	}
+
+	return nil
+}
+
 // Withdraw .
 func (u *UserRepo) Withdraw(ctx context.Context, userId uint64, giw, relGiw float64) error {
 	res := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("giw>=?", giw).
