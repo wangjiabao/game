@@ -884,13 +884,13 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 
 	if 0 >= bPrice {
 		return &pb.UserInfoReply{
-			Status: "币价biw:giw错误",
+			Status: "币价ispay:ispay错误",
 		}, nil
 	}
 
 	if 0 >= uPrice {
 		return &pb.UserInfoReply{
-			Status: "币价biw:u错误",
+			Status: "币价ispay:u错误",
 		}, nil
 	}
 
@@ -2621,7 +2621,7 @@ func (ac *AppUsecase) BuyBox(ctx context.Context, address string, req *pb.BuyBox
 
 	//if 0 >= uPrice {
 	//	return &pb.BuyBoxReply{
-	//		Status: "价格biw:u错误",
+	//		Status: "价格ispay:u错误",
 	//	}, nil
 	//}
 
@@ -3221,7 +3221,7 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 
 	if 0 >= uPrice {
 		return &pb.LandPlayTwoReply{
-			Status: "币价biw:u错误",
+			Status: "币价ispay:u错误",
 		}, nil
 	}
 
@@ -4140,7 +4140,7 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 
 	if 0 >= uPrice {
 		return &pb.LandPlaySixReply{
-			Status: "币价biw:u错误",
+			Status: "币价ispay:u错误",
 		}, nil
 	}
 
@@ -6234,8 +6234,8 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 			err = ac.userRepo.CreateNotice(
 				ctx,
 				user.ID,
-				"兑换"+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" BIW 获得 "+strconv.FormatFloat(usdt, 'f', -1, 64)+" USDT",
-				"exchange "+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" BIW for "+strconv.FormatFloat(usdt, 'f', -1, 64)+" USDT",
+				"兑换"+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" ISPAY 获得 "+strconv.FormatFloat(usdt, 'f', -1, 64)+" USDT",
+				"exchange "+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" ISPAY for "+strconv.FormatFloat(usdt, 'f', -1, 64)+" USDT",
 			)
 			if nil != err {
 				return err
@@ -6264,8 +6264,8 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 			err = ac.userRepo.CreateNotice(
 				ctx,
 				user.ID,
-				"兑换"+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" GIW 获得 "+strconv.FormatFloat(giw, 'f', -1, 64)+" BIW",
-				"exchange "+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" GIW for "+strconv.FormatFloat(giw, 'f', -1, 64)+" BIW",
+				"兑换"+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" GIW 获得 "+strconv.FormatFloat(giw, 'f', -1, 64)+" ISPAY",
+				"exchange "+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" GIW for "+strconv.FormatFloat(giw, 'f', -1, 64)+" ISPAY",
 			)
 			if nil != err {
 				return err
@@ -6406,7 +6406,7 @@ func (ac *AppUsecase) BuyTwo(ctx context.Context, address string, req *pb.BuyTwo
 
 	if tmpB > user.GiwTwo {
 		return &pb.BuyTwoReply{
-			Status: "充值biw余额不足",
+			Status: "充值ISPAY余额不足",
 		}, nil
 	}
 
