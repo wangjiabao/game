@@ -2267,15 +2267,15 @@ func (u *UserRepo) GetLandUserUseByLandIDsMapUsing(ctx context.Context, userId u
 
 // BuyBox .
 func (u *UserRepo) BuyBox(ctx context.Context, giw float64, originValue, value string, uc *biz.BoxRecord) (uint64, error) {
-	res := u.data.DB(ctx).Table("user").Where("id=?", uc.UserId).Where("giw>=?", giw).
-		Updates(map[string]interface{}{"giw": gorm.Expr("giw - ?", giw), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	res := u.data.DB(ctx).Table("user").Where("id=?", uc.UserId).Where("amount_usdt>=?", giw).
+		Updates(map[string]interface{}{"amount_usdt": gorm.Expr("amount_usdt - ?", giw), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil || 1 != res.RowsAffected {
 		return 0, errors.New(500, "BuyBox", "用户信息修改失败")
 	}
 
 	res = u.data.DB(ctx).Table("config").Where("id=?", 21).Where("value=?", originValue).
 		Updates(map[string]interface{}{"value": value, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return 0, errors.New(500, "BuyBox", "config")
 	}
 
@@ -2349,7 +2349,7 @@ func (u *UserRepo) GetUserBoxRecordById(ctx context.Context, id uint64) (*biz.Bo
 func (u *UserRepo) OpenBoxSeed(ctx context.Context, id uint64, content string, seedInfo *biz.Seed) (uint64, error) {
 	res := u.data.DB(ctx).Table("box_record").Where("id=?", id).Where("good_id=?", 0).
 		Updates(map[string]interface{}{"good_id": seedInfo.SeedId, "good_type": 1, "content": content, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return 0, errors.New(500, "BuyBox", "config")
 	}
 
@@ -2370,7 +2370,7 @@ func (u *UserRepo) OpenBoxSeed(ctx context.Context, id uint64, content string, s
 func (u *UserRepo) OpenBoxProp(ctx context.Context, id uint64, content string, propInfo *biz.Prop) (uint64, error) {
 	res := u.data.DB(ctx).Table("box_record").Where("id=?", id).Where("good_id=?", 0).
 		Updates(map[string]interface{}{"good_id": propInfo.PropType, "good_type": 2, "content": content, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return 0, errors.New(500, "BuyBox", "config")
 	}
 
@@ -2685,19 +2685,19 @@ func (u *UserRepo) GetPropByIDTwo(ctx context.Context, propID uint64) (*biz.Prop
 func (u *UserRepo) BuySeed(ctx context.Context, git, getGit float64, userId, userIdGet, seedId uint64) error {
 	res := u.data.DB(ctx).Table("user").Where("id=?", userIdGet).Where("git>=?", git).
 		Updates(map[string]interface{}{"git": gorm.Expr("git - ?", git), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "BuyBox", "用户信息修改失败")
 	}
 
 	res = u.data.DB(ctx).Table("user").Where("id=?", userId).
 		Updates(map[string]interface{}{"git": gorm.Expr("git + ?", getGit), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "BuyBox", "用户信息修改失败")
 	}
 
 	res = u.data.DB(ctx).Table("seed").Where("id=?", seedId).Where("user_id=?", userId).Where("status=?", 4).
 		Updates(map[string]interface{}{"user_id": userIdGet, "status": 0, "sell_amount": 0, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "BuySeed", "用户信息修改失败")
 	}
 	return nil
@@ -2707,7 +2707,7 @@ func (u *UserRepo) BuySeed(ctx context.Context, git, getGit float64, userId, use
 func (u *UserRepo) SellSeed(ctx context.Context, seedId, userId uint64, sellAmount float64) error {
 	res := u.data.DB(ctx).Table("seed").Where("id=?", seedId).Where("user_id=?", userId).Where("status=?", 0).
 		Updates(map[string]interface{}{"status": 4, "sell_amount": sellAmount, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "sellSeed", "用户信息修改失败")
 	}
 	return nil
@@ -2717,7 +2717,7 @@ func (u *UserRepo) SellSeed(ctx context.Context, seedId, userId uint64, sellAmou
 func (u *UserRepo) UnSellSeed(ctx context.Context, seedId, userId uint64) error {
 	res := u.data.DB(ctx).Table("seed").Where("id=?", seedId).Where("user_id=?", userId).Where("status=?", 4).
 		Updates(map[string]interface{}{"status": 0, "sell_amount": 0, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "sellSeed", "用户信息修改失败")
 	}
 	return nil
@@ -2727,19 +2727,19 @@ func (u *UserRepo) UnSellSeed(ctx context.Context, seedId, userId uint64) error 
 func (u *UserRepo) BuyProp(ctx context.Context, git, getGit float64, userId, userIdGet, propId uint64) error {
 	res := u.data.DB(ctx).Table("user").Where("id=?", userIdGet).Where("git>=?", git).
 		Updates(map[string]interface{}{"git": gorm.Expr("git - ?", git), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "BuyBox", "用户信息修改失败")
 	}
 
 	res = u.data.DB(ctx).Table("user").Where("id=?", userId).
 		Updates(map[string]interface{}{"git": gorm.Expr("git + ?", getGit), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "BuyBox", "用户信息修改失败")
 	}
 
 	res = u.data.DB(ctx).Table("prop").Where("id=?", propId).Where("user_id=?", userId).Where("status=?", 4).
 		Updates(map[string]interface{}{"user_id": userIdGet, "status": 1, "sell_amount": 0, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "BuyProp", "用户信息修改失败")
 	}
 	return nil
@@ -2749,7 +2749,7 @@ func (u *UserRepo) BuyProp(ctx context.Context, git, getGit float64, userId, use
 func (u *UserRepo) UnSellProp(ctx context.Context, propId uint64, userId uint64) error {
 	res := u.data.DB(ctx).Table("prop").Where("id=?", propId).Where("user_id=?", userId).Where("status=?", 4).
 		Updates(map[string]interface{}{"status": 1, "sell_amount": 0, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "sellProp", "用户信息修改失败")
 	}
 	return nil
@@ -2759,7 +2759,7 @@ func (u *UserRepo) UnSellProp(ctx context.Context, propId uint64, userId uint64)
 func (u *UserRepo) SellProp(ctx context.Context, propId uint64, userId uint64, sellAmount float64) error {
 	res := u.data.DB(ctx).Table("prop").Where("id=?", propId).Where("user_id=?", userId).Where("status<=?", 2).
 		Updates(map[string]interface{}{"status": 4, "sell_amount": sellAmount, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "sellProp", "用户信息修改失败")
 	}
 	return nil
@@ -2769,19 +2769,19 @@ func (u *UserRepo) SellProp(ctx context.Context, propId uint64, userId uint64, s
 func (u *UserRepo) BuyLand(ctx context.Context, git, getGit float64, userId, userIdGet, landId uint64) error {
 	res := u.data.DB(ctx).Table("user").Where("id=?", userIdGet).Where("git>=?", git).
 		Updates(map[string]interface{}{"git": gorm.Expr("git - ?", git), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "BuyBox", "用户信息修改失败")
 	}
 
 	res = u.data.DB(ctx).Table("user").Where("id=?", userId).
 		Updates(map[string]interface{}{"git": gorm.Expr("git + ?", getGit), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "BuyBox", "用户信息修改失败")
 	}
 
 	res = u.data.DB(ctx).Table("land").Where("id=?", landId).Where("user_id=?", userId).Where("status=?", 4).Where("three=?", 1).Where("limit_date>=?", time.Now().Unix()).
 		Updates(map[string]interface{}{"user_id": userIdGet, "status": 0, "sell_amount": 0, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "BuyLand", "用户信息修改失败")
 	}
 
@@ -2792,7 +2792,7 @@ func (u *UserRepo) BuyLand(ctx context.Context, git, getGit float64, userId, use
 func (u *UserRepo) UnSellLand(ctx context.Context, propId uint64, userId uint64) error {
 	res := u.data.DB(ctx).Table("land").Where("id=?", propId).Where("user_id=?", userId).Where("status=?", 4).
 		Updates(map[string]interface{}{"status": 0, "sell_amount": 0, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "sellLand", "用户信息修改失败")
 	}
 	return nil
@@ -2802,7 +2802,7 @@ func (u *UserRepo) UnSellLand(ctx context.Context, propId uint64, userId uint64)
 func (u *UserRepo) SellLand(ctx context.Context, propId uint64, userId uint64, sellAmount float64) error {
 	res := u.data.DB(ctx).Table("land").Where("id=?", propId).Where("user_id=?", userId).Where("status=?", 0).
 		Updates(map[string]interface{}{"status": 4, "sell_amount": sellAmount, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "sellLand", "用户信息修改失败")
 	}
 	return nil
@@ -2812,7 +2812,7 @@ func (u *UserRepo) SellLand(ctx context.Context, propId uint64, userId uint64, s
 func (u *UserRepo) RentLand(ctx context.Context, landId uint64, userId uint64, rentRate float64) error {
 	res := u.data.DB(ctx).Table("land").Where("id=?", landId).Where("user_id=?", userId).Where("status=?", 1).
 		Updates(map[string]interface{}{"status": 3, "rent_out_put_rate": rentRate, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "RentLand", "用户信息修改失败")
 	}
 	return nil
@@ -2822,7 +2822,7 @@ func (u *UserRepo) RentLand(ctx context.Context, landId uint64, userId uint64, r
 func (u *UserRepo) UnRentLand(ctx context.Context, landId uint64, userId uint64) error {
 	res := u.data.DB(ctx).Table("land").Where("id=?", landId).Where("user_id=?", userId).Where("status=?", 3).
 		Updates(map[string]interface{}{"status": 1, "rent_out_put_rate": 0, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "RentLand", "用户信息修改失败")
 	}
 	return nil
@@ -2832,7 +2832,7 @@ func (u *UserRepo) UnRentLand(ctx context.Context, landId uint64, userId uint64)
 func (u *UserRepo) LandPullTwo(ctx context.Context, landId uint64, userId uint64) error {
 	res := u.data.DB(ctx).Table("land").Where("id=?", landId).Where("user_id=?", userId).
 		Updates(map[string]interface{}{"status": 0, "location_num": 0, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "LandPull", "用户信息修改失败")
 	}
 	return nil
@@ -2842,7 +2842,7 @@ func (u *UserRepo) LandPullTwo(ctx context.Context, landId uint64, userId uint64
 func (u *UserRepo) LandPull(ctx context.Context, landId uint64, userId uint64) error {
 	res := u.data.DB(ctx).Table("land").Where("id=?", landId).Where("user_id=?", userId).Where("status=?", 1).
 		Updates(map[string]interface{}{"status": 0, "location_num": 0, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "LandPull", "用户信息修改失败")
 	}
 	return nil
@@ -2852,7 +2852,7 @@ func (u *UserRepo) LandPull(ctx context.Context, landId uint64, userId uint64) e
 func (u *UserRepo) LandPush(ctx context.Context, landId uint64, userId, locationNum uint64) error {
 	res := u.data.DB(ctx).Table("land").Where("id=?", landId).Where("user_id=?", userId).Where("status=?", 0).Where("location_num=?", 0).
 		Updates(map[string]interface{}{"status": 1, "location_num": locationNum, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "LandPush", "用户信息修改失败")
 	}
 	return nil
@@ -2862,7 +2862,7 @@ func (u *UserRepo) LandPush(ctx context.Context, landId uint64, userId, location
 func (u *UserRepo) stakeGit(ctx context.Context, propId uint64, userId uint64, sellAmount float64) error {
 	res := u.data.DB(ctx).Table("stake_git").Where("user_id=?", userId).Where("status=?", 1).
 		Updates(map[string]interface{}{"status": 4, "sell_amount": sellAmount, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "sellLand", "用户信息修改失败")
 	}
 
@@ -2877,7 +2877,7 @@ func (u *UserRepo) Plant(ctx context.Context, status, originStatus, perHealth ui
 			"max_health": gorm.Expr("max_health - ?", perHealth),
 			"updated_at": time.Now().Format("2006-01-02 15:04:05"),
 		})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "plant", "更新记录失败")
 	}
 
@@ -2886,7 +2886,7 @@ func (u *UserRepo) Plant(ctx context.Context, status, originStatus, perHealth ui
 			"status":     1,
 			"updated_at": time.Now().Format("2006-01-02 15:04:05"),
 		})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "plant", "更新失败")
 	}
 
@@ -2925,21 +2925,21 @@ func (u *UserRepo) PlantPlatTwo(ctx context.Context, id, landId uint64, rent boo
 	if rent {
 		res := u.data.DB(ctx).Table("land").Where("id=?", landId).Where("status=?", 8).
 			Updates(map[string]interface{}{"status": 3, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-		if res.Error != nil {
+		if res.Error != nil || 1 != res.RowsAffected {
 			return errors.New(500, "sellLand", "用户信息修改失败")
 		}
 
 	} else {
 		res := u.data.DB(ctx).Table("land").Where("id=?", landId).Where("status=?", 2).
 			Updates(map[string]interface{}{"status": 1, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-		if res.Error != nil {
+		if res.Error != nil || 1 != res.RowsAffected {
 			return errors.New(500, "sellLand", "用户信息修改失败")
 		}
 	}
 
 	res := u.data.DB(ctx).Table("land_user_use").Where("id=?", id).Where("status=?", 1).
 		Updates(map[string]interface{}{"status": 2, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "sellLand", "用户信息修改失败")
 	}
 
@@ -2963,13 +2963,13 @@ func (u *UserRepo) PlantPlatThree(ctx context.Context, id, overTime, propId uint
 
 	res := u.data.DB(ctx).Table("land_user_use").Where("id=?", id).Where("status=?", 1).
 		Updates(updateColums)
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "PlantPlatThree", "用户信息修改失败")
 	}
 
 	res = u.data.DB(ctx).Table("prop").Where("id=?", propId).Where("status=?", 1).
 		Updates(map[string]interface{}{"status": 3, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "PlantPlatThree", "用户信息修改失败")
 	}
 
@@ -2986,13 +2986,13 @@ func (u *UserRepo) PlantPlatFour(ctx context.Context, outMax float64, id, propId
 
 	res := u.data.DB(ctx).Table("land_user_use").Where("id=?", id).Where("status=?", 1).Where("two>?", 0).
 		Updates(updateColums)
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "PlantPlatFour", "用户信息修改失败")
 	}
 
 	res = u.data.DB(ctx).Table("prop").Where("id=?", propId).
 		Updates(map[string]interface{}{"status": propStatus, "four_one": propNum, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "PlantPlatFour", "用户信息修改失败")
 	}
 
@@ -3009,13 +3009,13 @@ func (u *UserRepo) PlantPlatFive(ctx context.Context, overTime, id, propId, prop
 
 	res := u.data.DB(ctx).Table("land_user_use").Where("id=?", id).Where("status=?", 1).Where("one>?", 0).
 		Updates(updateColums)
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "PlantPlatFive", "用户信息修改失败")
 	}
 
 	res = u.data.DB(ctx).Table("prop").Where("id=?", propId).
 		Updates(map[string]interface{}{"status": propStatus, "three_one": propNum, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "PlantPlatFive", "用户信息修改失败")
 	}
 
@@ -3026,7 +3026,7 @@ func (u *UserRepo) PlantPlatFive(ctx context.Context, overTime, id, propId, prop
 func (u *UserRepo) PlantPlatSix(ctx context.Context, id, propId, propStatus, propNum, landId uint64) error {
 	res := u.data.DB(ctx).Table("land").Where("id=?", landId).Where("status=?", 8).
 		Updates(map[string]interface{}{"status": 3, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "sellLand", "用户信息修改失败")
 	}
 
@@ -3037,13 +3037,13 @@ func (u *UserRepo) PlantPlatSix(ctx context.Context, id, propId, propStatus, pro
 
 	res = u.data.DB(ctx).Table("land_user_use").Where("id=?", id).Where("status=?", 1).
 		Updates(updateColums)
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "PlantPlatSix", "用户信息修改失败")
 	}
 
 	res = u.data.DB(ctx).Table("prop").Where("id=?", propId).
 		Updates(map[string]interface{}{"status": propStatus, "two_one": propNum, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "PlantPlatSix", "用户信息修改失败")
 	}
 
@@ -3060,19 +3060,19 @@ func (u *UserRepo) PlantPlatSeven(ctx context.Context, outMax, amount float64, s
 
 	res := u.data.DB(ctx).Table("land_user_use").Where("id=?", id).Where("status=?", 1).Where("sub_time=?", lastTime).
 		Updates(updateColums)
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "PlantPlatFive", "用户信息修改失败")
 	}
 
 	res = u.data.DB(ctx).Table("prop").Where("id=?", propId).
 		Updates(map[string]interface{}{"status": propStatus, "five_one": propNum, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "PlantPlatFive", "用户信息修改失败")
 	}
 
 	res = u.data.DB(ctx).Table("user").Where("id=?", userId).
 		Updates(map[string]interface{}{"git": gorm.Expr("git + ?", amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "PlantPlatFive", "用户信息修改失败")
 	}
 
@@ -3095,7 +3095,7 @@ func (u *UserRepo) PlantPlatTwoTwo(ctx context.Context, id, userId, rentUserId u
 	if amount > 0 {
 		res := u.data.DB(ctx).Table("user").Where("id=?", userId).
 			Updates(map[string]interface{}{"git": gorm.Expr("git + ?", amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-		if res.Error != nil {
+		if res.Error != nil || 1 != res.RowsAffected {
 			return errors.New(500, "BuyBox", "用户信息修改失败")
 		}
 
@@ -3115,7 +3115,7 @@ func (u *UserRepo) PlantPlatTwoTwo(ctx context.Context, id, userId, rentUserId u
 	if rentUserId > 0 && rentAmount > 0 {
 		res := u.data.DB(ctx).Table("user").Where("id=?", rentUserId).
 			Updates(map[string]interface{}{"git": gorm.Expr("git + ?", rentAmount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-		if res.Error != nil {
+		if res.Error != nil || 1 != res.RowsAffected {
 			return errors.New(500, "PlantPlatTwoTwo", "用户信息修改失败")
 		}
 
@@ -3140,37 +3140,37 @@ func (u *UserRepo) PlantPlatTwoTwoL(ctx context.Context, id, userId, lowUserId, 
 		if 4 == num {
 			res := u.data.DB(ctx).Table("user").Where("id=?", userId).
 				Updates(map[string]interface{}{"git": gorm.Expr("git + ?", amount), "reward_one": gorm.Expr("reward_one + ?", amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-			if res.Error != nil {
+			if res.Error != nil || 1 != res.RowsAffected {
 				return errors.New(500, "PlantPlatTwoTwoL", "用户信息修改失败")
 			}
 		} else if 5 == num {
 			res := u.data.DB(ctx).Table("user").Where("id=?", userId).
 				Updates(map[string]interface{}{"git": gorm.Expr("git + ?", amount), "reward_two": gorm.Expr("reward_two + ?", amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-			if res.Error != nil {
+			if res.Error != nil || 1 != res.RowsAffected {
 				return errors.New(500, "PlantPlatTwoTwoL", "用户信息修改失败")
 			}
 		} else if 7 == num {
 			res := u.data.DB(ctx).Table("user").Where("id=?", userId).
 				Updates(map[string]interface{}{"git": gorm.Expr("git + ?", amount), "reward_two_one": gorm.Expr("reward_two_one + ?", amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-			if res.Error != nil {
+			if res.Error != nil || 1 != res.RowsAffected {
 				return errors.New(500, "PlantPlatTwoTwoL", "用户信息修改失败")
 			}
 		} else if 8 == num {
 			res := u.data.DB(ctx).Table("user").Where("id=?", userId).
 				Updates(map[string]interface{}{"git": gorm.Expr("git + ?", amount), "reward_two_two": gorm.Expr("reward_two_two + ?", amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-			if res.Error != nil {
+			if res.Error != nil || 1 != res.RowsAffected {
 				return errors.New(500, "PlantPlatTwoTwoL", "用户信息修改失败")
 			}
 		} else if 10 == num {
 			res := u.data.DB(ctx).Table("user").Where("id=?", userId).
 				Updates(map[string]interface{}{"git": gorm.Expr("git + ?", amount), "reward_three_one": gorm.Expr("reward_three_one + ?", amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-			if res.Error != nil {
+			if res.Error != nil || 1 != res.RowsAffected {
 				return errors.New(500, "PlantPlatTwoTwoL", "用户信息修改失败")
 			}
 		} else if 11 == num {
 			res := u.data.DB(ctx).Table("user").Where("id=?", userId).
 				Updates(map[string]interface{}{"git": gorm.Expr("git + ?", amount), "reward_three_two": gorm.Expr("reward_three_two + ?", amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-			if res.Error != nil {
+			if res.Error != nil || 1 != res.RowsAffected {
 				return errors.New(500, "PlantPlatTwoTwoL", "用户信息修改失败")
 			}
 		}
@@ -3195,13 +3195,13 @@ func (u *UserRepo) PlantPlatTwoTwoL(ctx context.Context, id, userId, lowUserId, 
 func (u *UserRepo) LandAddOutRate(ctx context.Context, id, landId, userId uint64) error {
 	res := u.data.DB(ctx).Table("land").Where("id=?", landId).
 		Updates(map[string]interface{}{"max_health": gorm.Expr("max_health + ?", 20), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "LandAddOutRate", "用户信息修改失败")
 	}
 
 	res = u.data.DB(ctx).Table("prop").Where("id=?", id).
 		Updates(map[string]interface{}{"status": 3, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "LandAddOutRate", "用户信息修改失败")
 	}
 
@@ -3213,7 +3213,7 @@ func (u *UserRepo) PropStatusThree(ctx context.Context, id uint64) error {
 
 	res := u.data.DB(ctx).Table("prop").Where("id=?", id).
 		Updates(map[string]interface{}{"status": 3, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "LandAddOutRate", "用户信息修改失败")
 	}
 
@@ -3224,13 +3224,13 @@ func (u *UserRepo) PropStatusThree(ctx context.Context, id uint64) error {
 func (u *UserRepo) GetLand(ctx context.Context, id, id2, userId uint64) error {
 	res := u.data.DB(ctx).Table("land").Where("id=?", id).
 		Updates(map[string]interface{}{"status": 10, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "GetLand", "用户信息修改失败")
 	}
 
 	res = u.data.DB(ctx).Table("land").Where("id=?", id2).
 		Updates(map[string]interface{}{"status": 10, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "GetLand", "用户信息修改失败")
 	}
 
@@ -3311,7 +3311,7 @@ func (u *UserRepo) GetLandInfoByLevels(ctx context.Context) (map[uint64]*biz.Lan
 func (u *UserRepo) SetGiw(ctx context.Context, address string, giw uint64) error {
 	res := u.data.DB(ctx).Table("user").Where("address=?", address).
 		Updates(map[string]interface{}{"giw": gorm.Expr("giw + ?", float64(giw)), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "BuyBox", "用户信息修改失败")
 	}
 
@@ -3322,7 +3322,7 @@ func (u *UserRepo) SetGiw(ctx context.Context, address string, giw uint64) error
 func (u *UserRepo) SetGit(ctx context.Context, address string, git uint64) error {
 	res := u.data.DB(ctx).Table("user").Where("address=?", address).
 		Updates(map[string]interface{}{"git": gorm.Expr("git + ?", float64(git)), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "BuyBox", "用户信息修改失败")
 	}
 
@@ -3337,7 +3337,7 @@ func (u *UserRepo) SetStakeGetTotal(ctx context.Context, amount, balance float64
 			"balance":    gorm.Expr("balance + ?", balance),
 			"updated_at": time.Now().Format("2006-01-02 15:04:05"),
 		})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "SetStakeGetTotal", "用户信息修改失败")
 	}
 
@@ -3352,7 +3352,7 @@ func (u *UserRepo) SetStakeGetTotalSub(ctx context.Context, amount, balance floa
 			"balance":    gorm.Expr("balance- ?", balance),
 			"updated_at": time.Now().Format("2006-01-02 15:04:05"),
 		})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "SetStakeGetTotal", "用户信息修改失败")
 	}
 
@@ -3363,7 +3363,7 @@ func (u *UserRepo) SetStakeGetTotalSub(ctx context.Context, amount, balance floa
 func (u *UserRepo) SetStakeGit(ctx context.Context, userId uint64, amount float64) error {
 	res := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("git>=?", amount).
 		Updates(map[string]interface{}{"git": gorm.Expr("git - ?", amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "SetStakeGet", "用户信息修改失败")
 	}
 
@@ -3385,12 +3385,12 @@ func (u *UserRepo) SetStakeGit(ctx context.Context, userId uint64, amount float6
 func (u *UserRepo) SetUnStakeGit(ctx context.Context, id, userId uint64, amount float64) error {
 	res := u.data.DB(ctx).Table("user").Where("id=?", userId).
 		Updates(map[string]interface{}{"git": gorm.Expr("git + ?", amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "SetUnStakeGet", "用户信息修改失败")
 	}
 	res = u.data.DB(ctx).Table("stake_git_record").Where("id=?", id).
 		Updates(map[string]interface{}{"stake_type": 2, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "SetUnStakeGet", "用户信息修改失败")
 	}
 
@@ -3401,7 +3401,7 @@ func (u *UserRepo) SetUnStakeGit(ctx context.Context, id, userId uint64, amount 
 func (u *UserRepo) SetStakeGet(ctx context.Context, userId uint64, git, amount float64) error {
 	res := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("git>=?", amount).
 		Updates(map[string]interface{}{"git": gorm.Expr("git - ?", git), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "SetStakeGet", "用户信息修改失败")
 	}
 
@@ -3410,7 +3410,7 @@ func (u *UserRepo) SetStakeGet(ctx context.Context, userId uint64, git, amount f
 			"stake_rate": gorm.Expr("stake_rate + ?", amount),
 			"updated_at": time.Now().Format("2006-01-02 15:04:05"),
 		})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "SetStakeGet", "用户信息修改失败")
 	}
 
@@ -3421,7 +3421,7 @@ func (u *UserRepo) SetStakeGet(ctx context.Context, userId uint64, git, amount f
 func (u *UserRepo) SetStakeGetSub(ctx context.Context, userId uint64, git, amount float64) error {
 	res := u.data.DB(ctx).Table("user").Where("id=?", userId).
 		Updates(map[string]interface{}{"git": gorm.Expr("git + ?", git), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "SetStakeGet", "用户信息修改失败")
 	}
 
@@ -3430,7 +3430,7 @@ func (u *UserRepo) SetStakeGetSub(ctx context.Context, userId uint64, git, amoun
 			"stake_rate": gorm.Expr("stake_rate - ?", amount),
 			"updated_at": time.Now().Format("2006-01-02 15:04:05"),
 		})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "SetStakeGet", "用户信息修改失败")
 	}
 
@@ -3441,7 +3441,7 @@ func (u *UserRepo) SetStakeGetSub(ctx context.Context, userId uint64, git, amoun
 func (u *UserRepo) SetStakeGetPlaySub(ctx context.Context, userId uint64, amount float64) error {
 	res := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("git>=?", amount).
 		Updates(map[string]interface{}{"git": gorm.Expr("git - ?", amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "SetStakeGetPlaySub", "用户信息修改失败")
 	}
 
@@ -3450,7 +3450,7 @@ func (u *UserRepo) SetStakeGetPlaySub(ctx context.Context, userId uint64, amount
 			"balance":    gorm.Expr("balance + ?", amount),
 			"updated_at": time.Now().Format("2006-01-02 15:04:05"),
 		})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "SetStakeGetPlaySub", "用户信息修改失败")
 	}
 
@@ -3472,7 +3472,7 @@ func (u *UserRepo) SetStakeGetPlaySub(ctx context.Context, userId uint64, amount
 func (u *UserRepo) SetStakeGetPlay(ctx context.Context, userId uint64, git, amount float64) error {
 	res := u.data.DB(ctx).Table("user").Where("id=?", userId).
 		Updates(map[string]interface{}{"git": gorm.Expr("git + ?", git), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "SetStakeGetPlaySub", "用户信息修改失败")
 	}
 
@@ -3481,7 +3481,7 @@ func (u *UserRepo) SetStakeGetPlay(ctx context.Context, userId uint64, git, amou
 			"balance":    gorm.Expr("balance - ?", amount),
 			"updated_at": time.Now().Format("2006-01-02 15:04:05"),
 		})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "SetStakeGetPlaySub", "用户信息修改失败")
 	}
 
@@ -3531,7 +3531,7 @@ func (u *UserRepo) CreateStakeGet(ctx context.Context, sg *biz.StakeGet) error {
 func (u *UserRepo) Exchange(ctx context.Context, userId uint64, git, giw float64) error {
 	res := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("git>=?", git).
 		Updates(map[string]interface{}{"git": gorm.Expr("git - ?", git), "giw": gorm.Expr("giw + ?", giw), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "SetStakeGet", "用户信息修改失败")
 	}
 
@@ -3542,7 +3542,7 @@ func (u *UserRepo) Exchange(ctx context.Context, userId uint64, git, giw float64
 func (u *UserRepo) ExchangeTwo(ctx context.Context, userId uint64, git, giw float64) error {
 	res := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("git>=?", git).
 		Updates(map[string]interface{}{"git": gorm.Expr("git - ?", git), "usdt_two": gorm.Expr("usdt_two + ?", giw), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "SetStakeGet", "用户信息修改失败")
 	}
 
@@ -3553,7 +3553,7 @@ func (u *UserRepo) ExchangeTwo(ctx context.Context, userId uint64, git, giw floa
 func (u *UserRepo) ExchangeThree(ctx context.Context, userId uint64, git, giw float64) error {
 	res := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("giw>=?", git).
 		Updates(map[string]interface{}{"giw": gorm.Expr("giw - ?", git), "usdt_two": gorm.Expr("usdt_two + ?", giw), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "SetStakeGet", "用户信息修改失败")
 	}
 
@@ -3564,7 +3564,7 @@ func (u *UserRepo) ExchangeThree(ctx context.Context, userId uint64, git, giw fl
 func (u *UserRepo) Withdraw(ctx context.Context, userId uint64, giw, relGiw float64) error {
 	res := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("giw>=?", giw).
 		Updates(map[string]interface{}{"giw": gorm.Expr("giw - ?", giw), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "SetStakeGet", "用户信息修改失败")
 	}
 
@@ -3589,7 +3589,7 @@ func (u *UserRepo) Withdraw(ctx context.Context, userId uint64, giw, relGiw floa
 func (u *UserRepo) WithdrawTwo(ctx context.Context, userId uint64, usdt, relUsdt float64) error {
 	res := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("usdt_two>=?", usdt).
 		Updates(map[string]interface{}{"usdt_two": gorm.Expr("usdt_two - ?", usdt), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "SetStakeGet", "用户信息修改失败")
 	}
 
@@ -3662,13 +3662,13 @@ func (u *UserRepo) CreateBuyLandRecordOne(ctx context.Context, bl *biz.BuyLandRe
 			"status":     3,
 			"updated_at": time.Now().Format("2006-01-02 15:04:05"),
 		})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "SetStakeGetPlaySub", "用户信息修改失败")
 	}
 
 	res = u.data.DB(ctx).Table("user").Where("id=?", bl.UserID).Where("giw>=?", bl.Amount).
 		Updates(map[string]interface{}{"giw": gorm.Expr("giw - ?", bl.Amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "CreateBuyLandRecordOne", "用户信息修改失败")
 	}
 
@@ -3692,13 +3692,13 @@ func (u *UserRepo) CreateBuyLandRecord(ctx context.Context, limit uint64, bl *bi
 			"limit":      limit,
 			"updated_at": time.Now().Format("2006-01-02 15:04:05"),
 		})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "SetStakeGetPlaySub", "用户信息修改失败")
 	}
 
 	res = u.data.DB(ctx).Table("user").Where("id=?", bl.UserID).Where("giw>=?", bl.Amount).
 		Updates(map[string]interface{}{"giw": gorm.Expr("giw - ?", bl.Amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "CreateBuyLandRecord", "用户信息修改失败")
 	}
 
@@ -3748,7 +3748,7 @@ func (u *UserRepo) GetAllBuyLandRecords(ctx context.Context, id uint64) ([]*biz.
 func (u *UserRepo) BackUserGit(ctx context.Context, userId, id uint64, git float64) error {
 	res := u.data.DB(ctx).Table("user").Where("id=?", userId).
 		Updates(map[string]interface{}{"giw": gorm.Expr("giw + ?", git), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "BackUserGit", "用户信息修改失败")
 	}
 
@@ -3757,7 +3757,7 @@ func (u *UserRepo) BackUserGit(ctx context.Context, userId, id uint64, git float
 			"status":     4,
 			"updated_at": time.Now().Format("2006-01-02 15:04:05"),
 		})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "BackUserGit", "用户信息修改失败")
 	}
 
@@ -3770,7 +3770,7 @@ func (u *UserRepo) SetBuyLandOver(ctx context.Context, id uint64) error {
 			"status":     4,
 			"updated_at": time.Now().Format("2006-01-02 15:04:05"),
 		})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "SetBuyLandOver", "用户信息修改失败")
 	}
 
@@ -3787,7 +3787,7 @@ func (u *UserRepo) UpdateUserNewTwoNew(ctx context.Context, userId uint64, amoun
 			"amount":      amount,
 			"updated_at":  time.Now().Format("2006-01-02 15:04:05"),
 		})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "UPDATE_USER_ERROR", "用户信息修改失败")
 	}
 
@@ -3812,7 +3812,7 @@ func (u *UserRepo) UpdateUserNewTwoNew(ctx context.Context, userId uint64, amoun
 func (u *UserRepo) UpdateUserMyTotalAmount(ctx context.Context, userId uint64, amount float64) error {
 	res := u.data.DB(ctx).Table("user").Where("id=?", userId).
 		Updates(map[string]interface{}{"my_total_amount": gorm.Expr("my_total_amount + ?", amount)})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "UPDATE_USER_ERROR", "用户信息修改失败")
 	}
 
@@ -3823,7 +3823,7 @@ func (u *UserRepo) UpdateUserMyTotalAmount(ctx context.Context, userId uint64, a
 func (u *UserRepo) UpdateUserMyTotalAmountSub(ctx context.Context, userId int64, amount float64) error {
 	res := u.data.DB(ctx).Table("user").Where("id=?", userId).
 		Updates(map[string]interface{}{"my_total_amount": gorm.Expr("my_total_amount - ?", amount)})
-	if res.Error != nil {
+	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "UPDATE_USER_ERROR", "用户信息修改失败")
 	}
 
@@ -3849,7 +3849,7 @@ func (u *UserRepo) UpdateUserRewardRecommend2(ctx context.Context, userId uint64
 				"area_two":      0,
 				"all_num":       0,
 			})
-		if res.Error != nil {
+		if res.Error != nil || 1 != res.RowsAffected {
 			return errors.New(500, "UPDATE_USER_ERROR", "用户信息修改失败")
 		}
 
@@ -3870,7 +3870,7 @@ func (u *UserRepo) UpdateUserRewardRecommend2(ctx context.Context, userId uint64
 					"giw":        gorm.Expr("giw + ?", giw),
 					"updated_at": time.Now().Format("2006-01-02 15:04:05"),
 				})
-			if res.Error != nil {
+			if res.Error != nil || 1 != res.RowsAffected {
 				return errors.New(500, "UPDATE_USER_ERROR", "用户信息修改失败")
 			}
 		}

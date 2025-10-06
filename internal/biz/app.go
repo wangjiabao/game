@@ -2512,7 +2512,7 @@ func (ac *AppUsecase) BuyBox(ctx context.Context, address string, req *pb.BuyBox
 		boxAmount        float64
 		boxStart         string
 		boxEnd           string
-		uPrice           float64
+		//uPrice           float64
 	)
 	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
 	if nil != err || nil == user {
@@ -2573,9 +2573,9 @@ func (ac *AppUsecase) BuyBox(ctx context.Context, address string, req *pb.BuyBox
 		if "box_max" == vConfig.KeyName {
 			boxMax, _ = strconv.ParseUint(vConfig.Value, 10, 64)
 		}
-		if "u_price" == vConfig.KeyName {
-			uPrice, _ = strconv.ParseFloat(vConfig.Value, 10)
-		}
+		//if "u_price" == vConfig.KeyName {
+		//	uPrice, _ = strconv.ParseFloat(vConfig.Value, 10)
+		//}
 	}
 	// 解析时间字符串
 
@@ -2619,14 +2619,14 @@ func (ac *AppUsecase) BuyBox(ctx context.Context, address string, req *pb.BuyBox
 		}, nil
 	}
 
-	if 0 >= uPrice {
-		return &pb.BuyBoxReply{
-			Status: "价格biw:u错误",
-		}, nil
-	}
+	//if 0 >= uPrice {
+	//	return &pb.BuyBoxReply{
+	//		Status: "价格biw:u错误",
+	//	}, nil
+	//}
 
-	boxAmount = boxAmount / uPrice
-	if boxAmount > user.Giw {
+	//boxAmount = boxAmount / uPrice
+	if boxAmount > user.AmountUsdt {
 		return &pb.BuyBoxReply{
 			Status: "余额不足",
 		}, nil
@@ -2647,8 +2647,8 @@ func (ac *AppUsecase) BuyBox(ctx context.Context, address string, req *pb.BuyBox
 		err = ac.userRepo.CreateNotice(
 			ctx,
 			user.ID,
-			"您花费"+fmt.Sprintf("%.2f", boxAmount)+"BIW购买了盲盒",
-			"You've used "+fmt.Sprintf("%.2f", boxAmount)+" BIW buy box",
+			"您花费"+fmt.Sprintf("%.2f", boxAmount)+"USDT购买了盲盒",
+			"You've used "+fmt.Sprintf("%.2f", boxAmount)+" USDT buy box",
 		)
 		if nil != err {
 			return err
