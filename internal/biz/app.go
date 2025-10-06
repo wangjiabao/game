@@ -2621,7 +2621,7 @@ func (ac *AppUsecase) BuyBox(ctx context.Context, address string, req *pb.BuyBox
 
 	//if 0 >= uPrice {
 	//	return &pb.BuyBoxReply{
-	//		Status: "价格ispay:u错误",
+	//		Status: "价格biw:u错误",
 	//	}, nil
 	//}
 
@@ -3128,8 +3128,8 @@ func (ac *AppUsecase) LandPlayOne(ctx context.Context, address string, req *pb.L
 		err = ac.userRepo.CreateNotice(
 			ctx,
 			user.ID,
-			"您种植了一个产量为"+fmt.Sprintf("%.2f", seed.OutMaxAmount)+"GIW的种子",
-			"You've plant a seed with output "+fmt.Sprintf("%.2f", seed.OutMaxAmount)+" GIW",
+			"您种植了一个产量为"+fmt.Sprintf("%.2f", seed.OutMaxAmount)+"ISPAY的种子",
+			"You've plant a seed with output "+fmt.Sprintf("%.2f", seed.OutMaxAmount)+" ISPAY",
 		)
 		if nil != err {
 			return err
@@ -3391,8 +3391,8 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 		err = ac.userRepo.CreateNotice(
 			ctx,
 			user.ID,
-			"您收获了"+fmt.Sprintf("%.2f", reward)+"GIW",
-			"You've harvest "+fmt.Sprintf("%.2f", reward)+" GIW",
+			"您收获了"+fmt.Sprintf("%.2f", reward)+"ISPAY",
+			"You've harvest "+fmt.Sprintf("%.2f", reward)+" ISPAY",
 		)
 		if nil != err {
 			return err
@@ -3402,8 +3402,8 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 			err = ac.userRepo.CreateNotice(
 				ctx,
 				rentUserId,
-				"您收获了"+fmt.Sprintf("%.2f", rentReward)+"GIW",
-				"You've harvest "+fmt.Sprintf("%.2f", rentReward)+" GIW",
+				"您收获了"+fmt.Sprintf("%.2f", rentReward)+"ISPAY",
+				"You've harvest "+fmt.Sprintf("%.2f", rentReward)+" ISPAY",
 			)
 			if nil != err {
 				return err
@@ -3457,8 +3457,8 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 				err = ac.userRepo.CreateNotice(
 					ctx,
 					tmpUserId,
-					"您收获了"+fmt.Sprintf("%.2f", tmpReward)+"GIW",
-					"You've harvest "+fmt.Sprintf("%.2f", tmpReward)+" GIW",
+					"您收获了"+fmt.Sprintf("%.2f", tmpReward)+"ISPAY",
+					"You've harvest "+fmt.Sprintf("%.2f", tmpReward)+" ISPAY",
 				)
 				if nil != err {
 					return err
@@ -3513,8 +3513,8 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 				err = ac.userRepo.CreateNotice(
 					ctx,
 					tmpUserId,
-					"您收获了"+fmt.Sprintf("%.2f", tmpReward)+"GIW",
-					"You've harvest "+fmt.Sprintf("%.2f", tmpReward)+" GIW",
+					"您收获了"+fmt.Sprintf("%.2f", tmpReward)+"ISPAY",
+					"You've harvest "+fmt.Sprintf("%.2f", tmpReward)+" ISPAY",
 				)
 				if nil != err {
 					return err
@@ -4159,8 +4159,8 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 		err = ac.userRepo.CreateNotice(
 			ctx,
 			landUserUse.UserId,
-			"您收获了"+fmt.Sprintf("%.2f", tmpOverMax)+"GIW",
-			"You've harvest "+fmt.Sprintf("%.2f", tmpOverMax)+" GIW",
+			"您收获了"+fmt.Sprintf("%.2f", tmpOverMax)+"ISPAY",
+			"You've harvest "+fmt.Sprintf("%.2f", tmpOverMax)+" ISPAY",
 		)
 		if nil != err {
 			return err
@@ -4169,8 +4169,8 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 		err = ac.userRepo.CreateNotice(
 			ctx,
 			landUserUse.OwnerUserId,
-			"您收获了"+fmt.Sprintf("%.2f", tmpOverMaxTwo)+"GIW",
-			"You've harvest "+fmt.Sprintf("%.2f", tmpOverMaxTwo)+" GIW",
+			"您收获了"+fmt.Sprintf("%.2f", tmpOverMaxTwo)+"ISPAY",
+			"You've harvest "+fmt.Sprintf("%.2f", tmpOverMaxTwo)+" ISPAY",
 		)
 
 		// l1-l3，奖励发放
@@ -4220,8 +4220,8 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 				err = ac.userRepo.CreateNotice(
 					ctx,
 					tmpUserId,
-					"您收获了"+fmt.Sprintf("%.2f", tmpReward)+"GIW",
-					"You've harvest "+fmt.Sprintf("%.2f", tmpReward)+" GIW",
+					"您收获了"+fmt.Sprintf("%.2f", tmpReward)+"ISPAY",
+					"You've harvest "+fmt.Sprintf("%.2f", tmpReward)+" ISPAY",
 				)
 				if nil != err {
 					return err
@@ -4276,8 +4276,8 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 				err = ac.userRepo.CreateNotice(
 					ctx,
 					tmpUserId,
-					"您收获了"+fmt.Sprintf("%.2f", tmpReward)+"GIW",
-					"You've harvest "+fmt.Sprintf("%.2f", tmpReward)+" GIW",
+					"您收获了"+fmt.Sprintf("%.2f", tmpReward)+"ISPAY",
+					"You've harvest "+fmt.Sprintf("%.2f", tmpReward)+" ISPAY",
 				)
 				if nil != err {
 					return err
@@ -4441,8 +4441,8 @@ func (ac *AppUsecase) LandPlaySeven(ctx context.Context, address string, req *pb
 		err = ac.userRepo.CreateNotice(
 			ctx,
 			user.ID,
-			"您使用手套偷取了"+fmt.Sprintf("%.2f", tmpAmount)+"GIW",
-			"You've steal "+fmt.Sprintf("%.2f", tmpAmount)+" GIW use gloves",
+			"您使用手套偷取了"+fmt.Sprintf("%.2f", tmpAmount)+"ISPAY",
+			"You've steal "+fmt.Sprintf("%.2f", tmpAmount)+" ISPAY use gloves",
 		)
 		if nil != err {
 			return err
@@ -4555,8 +4555,8 @@ func (ac *AppUsecase) Buy(ctx context.Context, address string, req *pb.BuyReques
 			err = ac.userRepo.CreateNotice(
 				ctx,
 				user.ID,
-				"您购买了种子，花费"+fmt.Sprintf("%.2f", seed.SellAmount)+"GIW",
-				"You've pay "+fmt.Sprintf("%.2f", seed.SellAmount)+" GIW for seed",
+				"您购买了种子，花费"+fmt.Sprintf("%.2f", seed.SellAmount)+"ISPAY",
+				"You've pay "+fmt.Sprintf("%.2f", seed.SellAmount)+" ISPAY for seed",
 			)
 			if nil != err {
 				return err
@@ -4565,8 +4565,8 @@ func (ac *AppUsecase) Buy(ctx context.Context, address string, req *pb.BuyReques
 			err = ac.userRepo.CreateNotice(
 				ctx,
 				seed.UserId,
-				"您出售了种子，获得"+fmt.Sprintf("%.2f", tmpGet)+"GIW",
-				"You've get "+fmt.Sprintf("%.2f", tmpGet)+" GIW for seed",
+				"您出售了种子，获得"+fmt.Sprintf("%.2f", tmpGet)+"ISPAY",
+				"You've get "+fmt.Sprintf("%.2f", tmpGet)+" ISPAY for seed",
 			)
 			if nil != err {
 				return err
@@ -4624,8 +4624,8 @@ func (ac *AppUsecase) Buy(ctx context.Context, address string, req *pb.BuyReques
 			err = ac.userRepo.CreateNotice(
 				ctx,
 				user.ID,
-				"您购买了道具，花费"+fmt.Sprintf("%.2f", prop.SellAmount)+"GIW",
-				"You've pay "+fmt.Sprintf("%.2f", prop.SellAmount)+" GIW for prop",
+				"您购买了道具，花费"+fmt.Sprintf("%.2f", prop.SellAmount)+"ISPAY",
+				"You've pay "+fmt.Sprintf("%.2f", prop.SellAmount)+" ISPAY for prop",
 			)
 			if nil != err {
 				return err
@@ -4634,8 +4634,8 @@ func (ac *AppUsecase) Buy(ctx context.Context, address string, req *pb.BuyReques
 			err = ac.userRepo.CreateNotice(
 				ctx,
 				prop.UserId,
-				"您出售了道具，获得"+fmt.Sprintf("%.2f", tmpGet)+"GIW",
-				"You've get "+fmt.Sprintf("%.2f", tmpGet)+" GIW for prop",
+				"您出售了道具，获得"+fmt.Sprintf("%.2f", tmpGet)+"ISPAY",
+				"You've get "+fmt.Sprintf("%.2f", tmpGet)+" ISPAY for prop",
 			)
 			if nil != err {
 				return err
@@ -5013,8 +5013,8 @@ func (ac *AppUsecase) StakeGit(ctx context.Context, address string, req *pb.Stak
 			err = ac.userRepo.CreateNotice(
 				ctx,
 				user.ID,
-				"您向粮仓质押"+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+"GIW",
-				"You've deposit "+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" GIW to granary",
+				"您向粮仓质押"+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+"ISPAY",
+				"You've deposit "+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" ISPAY to granary",
 			)
 			if nil != err {
 				return err
@@ -5045,8 +5045,8 @@ func (ac *AppUsecase) StakeGit(ctx context.Context, address string, req *pb.Stak
 			err = ac.userRepo.CreateNotice(
 				ctx,
 				user.ID,
-				"您从粮仓解押"+fmt.Sprintf("%.2f", record.Amount)+"GIW",
-				"You've withdraw "+fmt.Sprintf("%.2f", record.Amount)+" GIW from granary",
+				"您从粮仓解押"+fmt.Sprintf("%.2f", record.Amount)+"ISPAY",
+				"You've withdraw "+fmt.Sprintf("%.2f", record.Amount)+" ISPAY from granary",
 			)
 			if nil != err {
 				return err
@@ -5855,8 +5855,8 @@ func (ac *AppUsecase) StakeGet(ctx context.Context, address string, req *pb.Stak
 			err = ac.userRepo.CreateNotice(
 				ctx,
 				user.ID,
-				"您向果实放大器质押"+fmt.Sprintf("%.2f", tmpAmount)+"GIW",
-				"You've deposit "+fmt.Sprintf("%.2f", tmpAmount)+" GIW to game",
+				"您向果实放大器质押"+fmt.Sprintf("%.2f", tmpAmount)+"ISPAY",
+				"You've deposit "+fmt.Sprintf("%.2f", tmpAmount)+" ISPAY to game",
 			)
 			if nil != err {
 				return err
@@ -5915,8 +5915,8 @@ func (ac *AppUsecase) StakeGet(ctx context.Context, address string, req *pb.Stak
 			err = ac.userRepo.CreateNotice(
 				ctx,
 				user.ID,
-				"您在果实放大器解押"+fmt.Sprintf("%.2f", tmpGit)+"GIW",
-				"You've withdraw "+fmt.Sprintf("%.2f", tmpGit)+" GIW from game",
+				"您在果实放大器解押"+fmt.Sprintf("%.2f", tmpGit)+"ISPAY",
+				"You've withdraw "+fmt.Sprintf("%.2f", tmpGit)+" ISPAY from game",
 			)
 			if nil != err {
 				return err
@@ -6035,8 +6035,8 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 			err = ac.userRepo.CreateNotice(
 				ctx,
 				user.ID,
-				"您在果实放大器赢得"+fmt.Sprintf("%.2f", tmpGit)+"GIW",
-				"You've win "+fmt.Sprintf("%.2f", tmpGit)+" GIW from game",
+				"您在果实放大器赢得"+fmt.Sprintf("%.2f", tmpGit)+"ISPAY",
+				"You've win "+fmt.Sprintf("%.2f", tmpGit)+" ISPAY from game",
 			)
 			if nil != err {
 				return err
@@ -6060,8 +6060,8 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 			err = ac.userRepo.CreateNotice(
 				ctx,
 				user.ID,
-				"您在果实放大器输了"+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+"GIW",
-				"You've lost "+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" GIW from game",
+				"您在果实放大器输了"+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+"ISPAY",
+				"You've lost "+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" ISPAY from game",
 			)
 			if nil != err {
 				return err
@@ -6119,7 +6119,7 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 	} else if 3 == req.SendBody.ExchangeType {
 		if req.SendBody.Amount > uint64(user.Giw) {
 			return &pb.ExchangeReply{
-				Status: "giw余额不足",
+				Status: "ispay余额不足",
 			}, nil
 		}
 
@@ -6204,8 +6204,8 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 			err = ac.userRepo.CreateNotice(
 				ctx,
 				user.ID,
-				"兑换"+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" GIW 获得 "+strconv.FormatFloat(usdt, 'f', -1, 64)+" USDT",
-				"exchange "+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" GIW for "+strconv.FormatFloat(usdt, 'f', -1, 64)+" USDT",
+				"兑换"+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" ISPAY 获得 "+strconv.FormatFloat(usdt, 'f', -1, 64)+" USDT",
+				"exchange "+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" ISPAY for "+strconv.FormatFloat(usdt, 'f', -1, 64)+" USDT",
 			)
 			if nil != err {
 				return err
@@ -6234,8 +6234,8 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 			err = ac.userRepo.CreateNotice(
 				ctx,
 				user.ID,
-				"兑换"+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" ISPAY 获得 "+strconv.FormatFloat(usdt, 'f', -1, 64)+" USDT",
-				"exchange "+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" ISPAY for "+strconv.FormatFloat(usdt, 'f', -1, 64)+" USDT",
+				"兑换"+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" BIW 获得 "+strconv.FormatFloat(usdt, 'f', -1, 64)+" USDT",
+				"exchange "+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" BIW for "+strconv.FormatFloat(usdt, 'f', -1, 64)+" USDT",
 			)
 			if nil != err {
 				return err
@@ -6264,8 +6264,8 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 			err = ac.userRepo.CreateNotice(
 				ctx,
 				user.ID,
-				"兑换"+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" GIW 获得 "+strconv.FormatFloat(giw, 'f', -1, 64)+" ISPAY",
-				"exchange "+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" GIW for "+strconv.FormatFloat(giw, 'f', -1, 64)+" ISPAY",
+				"兑换"+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" ISPAY 获得 "+strconv.FormatFloat(giw, 'f', -1, 64)+" BIW",
+				"exchange "+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" ISPAY for "+strconv.FormatFloat(giw, 'f', -1, 64)+" BIW",
 			)
 			if nil != err {
 				return err
@@ -6406,7 +6406,7 @@ func (ac *AppUsecase) BuyTwo(ctx context.Context, address string, req *pb.BuyTwo
 
 	if tmpB > user.GiwTwo {
 		return &pb.BuyTwoReply{
-			Status: "充值ISPAY余额不足",
+			Status: "充值biw余额不足",
 		}, nil
 	}
 
@@ -6751,7 +6751,7 @@ func (ac *AppUsecase) Withdraw(ctx context.Context, address string, req *pb.With
 	} else {
 		if req.SendBody.Amount > uint64(user.Giw) {
 			return &pb.WithdrawReply{
-				Status: "giw余额不足",
+				Status: "ispay余额不足",
 			}, nil
 		}
 
@@ -6789,8 +6789,8 @@ func (ac *AppUsecase) Withdraw(ctx context.Context, address string, req *pb.With
 			err = ac.userRepo.CreateNotice(
 				ctx,
 				user.ID,
-				"提现金额"+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+"GIW",
-				"You've withdraw "+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" GIW",
+				"提现金额"+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+"ISPAY",
+				"You've withdraw "+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" ISPAY",
 			)
 			if nil != err {
 				return err
@@ -7001,8 +7001,8 @@ func (ac *AppUsecase) SetBuyLand(ctx context.Context, req *pb.SetBuyLandRequest)
 				err = ac.userRepo.CreateNotice(
 					ctx,
 					v.UserID,
-					"未竞拍到物品，退还"+fmt.Sprintf("%.2f", v.Amount)+"GIW",
-					"You've get "+fmt.Sprintf("%.2f", v.Amount)+" GIW from auction",
+					"未竞拍到物品，退还"+fmt.Sprintf("%.2f", v.Amount)+"ISPAY",
+					"You've get "+fmt.Sprintf("%.2f", v.Amount)+" ISPAY from auction",
 				)
 				if nil != err {
 					return err
@@ -7120,8 +7120,8 @@ func (ac *AppUsecase) SetBuyLand(ctx context.Context, req *pb.SetBuyLandRequest)
 				err = ac.userRepo.CreateNotice(
 					ctx,
 					v.UserID,
-					"未竞拍到物品，退还"+fmt.Sprintf("%.2f", v.Amount)+"GIW",
-					"You've get "+fmt.Sprintf("%.2f", v.Amount)+" GIW from auction",
+					"未竞拍到物品，退还"+fmt.Sprintf("%.2f", v.Amount)+"ISPAY",
+					"You've get "+fmt.Sprintf("%.2f", v.Amount)+" ISPAY from auction",
 				)
 				if nil != err {
 					return err
@@ -7344,7 +7344,7 @@ func (ac *AppUsecase) BuyLand(ctx context.Context, addreses string, req *pb.BuyL
 		}
 
 		if user.Giw < amountTmp {
-			return &pb.BuyLandReply{Status: "giw余额不足"}, nil
+			return &pb.BuyLandReply{Status: "ispay余额不足"}, nil
 		}
 
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
@@ -7361,8 +7361,8 @@ func (ac *AppUsecase) BuyLand(ctx context.Context, addreses string, req *pb.BuyL
 			err = ac.userRepo.CreateNotice(
 				ctx,
 				user.ID,
-				"您参与了拍卖土地，使用"+fmt.Sprintf("%.2f", amountTmp)+"GIW",
-				"You've used "+fmt.Sprintf("%.2f", amountTmp)+" GIW to auction",
+				"您参与了拍卖土地，使用"+fmt.Sprintf("%.2f", amountTmp)+"ISPAY",
+				"You've used "+fmt.Sprintf("%.2f", amountTmp)+" ISPAY to auction",
 			)
 			if nil != err {
 				return err
@@ -7405,8 +7405,8 @@ func (ac *AppUsecase) BuyLand(ctx context.Context, addreses string, req *pb.BuyL
 			err = ac.userRepo.CreateNotice(
 				ctx,
 				user.ID,
-				"您参与了拍卖土地，使用"+strconv.FormatUint(amountTmp, 10)+"GIW",
-				"You've used "+strconv.FormatUint(amountTmp, 10)+" GIW to auction",
+				"您参与了拍卖土地，使用"+strconv.FormatUint(amountTmp, 10)+"ISPAY",
+				"You've used "+strconv.FormatUint(amountTmp, 10)+" ISPAY to auction",
 			)
 			if nil != err {
 				return err
