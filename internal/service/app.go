@@ -1685,6 +1685,8 @@ func (a *AppService) Exchange(ctx context.Context, req *pb.ExchangeRequest) (*pb
 }
 
 func (a *AppService) BuyTwo(ctx context.Context, req *pb.BuyTwoRequest) (*pb.BuyTwoReply, error) {
+	return &pb.BuyTwoReply{Status: "无效"}, nil
+
 	// 在上下文 context 中取出 claims 对象
 	var (
 		address string

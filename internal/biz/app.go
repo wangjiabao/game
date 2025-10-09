@@ -1049,8 +1049,8 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		BoxSell:                   boxSellNum,
 		Start:                     boxStart,
 		End:                       boxEnd,
-		BoxSellAmount:             boxAmount / uPrice,
-		ExchangeRate:              bPrice / uPrice,
+		BoxSellAmount:             boxAmount,
+		ExchangeRate:              bPrice,
 		ExchangeRateTwo:           uPrice,
 		BiwPrice:                  uPrice,
 		UsdtTwo:                   user.UsdtTwo,
@@ -1578,7 +1578,7 @@ func (ac *AppUsecase) UserBackList(ctx context.Context, address string, req *pb.
 			eContentTmp = "A plant may use special water duringits growth. Plants that are short ofwater will stop growing. After using it,your plants will never be short of water."
 		} else if 13 == vProp.PropType {
 			useNum = uint64(vProp.FiveOne) // 手套
-			contentTmp = "带上手套后，可偷取任何邻居家的已经成熟的植物，可获得一定的GIT，但是使用的次数有限。"
+			contentTmp = "带上手套后，可偷取任何邻居家的已经成熟的植物，可获得一定的ISPAY，但是使用的次数有限。"
 			eContentTmp = "After wearing gloves, you can stealany mature plants from your neighbor'shouse and obtain a certain amount ofGlT, but the number of uses is limited."
 		} else if 14 == vProp.PropType {
 			useNum = uint64(vProp.FourOne) // 除虫剂
@@ -1592,7 +1592,7 @@ func (ac *AppUsecase) UserBackList(ctx context.Context, address string, req *pb.
 			contentTmp = "一种通过算法生成的增加产量道具，合成士地和增加土地肥沃度。"
 			eContentTmp = "An algorithmically generated item thatincreases yield, synthesizes land, andincreases land fertility."
 		} else if 17 == vProp.PropType {
-			contentTmp = "在Magic Manor大陆深处埋徵着一张”地契”，它是初创统治者亲手制作，代表着整个Magic Manor最肥沃的土地，找到它的人不仅可以拥有土地，还能解锁谷中隐藏的古老秘密。\n\t\t获取方式:每新增1亿GIT产出业绩，自动获得1张地契:作用:1张地契加5块化肥，可合成一个崭新的1级土地;地契描述"
+			contentTmp = "在Magic Manor大陆深处埋徵着一张”地契”，它是初创统治者亲手制作，代表着整个Magic Manor最肥沃的土地，找到它的人不仅可以拥有土地，还能解锁谷中隐藏的古老秘密。\n\t\t获取方式:每新增1亿ISPAY产出业绩，自动获得1张地契:作用:1张地契加5块化肥，可合成一个崭新的1级土地;地契描述"
 			eContentTmp = "There is a \"land deed\" buried deep in the Magic Manorcontinent. lt was made by the original ruler himself andrepresents the most fertile land in the entire MagicManor. Whoever finds it will not only claim the land, butalso unlock ancient secrets hidden within the valley.How to obtain: For every 100 milion new GlT outputs,you will automatically obtain a land deed;Function: 1 land deed and 5 fertilizers can be combinedinto a brand new level 1 land."
 		}
 
@@ -1843,7 +1843,7 @@ func (ac *AppUsecase) UserMarketPropList(ctx context.Context, address string, re
 			eContentTmp = "A plant may use special water duringits growth. Plants that are short ofwater will stop growing. After using it,your plants will never be short of water."
 		} else if 13 == v.PropType {
 			useNum = uint64(v.FiveOne) // 手套
-			contentTmp = "带上手套后，可偷取任何邻居家的已经成熟的植物，可获得一定的GIT，但是使用的次数有限。"
+			contentTmp = "带上手套后，可偷取任何邻居家的已经成熟的植物，可获得一定的ISPAY，但是使用的次数有限。"
 			eContentTmp = "After wearing gloves, you can stealany mature plants from your neighbor'shouse and obtain a certain amount ofGlT, but the number of uses is limited."
 		} else if 14 == v.PropType {
 			useNum = uint64(v.FourOne) // 除虫剂
@@ -1857,7 +1857,7 @@ func (ac *AppUsecase) UserMarketPropList(ctx context.Context, address string, re
 			contentTmp = "一种通过算法生成的增加产量道具，合成士地和增加土地肥沃度。"
 			eContentTmp = "An algorithmically generated item thatincreases yield, synthesizes land, andincreases land fertility."
 		} else if 17 == v.PropType {
-			contentTmp = "在Magic Manor大陆深处埋徵着一张”地契”，它是初创统治者亲手制作，代表着整个Magic Manor最肥沃的土地，找到它的人不仅可以拥有土地，还能解锁谷中隐藏的古老秘密。\n\t\t获取方式:每新增1亿GIT产出业绩，自动获得1张地契:作用:1张地契加5块化肥，可合成一个崭新的1级土地;地契描述"
+			contentTmp = "在Magic Manor大陆深处埋徵着一张”地契”，它是初创统治者亲手制作，代表着整个Magic Manor最肥沃的土地，找到它的人不仅可以拥有土地，还能解锁谷中隐藏的古老秘密。\n\t\t获取方式:每新增1亿ISPAY产出业绩，自动获得1张地契:作用:1张地契加5块化肥，可合成一个崭新的1级土地;地契描述"
 			eContentTmp = "There is a \"land deed\" buried deep in the Magic Manorcontinent. lt was made by the original ruler himself andrepresents the most fertile land in the entire MagicManor. Whoever finds it will not only claim the land, butalso unlock ancient secrets hidden within the valley.How to obtain: For every 100 milion new GlT outputs,you will automatically obtain a land deed;Function: 1 land deed and 5 fertilizers can be combinedinto a brand new level 1 land."
 		}
 
@@ -2057,7 +2057,7 @@ func (ac *AppUsecase) UserMyMarketList(ctx context.Context, address string, req 
 			eContentTmp = "A plant may use special water duringits growth. Plants that are short ofwater will stop growing. After using it,your plants will never be short of water."
 		} else if 13 == vProp.PropType {
 			useNum = uint64(vProp.FiveOne) // 手套
-			contentTmp = "带上手套后，可偷取任何邻居家的已经成熟的植物，可获得一定的GIT，但是使用的次数有限。"
+			contentTmp = "带上手套后，可偷取任何邻居家的已经成熟的植物，可获得一定的ISPAY，但是使用的次数有限。"
 			eContentTmp = "After wearing gloves, you can stealany mature plants from your neighbor'shouse and obtain a certain amount ofGlT, but the number of uses is limited."
 		} else if 14 == vProp.PropType {
 			useNum = uint64(vProp.FourOne) // 除虫剂
@@ -2071,7 +2071,7 @@ func (ac *AppUsecase) UserMyMarketList(ctx context.Context, address string, req 
 			contentTmp = "一种通过算法生成的增加产量道具，合成士地和增加土地肥沃度。"
 			eContentTmp = "An algorithmically generated item thatincreases yield, synthesizes land, andincreases land fertility."
 		} else if 17 == vProp.PropType {
-			contentTmp = "在Magic Manor大陆深处埋徵着一张”地契”，它是初创统治者亲手制作，代表着整个Magic Manor最肥沃的土地，找到它的人不仅可以拥有土地，还能解锁谷中隐藏的古老秘密。\n\t\t获取方式:每新增1亿GIT产出业绩，自动获得1张地契:作用:1张地契加5块化肥，可合成一个崭新的1级土地;地契描述"
+			contentTmp = "在Magic Manor大陆深处埋徵着一张”地契”，它是初创统治者亲手制作，代表着整个Magic Manor最肥沃的土地，找到它的人不仅可以拥有土地，还能解锁谷中隐藏的古老秘密。\n\t\t获取方式:每新增1亿ISPAY产出业绩，自动获得1张地契:作用:1张地契加5块化肥，可合成一个崭新的1级土地;地契描述"
 			eContentTmp = "There is a \"land deed\" buried deep in the Magic Manorcontinent. lt was made by the original ruler himself andrepresents the most fertile land in the entire MagicManor. Whoever finds it will not only claim the land, butalso unlock ancient secrets hidden within the valley.How to obtain: For every 100 milion new GlT outputs,you will automatically obtain a land deed;Function: 1 land deed and 5 fertilizers can be combinedinto a brand new level 1 land."
 		}
 
@@ -3154,14 +3154,14 @@ var rngMutexPlantTwo sync.Mutex
 // LandPlayTwo 收果实
 func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.LandPlayTwoRequest) (*pb.LandPlayTwoReply, error) {
 	var (
-		configs    []*Config
-		user       *User
-		oneRate    float64
-		twoRate    float64
-		threeRate  float64
-		uPrice     float64
-		lowRewardU float64
-		err        error
+		configs   []*Config
+		user      *User
+		oneRate   float64
+		twoRate   float64
+		threeRate float64
+		uPrice    float64
+		//lowRewardU float64
+		err error
 	)
 
 	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
@@ -3214,9 +3214,9 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 			uPrice, _ = strconv.ParseFloat(vConfig.Value, 10)
 		}
 
-		if "low_reward_u" == vConfig.KeyName {
-			lowRewardU, _ = strconv.ParseFloat(vConfig.Value, 10)
-		}
+		//if "low_reward_u" == vConfig.KeyName {
+		//	lowRewardU, _ = strconv.ParseFloat(vConfig.Value, 10)
+		//}
 	}
 
 	if 0 >= uPrice {
@@ -3428,9 +3428,9 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 					continue
 				}
 
-				if lowRewardU > usersMap[tmpUserId].Giw/uPrice {
-					continue
-				}
+				//if lowRewardU > usersMap[tmpUserId].Giw/uPrice {
+				//	continue
+				//}
 
 				tmpReward := float64(0)
 
@@ -3484,9 +3484,9 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 					continue
 				}
 
-				if lowRewardU > usersMap[tmpUserId].Giw/uPrice {
-					continue
-				}
+				//if lowRewardU > usersMap[tmpUserId].Giw/uPrice {
+				//	continue
+				//}
 
 				tmpReward := float64(0)
 
@@ -4100,12 +4100,12 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 
 	// 配置
 	var (
-		configs    []*Config
-		oneRate    float64
-		twoRate    float64
-		threeRate  float64
-		uPrice     float64
-		lowRewardU float64
+		configs   []*Config
+		oneRate   float64
+		twoRate   float64
+		threeRate float64
+		uPrice    float64
+		//lowRewardU float64
 	)
 	configs, err = ac.userRepo.GetConfigByKeys(ctx,
 		"one_rate", "two_rate", "three_rate", "u_price", "low_reward_u",
@@ -4133,9 +4133,9 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 			uPrice, _ = strconv.ParseFloat(vConfig.Value, 10)
 		}
 
-		if "low_reward_u" == vConfig.KeyName {
-			lowRewardU, _ = strconv.ParseFloat(vConfig.Value, 10)
-		}
+		//if "low_reward_u" == vConfig.KeyName {
+		//	lowRewardU, _ = strconv.ParseFloat(vConfig.Value, 10)
+		//}
 	}
 
 	if 0 >= uPrice {
@@ -4191,9 +4191,9 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 					continue
 				}
 
-				if lowRewardU > usersMap[tmpUserId].Giw/uPrice {
-					continue
-				}
+				//if lowRewardU > usersMap[tmpUserId].Giw/uPrice {
+				//	continue
+				//}
 
 				tmpReward := float64(0)
 
@@ -4247,9 +4247,9 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 					continue
 				}
 
-				if lowRewardU > usersMap[tmpUserId].Giw/uPrice {
-					continue
-				}
+				//if lowRewardU > usersMap[tmpUserId].Giw/uPrice {
+				//	continue
+				//}
 
 				tmpReward := float64(0)
 
@@ -4994,13 +4994,13 @@ func (ac *AppUsecase) StakeGit(ctx context.Context, address string, req *pb.Stak
 	if 1 == req.SendBody.Num {
 		if 100 > req.SendBody.Amount {
 			return &pb.StakeGitReply{
-				Status: "git金额要多于100",
+				Status: "ispay金额要多于100",
 			}, nil
 		}
 
 		if req.SendBody.Amount > uint64(user.Git) {
 			return &pb.StakeGitReply{
-				Status: "git余额不足",
+				Status: "ispay余额不足",
 			}, nil
 		}
 
@@ -5022,7 +5022,7 @@ func (ac *AppUsecase) StakeGit(ctx context.Context, address string, req *pb.Stak
 			return nil
 		}); nil != err {
 			return &pb.StakeGitReply{
-				Status: "stakeGit失败",
+				Status: "stakeISPAY失败",
 			}, nil
 		}
 	} else if 2 == req.SendBody.Num {
@@ -5054,7 +5054,7 @@ func (ac *AppUsecase) StakeGit(ctx context.Context, address string, req *pb.Stak
 			return nil
 		}); nil != err {
 			return &pb.StakeGitReply{
-				Status: "stakeGit失败",
+				Status: "stakeISPAY失败",
 			}, nil
 		}
 	} else {
@@ -5098,23 +5098,23 @@ func (ac *AppUsecase) RentLand(ctx context.Context, address string, req *pb.Rent
 	}
 
 	rentRate := float64(0)
-	//if 1 == req.SendBody.Rate {
-	//	rentRate = 0.05
-	//} else if 2 == req.SendBody.Rate {
-	//	rentRate = 0.1
-	//} else if 3 == req.SendBody.Rate {
-	//	rentRate = 0.2
-	//} else if 4 == req.SendBody.Rate {
-	//	rentRate = 0.3
-	//} else if 5 == req.SendBody.Rate {
-	//	rentRate = 0.4
-	//} else if 6 == req.SendBody.Rate {
-	//	rentRate = 0.5
-	//} else {
-	//	return &pb.RentLandReply{
-	//		Status: "比例错误",
-	//	}, nil
-	//}
+	if 1 == req.SendBody.Rate {
+		rentRate = 0.05
+	} else if 2 == req.SendBody.Rate {
+		rentRate = 0.1
+	} else if 3 == req.SendBody.Rate {
+		rentRate = 0.2
+	} else if 4 == req.SendBody.Rate {
+		rentRate = 0.3
+	} else if 5 == req.SendBody.Rate {
+		rentRate = 0.4
+	} else if 6 == req.SendBody.Rate {
+		rentRate = 0.5
+	} else {
+		return &pb.RentLandReply{
+			Status: "比例错误",
+		}, nil
+	}
 
 	if 1 == req.SendBody.Num {
 		var (
@@ -5818,13 +5818,13 @@ func (ac *AppUsecase) StakeGet(ctx context.Context, address string, req *pb.Stak
 	if 1 == req.SendBody.Num {
 		if 100 > req.SendBody.Amount {
 			return &pb.StakeGetReply{
-				Status: "git金额要多于100",
+				Status: "ispay金额要多于100",
 			}, nil
 		}
 
 		if req.SendBody.Amount > uint64(user.Git) {
 			return &pb.StakeGetReply{
-				Status: "git余额不足",
+				Status: "ispay余额不足",
 			}, nil
 		}
 
@@ -5864,7 +5864,7 @@ func (ac *AppUsecase) StakeGet(ctx context.Context, address string, req *pb.Stak
 			return nil
 		}); nil != err {
 			return &pb.StakeGetReply{
-				Status: "git余额不足",
+				Status: "ispay余额不足",
 			}, nil
 		}
 	} else if 2 == req.SendBody.Num {
@@ -5877,13 +5877,13 @@ func (ac *AppUsecase) StakeGet(ctx context.Context, address string, req *pb.Stak
 
 		if 100 > req.SendBody.Amount {
 			return &pb.StakeGetReply{
-				Status: "git最小提现100",
+				Status: "ispay最小提现100",
 			}, nil
 		}
 
 		if 0 >= stakeGet.StakeRate {
 			return &pb.StakeGetReply{
-				Status: "用户无可提git",
+				Status: "用户无可提ispay",
 			}, nil
 		}
 
@@ -5893,7 +5893,7 @@ func (ac *AppUsecase) StakeGet(ctx context.Context, address string, req *pb.Stak
 		maxWithdraw := stakeGet.StakeRate * valuePerShare
 		if req.SendBody.Amount > uint64(maxWithdraw) {
 			return &pb.StakeGetReply{
-				Status: "可提git不足",
+				Status: "可提ispay不足",
 			}, nil
 		}
 
@@ -5924,7 +5924,7 @@ func (ac *AppUsecase) StakeGet(ctx context.Context, address string, req *pb.Stak
 			return nil
 		}); nil != err {
 			return &pb.StakeGetReply{
-				Status: "git余额不足",
+				Status: "ispay余额不足",
 			}, nil
 		}
 	} else {
@@ -5969,7 +5969,7 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 
 	if req.SendBody.Amount > uint64(user.Git) {
 		return &pb.StakeGetPlayReply{
-			Status: "git余额不足",
+			Status: "ispay余额不足",
 		}, nil
 	}
 
@@ -6045,7 +6045,7 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 			return nil
 		}); nil != err {
 			return &pb.StakeGetPlayReply{
-				Status: "git余额不足",
+				Status: "ispay余额不足",
 			}, nil
 		}
 
@@ -6069,7 +6069,7 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 			return nil
 		}); nil != err {
 			return &pb.StakeGetPlayReply{
-				Status: "git余额不足",
+				Status: "ispay余额不足",
 			}, nil
 		}
 
@@ -6105,9 +6105,13 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 	}
 
 	if 2 == req.SendBody.ExchangeType {
+		return &pb.ExchangeReply{
+			Status: "未开放",
+		}, nil
+
 		if req.SendBody.Amount > uint64(user.Git) {
 			return &pb.ExchangeReply{
-				Status: "git余额不足",
+				Status: "ispay余额不足",
 			}, nil
 		}
 
@@ -6117,7 +6121,7 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 			}, nil
 		}
 	} else if 3 == req.SendBody.ExchangeType {
-		if req.SendBody.Amount > uint64(user.Giw) {
+		if req.SendBody.Amount > uint64(user.Git) {
 			return &pb.ExchangeReply{
 				Status: "ispay余额不足",
 			}, nil
@@ -6129,6 +6133,10 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 			}, nil
 		}
 	} else {
+		return &pb.ExchangeReply{
+			Status: "未开放",
+		}, nil
+
 		if req.SendBody.Amount > uint64(user.Git) {
 			return &pb.ExchangeReply{
 				Status: "git余额不足",
@@ -6143,12 +6151,12 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 	}
 
 	var (
-		configs   []*Config
-		bPrice    float64
-		uPrice    float64
-		rate      float64
-		rateTwo   float64
-		rateThree float64
+		configs []*Config
+		bPrice  float64
+		//uPrice    float64
+		//rate      float64
+		rateTwo float64
+		//rateThree float64
 	)
 
 	// 配置
@@ -6165,29 +6173,59 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 		}, nil
 	}
 	for _, vConfig := range configs {
-		if "exchange_fee_rate" == vConfig.KeyName {
-			rate, _ = strconv.ParseFloat(vConfig.Value, 10)
-		}
-
+		//if "exchange_fee_rate" == vConfig.KeyName {
+		//	rate, _ = strconv.ParseFloat(vConfig.Value, 10)
+		//}
+		//
 		if "exchange_fee_rate_two" == vConfig.KeyName {
 			rateTwo, _ = strconv.ParseFloat(vConfig.Value, 10)
 		}
 
-		if "exchange_fee_rate_three" == vConfig.KeyName {
-			rateThree, _ = strconv.ParseFloat(vConfig.Value, 10)
-		}
+		//if "exchange_fee_rate_three" == vConfig.KeyName {
+		//	rateThree, _ = strconv.ParseFloat(vConfig.Value, 10)
+		//}
 
 		if "b_price" == vConfig.KeyName {
 			bPrice, _ = strconv.ParseFloat(vConfig.Value, 10)
 		}
 
-		if "u_price" == vConfig.KeyName {
-			uPrice, _ = strconv.ParseFloat(vConfig.Value, 10)
-		}
+		//if "u_price" == vConfig.KeyName {
+		//	uPrice, _ = strconv.ParseFloat(vConfig.Value, 10)
+		//}
 	}
 
 	if 2 == req.SendBody.ExchangeType {
-		tmp := float64(req.SendBody.Amount) * uPrice
+		//tmp := float64(req.SendBody.Amount) * uPrice
+		//usdt := tmp - tmp*rateTwo
+		//if 0 >= usdt {
+		//	return &pb.ExchangeReply{
+		//		Status: "配置错误",
+		//	}, nil
+		//}
+		//
+		//if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+		//	err = ac.userRepo.ExchangeTwo(ctx, user.ID, float64(req.SendBody.Amount), usdt)
+		//	if nil != err {
+		//		return err
+		//	}
+		//
+		//	err = ac.userRepo.CreateNotice(
+		//		ctx,
+		//		user.ID,
+		//		"兑换"+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" ISPAY 获得 "+strconv.FormatFloat(usdt, 'f', -1, 64)+" USDT",
+		//		"exchange "+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" ISPAY for "+strconv.FormatFloat(usdt, 'f', -1, 64)+" USDT",
+		//	)
+		//	if nil != err {
+		//		return err
+		//	}
+		//	return nil
+		//}); nil != err {
+		//	return &pb.ExchangeReply{
+		//		Status: "兑换错误",
+		//	}, nil
+		//}
+	} else if 3 == req.SendBody.ExchangeType {
+		tmp := float64(req.SendBody.Amount) * bPrice
 		usdt := tmp - tmp*rateTwo
 		if 0 >= usdt {
 			return &pb.ExchangeReply{
@@ -6216,66 +6254,36 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 				Status: "兑换错误",
 			}, nil
 		}
-	} else if 3 == req.SendBody.ExchangeType {
-		tmp := float64(req.SendBody.Amount) * bPrice
-		usdt := tmp - tmp*rateThree
-		if 0 >= usdt {
-			return &pb.ExchangeReply{
-				Status: "配置错误",
-			}, nil
-		}
-
-		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-			err = ac.userRepo.ExchangeThree(ctx, user.ID, float64(req.SendBody.Amount), usdt)
-			if nil != err {
-				return err
-			}
-
-			err = ac.userRepo.CreateNotice(
-				ctx,
-				user.ID,
-				"兑换"+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" BIW 获得 "+strconv.FormatFloat(usdt, 'f', -1, 64)+" USDT",
-				"exchange "+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" BIW for "+strconv.FormatFloat(usdt, 'f', -1, 64)+" USDT",
-			)
-			if nil != err {
-				return err
-			}
-			return nil
-		}); nil != err {
-			return &pb.ExchangeReply{
-				Status: "兑换错误",
-			}, nil
-		}
 	} else {
-		tmp := float64(req.SendBody.Amount) * (bPrice / uPrice)
-		giw := tmp - tmp*rate
-		if 0 >= giw {
-			return &pb.ExchangeReply{
-				Status: "配置错误",
-			}, nil
-		}
-
-		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-			err = ac.userRepo.Exchange(ctx, user.ID, float64(req.SendBody.Amount), giw)
-			if nil != err {
-				return err
-			}
-
-			err = ac.userRepo.CreateNotice(
-				ctx,
-				user.ID,
-				"兑换"+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" ISPAY 获得 "+strconv.FormatFloat(giw, 'f', -1, 64)+" BIW",
-				"exchange "+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" ISPAY for "+strconv.FormatFloat(giw, 'f', -1, 64)+" BIW",
-			)
-			if nil != err {
-				return err
-			}
-			return nil
-		}); nil != err {
-			return &pb.ExchangeReply{
-				Status: "兑换错误",
-			}, nil
-		}
+		//tmp := float64(req.SendBody.Amount) * (bPrice / uPrice)
+		//giw := tmp - tmp*rate
+		//if 0 >= giw {
+		//	return &pb.ExchangeReply{
+		//		Status: "配置错误",
+		//	}, nil
+		//}
+		//
+		//if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+		//	err = ac.userRepo.Exchange(ctx, user.ID, float64(req.SendBody.Amount), giw)
+		//	if nil != err {
+		//		return err
+		//	}
+		//
+		//	err = ac.userRepo.CreateNotice(
+		//		ctx,
+		//		user.ID,
+		//		"兑换"+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" ISPAY 获得 "+strconv.FormatFloat(giw, 'f', -1, 64)+" BIW",
+		//		"exchange "+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" ISPAY for "+strconv.FormatFloat(giw, 'f', -1, 64)+" BIW",
+		//	)
+		//	if nil != err {
+		//		return err
+		//	}
+		//	return nil
+		//}); nil != err {
+		//	return &pb.ExchangeReply{
+		//		Status: "兑换错误",
+		//	}, nil
+		//}
 	}
 
 	return &pb.ExchangeReply{
@@ -6749,6 +6757,10 @@ func (ac *AppUsecase) Withdraw(ctx context.Context, address string, req *pb.With
 			}, nil
 		}
 	} else {
+		return &pb.WithdrawReply{
+			Status: "ispay暂未开放",
+		}, nil
+
 		if req.SendBody.Amount > uint64(user.Giw) {
 			return &pb.WithdrawReply{
 				Status: "ispay余额不足",
@@ -7388,7 +7400,7 @@ func (ac *AppUsecase) BuyLand(ctx context.Context, addreses string, req *pb.BuyL
 		}
 
 		if uint64(user.Giw) < amountTmp {
-			return &pb.BuyLandReply{Status: "git余额不足"}, nil
+			return &pb.BuyLandReply{Status: "ISPAY余额不足"}, nil
 		}
 
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
