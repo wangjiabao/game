@@ -3666,8 +3666,8 @@ func (u *UserRepo) CreateBuyLandRecordOne(ctx context.Context, bl *biz.BuyLandRe
 		return errors.New(500, "SetStakeGetPlaySub", "用户信息修改失败")
 	}
 
-	res = u.data.DB(ctx).Table("user").Where("id=?", bl.UserID).Where("giw>=?", bl.Amount).
-		Updates(map[string]interface{}{"giw": gorm.Expr("giw - ?", bl.Amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	res = u.data.DB(ctx).Table("user").Where("id=?", bl.UserID).Where("amount_usdt>=?", bl.Amount).
+		Updates(map[string]interface{}{"amount_usdt": gorm.Expr("amount_usdt - ?", bl.Amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "CreateBuyLandRecordOne", "用户信息修改失败")
 	}
@@ -3696,8 +3696,8 @@ func (u *UserRepo) CreateBuyLandRecord(ctx context.Context, limit uint64, bl *bi
 		return errors.New(500, "SetStakeGetPlaySub", "用户信息修改失败")
 	}
 
-	res = u.data.DB(ctx).Table("user").Where("id=?", bl.UserID).Where("giw>=?", bl.Amount).
-		Updates(map[string]interface{}{"giw": gorm.Expr("giw - ?", bl.Amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	res = u.data.DB(ctx).Table("user").Where("id=?", bl.UserID).Where("amount_usdt>=?", bl.Amount).
+		Updates(map[string]interface{}{"amount_usdt": gorm.Expr("amount_usdt - ?", bl.Amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "CreateBuyLandRecord", "用户信息修改失败")
 	}
@@ -3747,7 +3747,7 @@ func (u *UserRepo) GetAllBuyLandRecords(ctx context.Context, id uint64) ([]*biz.
 // BackUserGit .
 func (u *UserRepo) BackUserGit(ctx context.Context, userId, id uint64, git float64) error {
 	res := u.data.DB(ctx).Table("user").Where("id=?", userId).
-		Updates(map[string]interface{}{"giw": gorm.Expr("giw + ?", git), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+		Updates(map[string]interface{}{"ammount_usdt": gorm.Expr("ammount_usdt + ?", git), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "BackUserGit", "用户信息修改失败")
 	}

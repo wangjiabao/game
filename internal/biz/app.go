@@ -7013,8 +7013,8 @@ func (ac *AppUsecase) SetBuyLand(ctx context.Context, req *pb.SetBuyLandRequest)
 				err = ac.userRepo.CreateNotice(
 					ctx,
 					v.UserID,
-					"未竞拍到物品，退还"+fmt.Sprintf("%.2f", v.Amount)+"ISPAY",
-					"You've get "+fmt.Sprintf("%.2f", v.Amount)+" ISPAY from auction",
+					"未竞拍到物品，退还"+fmt.Sprintf("%.2f", v.Amount)+"USDT",
+					"You've get "+fmt.Sprintf("%.2f", v.Amount)+" USDT from auction",
 				)
 				if nil != err {
 					return err
@@ -7132,8 +7132,8 @@ func (ac *AppUsecase) SetBuyLand(ctx context.Context, req *pb.SetBuyLandRequest)
 				err = ac.userRepo.CreateNotice(
 					ctx,
 					v.UserID,
-					"未竞拍到物品，退还"+fmt.Sprintf("%.2f", v.Amount)+"ISPAY",
-					"You've get "+fmt.Sprintf("%.2f", v.Amount)+" ISPAY from auction",
+					"未竞拍到物品，退还"+fmt.Sprintf("%.2f", v.Amount)+"USDT",
+					"You've get "+fmt.Sprintf("%.2f", v.Amount)+" USDT from auction",
 				)
 				if nil != err {
 					return err
@@ -7355,8 +7355,8 @@ func (ac *AppUsecase) BuyLand(ctx context.Context, addreses string, req *pb.BuyL
 			}
 		}
 
-		if user.Giw < amountTmp {
-			return &pb.BuyLandReply{Status: "ispay余额不足"}, nil
+		if user.AmountUsdt < amountTmp {
+			return &pb.BuyLandReply{Status: "usdt余额不足"}, nil
 		}
 
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
@@ -7373,8 +7373,8 @@ func (ac *AppUsecase) BuyLand(ctx context.Context, addreses string, req *pb.BuyL
 			err = ac.userRepo.CreateNotice(
 				ctx,
 				user.ID,
-				"您参与了拍卖土地，使用"+fmt.Sprintf("%.2f", amountTmp)+"ISPAY",
-				"You've used "+fmt.Sprintf("%.2f", amountTmp)+" ISPAY to auction",
+				"您参与了拍卖土地，使用"+fmt.Sprintf("%.2f", amountTmp)+"USDT",
+				"You've used "+fmt.Sprintf("%.2f", amountTmp)+" USDT to auction",
 			)
 			if nil != err {
 				return err
@@ -7399,7 +7399,7 @@ func (ac *AppUsecase) BuyLand(ctx context.Context, addreses string, req *pb.BuyL
 			}
 		}
 
-		if uint64(user.Giw) < amountTmp {
+		if uint64(user.AmountUsdt) < amountTmp {
 			return &pb.BuyLandReply{Status: "ISPAY余额不足"}, nil
 		}
 
@@ -7417,8 +7417,8 @@ func (ac *AppUsecase) BuyLand(ctx context.Context, addreses string, req *pb.BuyL
 			err = ac.userRepo.CreateNotice(
 				ctx,
 				user.ID,
-				"您参与了拍卖土地，使用"+strconv.FormatUint(amountTmp, 10)+"ISPAY",
-				"You've used "+strconv.FormatUint(amountTmp, 10)+" ISPAY to auction",
+				"您参与了拍卖土地，使用"+strconv.FormatUint(amountTmp, 10)+"USDT",
+				"You've used "+strconv.FormatUint(amountTmp, 10)+" USDT to auction",
 			)
 			if nil != err {
 				return err
