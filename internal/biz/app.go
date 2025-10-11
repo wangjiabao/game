@@ -4414,7 +4414,7 @@ func (ac *AppUsecase) LandPlaySeven(ctx context.Context, address string, req *pb
 		//}
 	}
 
-	tmpAmount := landUserUse.OutMaxNum * 0.1
+	tmpAmount := landUserUse.OutMaxNum * 0.05
 	tmpOutMax := float64(0)
 	if tmpAmount >= landUserUse.OutMaxNum {
 		tmpOutMax = 0
