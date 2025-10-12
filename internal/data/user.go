@@ -2683,14 +2683,14 @@ func (u *UserRepo) GetPropByIDTwo(ctx context.Context, propID uint64) (*biz.Prop
 
 // BuySeed .
 func (u *UserRepo) BuySeed(ctx context.Context, git, getGit float64, userId, userIdGet, seedId uint64) error {
-	res := u.data.DB(ctx).Table("user").Where("id=?", userIdGet).Where("git>=?", git).
-		Updates(map[string]interface{}{"git": gorm.Expr("git - ?", git), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	res := u.data.DB(ctx).Table("user").Where("id=?", userIdGet).Where("amount_usdt>=?", git).
+		Updates(map[string]interface{}{"amount_usdt": gorm.Expr("amount_usdt - ?", git), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "BuyBox", "用户信息修改失败")
 	}
 
 	res = u.data.DB(ctx).Table("user").Where("id=?", userId).
-		Updates(map[string]interface{}{"git": gorm.Expr("git + ?", getGit), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+		Updates(map[string]interface{}{"amount_usdt": gorm.Expr("amount_usdt + ?", getGit), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "BuyBox", "用户信息修改失败")
 	}
@@ -2725,14 +2725,14 @@ func (u *UserRepo) UnSellSeed(ctx context.Context, seedId, userId uint64) error 
 
 // BuyProp .
 func (u *UserRepo) BuyProp(ctx context.Context, git, getGit float64, userId, userIdGet, propId uint64) error {
-	res := u.data.DB(ctx).Table("user").Where("id=?", userIdGet).Where("git>=?", git).
-		Updates(map[string]interface{}{"git": gorm.Expr("git - ?", git), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	res := u.data.DB(ctx).Table("user").Where("id=?", userIdGet).Where("amount_usdt>=?", git).
+		Updates(map[string]interface{}{"amount_usdt": gorm.Expr("amount_usdt - ?", git), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "BuyBox", "用户信息修改失败")
 	}
 
 	res = u.data.DB(ctx).Table("user").Where("id=?", userId).
-		Updates(map[string]interface{}{"git": gorm.Expr("git + ?", getGit), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+		Updates(map[string]interface{}{"amount_usdt": gorm.Expr("amount_usdt + ?", getGit), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "BuyBox", "用户信息修改失败")
 	}
@@ -2767,14 +2767,14 @@ func (u *UserRepo) SellProp(ctx context.Context, propId uint64, userId uint64, s
 
 // BuyLand .
 func (u *UserRepo) BuyLand(ctx context.Context, git, getGit float64, userId, userIdGet, landId uint64) error {
-	res := u.data.DB(ctx).Table("user").Where("id=?", userIdGet).Where("git>=?", git).
-		Updates(map[string]interface{}{"git": gorm.Expr("git - ?", git), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	res := u.data.DB(ctx).Table("user").Where("id=?", userIdGet).Where("amount_usdt>=?", git).
+		Updates(map[string]interface{}{"amount_usdt": gorm.Expr("amount_usdt - ?", git), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "BuyBox", "用户信息修改失败")
 	}
 
 	res = u.data.DB(ctx).Table("user").Where("id=?", userId).
-		Updates(map[string]interface{}{"git": gorm.Expr("git + ?", getGit), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+		Updates(map[string]interface{}{"amount_usdt": gorm.Expr("amount_usdt + ?", getGit), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "BuyBox", "用户信息修改失败")
 	}
@@ -3541,7 +3541,7 @@ func (u *UserRepo) Exchange(ctx context.Context, userId uint64, git, giw float64
 // ExchangeTwo .
 func (u *UserRepo) ExchangeTwo(ctx context.Context, userId uint64, git, giw float64) error {
 	res := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("git>=?", git).
-		Updates(map[string]interface{}{"git": gorm.Expr("git - ?", git), "usdt_two": gorm.Expr("usdt_two + ?", giw), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+		Updates(map[string]interface{}{"git": gorm.Expr("git - ?", git), "amount_usdt": gorm.Expr("amount_usdt + ?", giw), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "SetStakeGet", "用户信息修改失败")
 	}
@@ -3587,8 +3587,8 @@ func (u *UserRepo) Withdraw(ctx context.Context, userId uint64, giw, relGiw floa
 
 // WithdrawTwo .
 func (u *UserRepo) WithdrawTwo(ctx context.Context, userId uint64, usdt, relUsdt float64) error {
-	res := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("usdt_two>=?", usdt).
-		Updates(map[string]interface{}{"usdt_two": gorm.Expr("usdt_two - ?", usdt), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	res := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("amount_usdt>=?", usdt).
+		Updates(map[string]interface{}{"amount_usdt": gorm.Expr("amount_usdt - ?", usdt), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "SetStakeGet", "用户信息修改失败")
 	}

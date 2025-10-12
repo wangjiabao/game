@@ -1053,7 +1053,7 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		ExchangeRate:              bPrice,
 		ExchangeRateTwo:           uPrice,
 		BiwPrice:                  uPrice,
-		UsdtTwo:                   user.UsdtTwo,
+		UsdtTwo:                   user.AmountUsdt,
 		ExchangeFeeRate:           exchangeFeeRate,
 		ExchangeFeeRateTwo:        exchangeFeeRateTwo,
 		StakeGetTotal:             stakeGetTotalAmount,
@@ -3045,6 +3045,31 @@ func (ac *AppUsecase) LandPlayOne(ctx context.Context, address string, req *pb.L
 		}, nil
 	}
 
+	var (
+		configs     []*Config
+		playOneRate float64
+		playTwoRate float64
+	)
+
+	// 配置
+	configs, err = ac.userRepo.GetConfigByKeys(ctx,
+		"play_one_rate",
+		"play_two_rate",
+	)
+	if nil != err || nil == configs {
+		return &pb.LandPlayOneReply{
+			Status: "配置错误",
+		}, nil
+	}
+	for _, vConfig := range configs {
+		if "play_one_rate" == vConfig.KeyName {
+			playOneRate, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+		if "play_two_rate" == vConfig.KeyName {
+			playTwoRate, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+	}
+
 	if nil == rngPlant {
 		var (
 			seedInt     int64
@@ -3093,9 +3118,9 @@ func (ac *AppUsecase) LandPlayOne(ctx context.Context, address string, req *pb.L
 	one := uint64(0)
 	two := uint64(0)
 	r := rngPlant.Float64() // 生成 0.0 ~ 1.0 之间的随机数
-	if r < 0.05 {
+	if r < playOneRate {
 		one = uint64(randomNumber)
-	} else if r < 0.1 {
+	} else if r < playOneRate+playTwoRate {
 		two = uint64(randomNumber)
 	}
 
@@ -4301,8 +4326,10 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 // LandPlaySeven 手套
 func (ac *AppUsecase) LandPlaySeven(ctx context.Context, address string, req *pb.LandPlaySevenRequest) (*pb.LandPlaySevenReply, error) {
 	var (
-		user *User
-		err  error
+		user    *User
+		err     error
+		configs []*Config
+		sRate   float64
 	)
 
 	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
@@ -4315,6 +4342,28 @@ func (ac *AppUsecase) LandPlaySeven(ctx context.Context, address string, req *pb
 	if 1 == user.LockUse {
 		return &pb.LandPlaySevenReply{
 			Status: "锁定用户",
+		}, nil
+	}
+
+	// 配置
+	configs, err = ac.userRepo.GetConfigByKeys(ctx,
+		"s_rate",
+	)
+	if nil != err || nil == configs {
+		return &pb.LandPlaySevenReply{
+			Status: "配置错误",
+		}, nil
+	}
+
+	for _, vConfig := range configs {
+		if "s_rate" == vConfig.KeyName {
+			sRate, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+	}
+
+	if 0 >= sRate {
+		return &pb.LandPlaySevenReply{
+			Status: "手套获取百分比为0",
 		}, nil
 	}
 
@@ -4414,7 +4463,7 @@ func (ac *AppUsecase) LandPlaySeven(ctx context.Context, address string, req *pb
 		//}
 	}
 
-	tmpAmount := landUserUse.OutMaxNum * 0.05
+	tmpAmount := landUserUse.OutMaxNum * sRate
 	tmpOutMax := float64(0)
 	if tmpAmount >= landUserUse.OutMaxNum {
 		tmpOutMax = 0
@@ -4533,9 +4582,9 @@ func (ac *AppUsecase) Buy(ctx context.Context, address string, req *pb.BuyReques
 			}, nil
 		}
 
-		if user.Git < seed.SellAmount {
+		if user.AmountUsdt < seed.SellAmount {
 			return &pb.BuyReply{
-				Status: "余额不足",
+				Status: "usdt余额不足",
 			}, nil
 		}
 		// 种子
@@ -4555,8 +4604,8 @@ func (ac *AppUsecase) Buy(ctx context.Context, address string, req *pb.BuyReques
 			err = ac.userRepo.CreateNotice(
 				ctx,
 				user.ID,
-				"您购买了种子，花费"+fmt.Sprintf("%.2f", seed.SellAmount)+"ISPAY",
-				"You've pay "+fmt.Sprintf("%.2f", seed.SellAmount)+" ISPAY for seed",
+				"您购买了种子，花费"+fmt.Sprintf("%.2f", seed.SellAmount)+"USDT",
+				"You've pay "+fmt.Sprintf("%.2f", seed.SellAmount)+" USDT for seed",
 			)
 			if nil != err {
 				return err
@@ -4565,8 +4614,8 @@ func (ac *AppUsecase) Buy(ctx context.Context, address string, req *pb.BuyReques
 			err = ac.userRepo.CreateNotice(
 				ctx,
 				seed.UserId,
-				"您出售了种子，获得"+fmt.Sprintf("%.2f", tmpGet)+"ISPAY",
-				"You've get "+fmt.Sprintf("%.2f", tmpGet)+" ISPAY for seed",
+				"您出售了种子，获得"+fmt.Sprintf("%.2f", tmpGet)+"USDT",
+				"You've get "+fmt.Sprintf("%.2f", tmpGet)+" USDT for seed",
 			)
 			if nil != err {
 				return err
@@ -4602,9 +4651,9 @@ func (ac *AppUsecase) Buy(ctx context.Context, address string, req *pb.BuyReques
 			}, nil
 		}
 
-		if user.Git < prop.SellAmount {
+		if user.AmountUsdt < prop.SellAmount {
 			return &pb.BuyReply{
-				Status: "余额不足",
+				Status: "usdt余额不足",
 			}, nil
 		}
 
@@ -4624,8 +4673,8 @@ func (ac *AppUsecase) Buy(ctx context.Context, address string, req *pb.BuyReques
 			err = ac.userRepo.CreateNotice(
 				ctx,
 				user.ID,
-				"您购买了道具，花费"+fmt.Sprintf("%.2f", prop.SellAmount)+"ISPAY",
-				"You've pay "+fmt.Sprintf("%.2f", prop.SellAmount)+" ISPAY for prop",
+				"您购买了道具，花费"+fmt.Sprintf("%.2f", prop.SellAmount)+"USDT",
+				"You've pay "+fmt.Sprintf("%.2f", prop.SellAmount)+" USDT for prop",
 			)
 			if nil != err {
 				return err
@@ -4634,8 +4683,8 @@ func (ac *AppUsecase) Buy(ctx context.Context, address string, req *pb.BuyReques
 			err = ac.userRepo.CreateNotice(
 				ctx,
 				prop.UserId,
-				"您出售了道具，获得"+fmt.Sprintf("%.2f", tmpGet)+"ISPAY",
-				"You've get "+fmt.Sprintf("%.2f", tmpGet)+" ISPAY for prop",
+				"您出售了道具，获得"+fmt.Sprintf("%.2f", tmpGet)+"USDT",
+				"You've get "+fmt.Sprintf("%.2f", tmpGet)+" USDT for prop",
 			)
 			if nil != err {
 				return err
@@ -4649,85 +4698,85 @@ func (ac *AppUsecase) Buy(ctx context.Context, address string, req *pb.BuyReques
 			}, nil
 		}
 	} else if 3 == req.SendBody.BuyType {
-		return &pb.BuyReply{
-			Status: "暂未开放",
-		}, nil
+		//return &pb.BuyReply{
+		//	Status: "暂未开放",
+		//}, nil
 
-		//var (
-		//	land *Land
-		//)
-		//land, err = ac.userRepo.GetLandByID(ctx, req.SendBody.Id)
-		//if nil != err || nil == land {
-		//	return &pb.BuyReply{
-		//		Status: "不存道具",
-		//	}, nil
-		//}
-		//
-		//if user.ID == land.UserId {
-		//	return &pb.BuyReply{
-		//		Status: "不允许购买自己的",
-		//	}, nil
-		//}
-		//
-		//if 4 != land.Status {
-		//	return &pb.BuyReply{
-		//		Status: "未出售",
-		//	}, nil
-		//}
-		//
-		//if 0 >= land.SellAmount {
-		//	return &pb.BuyReply{
-		//		Status: "金额错误",
-		//	}, nil
-		//}
-		//
-		//if user.Git < land.SellAmount {
-		//	return &pb.BuyReply{
-		//		Status: "余额不足",
-		//	}, nil
-		//}
-		//
-		//// 土地
-		//tmpGet := land.SellAmount - land.SellAmount*feeRate
-		//if 0 >= tmpGet {
-		//	return &pb.BuyReply{
-		//		Status: "金额错误",
-		//	}, nil
-		//}
-		//
-		//if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-		//	err = ac.userRepo.BuyLand(ctx, land.SellAmount, tmpGet, land.UserId, user.ID, land.ID)
-		//	if nil != err {
-		//		return err
-		//	}
-		//
-		//	err = ac.userRepo.CreateNotice(
-		//		ctx,
-		//		land.UserId,
-		//		"您购买了土地，花费"+strconv.FormatFloat(land.SellAmount, 'f', -1, 64)+"GIT",
-		//		"You've pay "+strconv.FormatFloat(land.SellAmount, 'f', -1, 64)+" GIT for land",
-		//	)
-		//	if nil != err {
-		//		return err
-		//	}
-		//
-		//	err = ac.userRepo.CreateNotice(
-		//		ctx,
-		//		user.ID,
-		//		"您出售了土地，获得"+strconv.FormatFloat(tmpGet, 'f', -1, 64)+"GIT",
-		//		"You've get "+strconv.FormatFloat(tmpGet, 'f', -1, 64)+" GIT for land",
-		//	)
-		//	if nil != err {
-		//		return err
-		//	}
-		//
-		//	return nil
-		//}); nil != err {
-		//	fmt.Println(err, "buyLand", user)
-		//	return &pb.BuyReply{
-		//		Status: "购买失败",
-		//	}, nil
-		//}
+		var (
+			land *Land
+		)
+		land, err = ac.userRepo.GetLandByID(ctx, req.SendBody.Id)
+		if nil != err || nil == land {
+			return &pb.BuyReply{
+				Status: "不存道具",
+			}, nil
+		}
+
+		if user.ID == land.UserId {
+			return &pb.BuyReply{
+				Status: "不允许购买自己的",
+			}, nil
+		}
+
+		if 4 != land.Status {
+			return &pb.BuyReply{
+				Status: "未出售",
+			}, nil
+		}
+
+		if 0 >= land.SellAmount {
+			return &pb.BuyReply{
+				Status: "金额错误",
+			}, nil
+		}
+
+		if user.AmountUsdt < land.SellAmount {
+			return &pb.BuyReply{
+				Status: "usdt余额不足",
+			}, nil
+		}
+
+		// 土地
+		tmpGet := land.SellAmount - land.SellAmount*feeRate
+		if 0 >= tmpGet {
+			return &pb.BuyReply{
+				Status: "金额错误",
+			}, nil
+		}
+
+		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+			err = ac.userRepo.BuyLand(ctx, land.SellAmount, tmpGet, land.UserId, user.ID, land.ID)
+			if nil != err {
+				return err
+			}
+
+			err = ac.userRepo.CreateNotice(
+				ctx,
+				land.UserId,
+				"您购买了土地，花费"+strconv.FormatFloat(land.SellAmount, 'f', -1, 64)+"USDT",
+				"You've pay "+strconv.FormatFloat(land.SellAmount, 'f', -1, 64)+" USDT for land",
+			)
+			if nil != err {
+				return err
+			}
+
+			err = ac.userRepo.CreateNotice(
+				ctx,
+				user.ID,
+				"您出售了土地，获得"+strconv.FormatFloat(tmpGet, 'f', -1, 64)+"USDT",
+				"You've get "+strconv.FormatFloat(tmpGet, 'f', -1, 64)+" USDT for land",
+			)
+			if nil != err {
+				return err
+			}
+
+			return nil
+		}); nil != err {
+			fmt.Println(err, "buyLand", user)
+			return &pb.BuyReply{
+				Status: "购买失败",
+			}, nil
+		}
 	} else {
 		return &pb.BuyReply{
 			Status: "参数错误",
@@ -4817,52 +4866,74 @@ func (ac *AppUsecase) Sell(ctx context.Context, address string, req *pb.SellRequ
 				}, nil
 			}
 		} else if 3 == req.SendBody.SellType {
-			return &pb.SellReply{
-				Status: "暂未开放",
-			}, nil
+			var (
+				configs  []*Config
+				sellLand uint64
+			)
 
-			//var (
-			//	land *Land
-			//)
-			//land, err = ac.userRepo.GetLandByID(ctx, req.SendBody.Id)
-			//if nil != err || nil == land {
-			//	return &pb.SellReply{
-			//		Status: "不存在土地",
-			//	}, nil
-			//}
-			//
-			//if user.ID != land.UserId {
-			//	return &pb.SellReply{
-			//		Status: "不是自己的",
-			//	}, nil
-			//}
-			//
-			//if 0 != land.LocationNum {
-			//	return &pb.SellReply{
-			//		Status: "土地布置中",
-			//	}, nil
-			//}
-			//
-			//if 0 != land.Status {
-			//	return &pb.SellReply{
-			//		Status: "不符合上架状态",
-			//	}, nil
-			//}
-			//
-			//if 1 != land.Two {
-			//	return &pb.SellReply{
-			//		Status: "不可出售土地",
-			//	}, nil
-			//}
-			//
-			//if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-			//	return ac.userRepo.SellLand(ctx, land.ID, user.ID, tmpSellAmount)
-			//}); nil != err {
-			//	fmt.Println(err, "sellProp", user)
-			//	return &pb.SellReply{
-			//		Status: "上架失败",
-			//	}, nil
-			//}
+			// 配置
+			configs, err = ac.userRepo.GetConfigByKeys(ctx,
+				"sell_land",
+			)
+			if nil != err || nil == configs {
+				return &pb.SellReply{
+					Status: "配置错误",
+				}, nil
+			}
+			for _, vConfig := range configs {
+				if "sell_land" == vConfig.KeyName {
+					sellLand, _ = strconv.ParseUint(vConfig.Value, 10, 64)
+				}
+			}
+
+			if 0 >= sellLand {
+				return &pb.SellReply{
+					Status: "暂未开放",
+				}, nil
+			}
+
+			var (
+				land *Land
+			)
+			land, err = ac.userRepo.GetLandByID(ctx, req.SendBody.Id)
+			if nil != err || nil == land {
+				return &pb.SellReply{
+					Status: "不存在土地",
+				}, nil
+			}
+
+			if user.ID != land.UserId {
+				return &pb.SellReply{
+					Status: "不是自己的",
+				}, nil
+			}
+
+			if 0 != land.LocationNum {
+				return &pb.SellReply{
+					Status: "土地布置中",
+				}, nil
+			}
+
+			if 0 != land.Status {
+				return &pb.SellReply{
+					Status: "不符合上架状态",
+				}, nil
+			}
+
+			if 1 != land.Two {
+				return &pb.SellReply{
+					Status: "不可出售土地",
+				}, nil
+			}
+
+			if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+				return ac.userRepo.SellLand(ctx, land.ID, user.ID, tmpSellAmount)
+			}); nil != err {
+				fmt.Println(err, "sellProp", user)
+				return &pb.SellReply{
+					Status: "上架失败",
+				}, nil
+			}
 		} else {
 			return &pb.SellReply{
 				Status: "参数错误",
@@ -4920,46 +4991,46 @@ func (ac *AppUsecase) Sell(ctx context.Context, address string, req *pb.SellRequ
 				}, nil
 			}
 		} else if 3 == req.SendBody.SellType {
-			return &pb.SellReply{
-				Status: "暂未开放",
-			}, nil
+			//return &pb.SellReply{
+			//	Status: "暂未开放",
+			//}, nil
 
-			//var (
-			//	land *Land
-			//)
-			//land, err = ac.userRepo.GetLandByIDTwo(ctx, req.SendBody.Id)
-			//if nil != err || nil == land {
-			//	return &pb.SellReply{
-			//		Status: "不存在土地",
-			//	}, nil
-			//}
-			//
-			//if user.ID != land.UserId {
-			//	return &pb.SellReply{
-			//		Status: "不是自己的",
-			//	}, nil
-			//}
-			//
-			//if 0 != land.LocationNum {
-			//	return &pb.SellReply{
-			//		Status: "土地布置中",
-			//	}, nil
-			//}
-			//
-			//if 4 != land.Status {
-			//	return &pb.SellReply{
-			//		Status: "不符合下架要求",
-			//	}, nil
-			//}
-			//
-			//if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-			//	return ac.userRepo.UnSellLand(ctx, land.ID, user.ID)
-			//}); nil != err {
-			//	fmt.Println(err, "unSellLand", user)
-			//	return &pb.SellReply{
-			//		Status: "下架失败",
-			//	}, nil
-			//}
+			var (
+				land *Land
+			)
+			land, err = ac.userRepo.GetLandByIDTwo(ctx, req.SendBody.Id)
+			if nil != err || nil == land {
+				return &pb.SellReply{
+					Status: "不存在土地",
+				}, nil
+			}
+
+			if user.ID != land.UserId {
+				return &pb.SellReply{
+					Status: "不是自己的",
+				}, nil
+			}
+
+			if 0 != land.LocationNum {
+				return &pb.SellReply{
+					Status: "土地布置中",
+				}, nil
+			}
+
+			if 4 != land.Status {
+				return &pb.SellReply{
+					Status: "不符合下架要求",
+				}, nil
+			}
+
+			if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+				return ac.userRepo.UnSellLand(ctx, land.ID, user.ID)
+			}); nil != err {
+				fmt.Println(err, "unSellLand", user)
+				return &pb.SellReply{
+					Status: "下架失败",
+				}, nil
+			}
 		} else {
 			return &pb.SellReply{
 				Status: "参数错误",
@@ -6705,7 +6776,7 @@ func (ac *AppUsecase) Withdraw(ctx context.Context, address string, req *pb.With
 	}
 
 	if 2 == req.SendBody.WithdrawType {
-		if req.SendBody.Amount > uint64(user.UsdtTwo) {
+		if req.SendBody.Amount > uint64(user.AmountUsdt) {
 			return &pb.WithdrawReply{
 				Status: "可提usdt余额不足",
 			}, nil
