@@ -3313,14 +3313,14 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 
 	// 租的
 	rentReward := float64(0)
-	if landUserUse.UserId != landUserUse.OwnerUserId {
-		if 0 < reward {
-			rentReward = reward * land.RentOutPutRate
-			if reward > rentReward {
-				reward = reward - rentReward
-			}
-		}
-	}
+	//if landUserUse.UserId != landUserUse.OwnerUserId {
+	//	if 0 < reward {
+	//		rentReward = reward * land.RentOutPutRate
+	//		if reward > rentReward {
+	//			reward = reward - rentReward
+	//		}
+	//	}
+	//}
 
 	// 推荐
 	var (
