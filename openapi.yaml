@@ -1419,6 +1419,8 @@ components:
                     type: string
                 sign:
                     type: string
+                userAddress:
+                    type: string
         LandPlaySevenReply:
             type: object
             properties:
@@ -1925,6 +1927,15 @@ components:
                 addressThree:
                     type: string
                 giwTwo:
+                    type: number
+                    format: double
+                rentOne:
+                    type: number
+                    format: double
+                rentTwo:
+                    type: number
+                    format: double
+                rentThree:
                     type: number
                     format: double
         UserLandReply:

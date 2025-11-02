@@ -939,6 +939,7 @@ func (a *AppService) OpenBox(ctx context.Context, req *pb.OpenBoxRequest) (*pb.O
 	return a.ac.OpenBox(ctx, address, req)
 }
 
+// LandPlay 布置土地
 func (a *AppService) LandPlay(ctx context.Context, req *pb.LandPlayRequest) (*pb.LandPlayReply, error) {
 	// 在上下文 context 中取出 claims 对象
 	var (
@@ -983,6 +984,7 @@ func (a *AppService) LandPlay(ctx context.Context, req *pb.LandPlayRequest) (*pb
 	return a.ac.LandPlay(ctx, address, req)
 }
 
+// LandPlayOne 种植
 func (a *AppService) LandPlayOne(ctx context.Context, req *pb.LandPlayOneRequest) (*pb.LandPlayOneReply, error) {
 	// 在上下文 context 中取出 claims 对象
 	var (
@@ -1027,6 +1029,7 @@ func (a *AppService) LandPlayOne(ctx context.Context, req *pb.LandPlayOneRequest
 	return a.ac.LandPlayOne(ctx, address, req)
 }
 
+// LandPlayTwo 种植收果实
 func (a *AppService) LandPlayTwo(ctx context.Context, req *pb.LandPlayTwoRequest) (*pb.LandPlayTwoReply, error) {
 	// 在上下文 context 中取出 claims 对象
 	var (
@@ -1203,6 +1206,7 @@ func (a *AppService) LandPlayFive(ctx context.Context, req *pb.LandPlayFiveReque
 	return a.ac.LandPlayFive(ctx, address, req)
 }
 
+// LandPlaySix 铲子
 func (a *AppService) LandPlaySix(ctx context.Context, req *pb.LandPlaySixRequest) (*pb.LandPlaySixReply, error) {
 	// 在上下文 context 中取出 claims 对象
 	var (
@@ -1247,6 +1251,7 @@ func (a *AppService) LandPlaySix(ctx context.Context, req *pb.LandPlaySixRequest
 	return a.ac.LandPlaySix(ctx, address, req)
 }
 
+// LandPlaySeven 手套
 func (a *AppService) LandPlaySeven(ctx context.Context, req *pb.LandPlaySevenRequest) (*pb.LandPlaySevenReply, error) {
 	// 在上下文 context 中取出 claims 对象
 	var (
@@ -1423,6 +1428,7 @@ func (a *AppService) StakeGit(ctx context.Context, req *pb.StakeGitRequest) (*pb
 	return a.ac.StakeGit(ctx, address, req)
 }
 
+// RentLand 出租土地
 func (a *AppService) RentLand(ctx context.Context, req *pb.RentLandRequest) (*pb.RentLandReply, error) {
 	// 在上下文 context 中取出 claims 对象
 	var (
@@ -1467,6 +1473,7 @@ func (a *AppService) RentLand(ctx context.Context, req *pb.RentLandRequest) (*pb
 	return a.ac.RentLand(ctx, address, req)
 }
 
+// LandAddOutRate 化肥使用在土地
 func (a *AppService) LandAddOutRate(ctx context.Context, req *pb.LandAddOutRateRequest) (*pb.LandAddOutRateReply, error) {
 	// 在上下文 context 中取出 claims 对象
 	var (
@@ -1511,7 +1518,10 @@ func (a *AppService) LandAddOutRate(ctx context.Context, req *pb.LandAddOutRateR
 	return a.ac.LandAddOutRate(ctx, address, req)
 }
 
+// GetLand 土地合成
 func (a *AppService) GetLand(ctx context.Context, req *pb.GetLandRequest) (*pb.GetLandReply, error) {
+	return &pb.GetLandReply{Status: "暂未开放"}, nil
+
 	// 在上下文 context 中取出 claims 对象
 	var (
 		address string
@@ -1555,6 +1565,7 @@ func (a *AppService) GetLand(ctx context.Context, req *pb.GetLandRequest) (*pb.G
 	return a.ac.GetLand(ctx, address, req)
 }
 
+// StakeGet 放大器质解压
 func (a *AppService) StakeGet(ctx context.Context, req *pb.StakeGetRequest) (*pb.StakeGetReply, error) {
 	// 在上下文 context 中取出 claims 对象
 	var (
@@ -1599,6 +1610,7 @@ func (a *AppService) StakeGet(ctx context.Context, req *pb.StakeGetRequest) (*pb
 	return a.ac.StakeGet(ctx, address, req)
 }
 
+// StakeGetPlay 玩放大器
 func (a *AppService) StakeGetPlay(ctx context.Context, req *pb.StakeGetPlayRequest) (*pb.StakeGetPlayReply, error) {
 	// 在上下文 context 中取出 claims 对象
 	var (
@@ -1643,6 +1655,7 @@ func (a *AppService) StakeGetPlay(ctx context.Context, req *pb.StakeGetPlayReque
 	return a.ac.StakeGetPlay(ctx, address, req)
 }
 
+// Exchange 兑换
 func (a *AppService) Exchange(ctx context.Context, req *pb.ExchangeRequest) (*pb.ExchangeReply, error) {
 	// 在上下文 context 中取出 claims 对象
 	var (
@@ -1687,6 +1700,7 @@ func (a *AppService) Exchange(ctx context.Context, req *pb.ExchangeRequest) (*pb
 	return a.ac.Exchange(ctx, address, req)
 }
 
+// BuyTwo 已删除的认购功能
 func (a *AppService) BuyTwo(ctx context.Context, req *pb.BuyTwoRequest) (*pb.BuyTwoReply, error) {
 	return &pb.BuyTwoReply{Status: "无效"}, nil
 
@@ -1789,10 +1803,12 @@ func (a *AppService) SetLand(ctx context.Context, req *pb.SetLandRequest) (*pb.S
 	return a.ac.SetLand(ctx, req)
 }
 
+// SetBuyLand 定时任务处理竞拍结果
 func (a *AppService) SetBuyLand(ctx context.Context, req *pb.SetBuyLandRequest) (*pb.SetBuyLandReply, error) {
 	return a.ac.SetBuyLand(ctx, req)
 }
 
+// GetBuyLand 当前竞拍信息
 func (a *AppService) GetBuyLand(ctx context.Context, req *pb.GetBuyLandRequest) (*pb.GetBuyLandReply, error) {
 	// 在上下文 context 中取出 claims 对象
 	var (
@@ -1826,6 +1842,7 @@ func (a *AppService) GetBuyLand(ctx context.Context, req *pb.GetBuyLandRequest) 
 	return a.ac.GetBuyLand(ctx, address, req)
 }
 
+// BuyLandRecord 竞拍记录
 func (a *AppService) BuyLandRecord(ctx context.Context, req *pb.BuyLandRecordRequest) (*pb.BuyLandRecordReply, error) {
 	// 在上下文 context 中取出 claims 对象
 	var (
@@ -1859,6 +1876,7 @@ func (a *AppService) BuyLandRecord(ctx context.Context, req *pb.BuyLandRecordReq
 	return a.ac.BuyLandRecord(ctx, address, req)
 }
 
+// BuyLand 竞拍土地
 func (a *AppService) BuyLand(ctx context.Context, req *pb.BuyLandRequest) (*pb.BuyLandReply, error) {
 	// 在上下文 context 中取出 claims 对象
 	var (

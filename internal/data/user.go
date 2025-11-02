@@ -50,6 +50,9 @@ type User struct {
 	GiwTwo           float64   `gorm:"type:decimal(65,20);"`
 	CreatedAt        time.Time `gorm:"type:datetime;not null"`
 	UpdatedAt        time.Time `gorm:"type:datetime;not null"`
+	CanSell          uint64    `gorm:"type:int;"`
+	CanRent          uint64    `gorm:"type:int;"`
+	CanLand          uint64    `gorm:"type:int;"`
 }
 
 type UserRecommend struct {
@@ -138,6 +141,8 @@ type Land struct {
 	SellAmount     float64   `gorm:"type:decimal(65,20);not null;default:0.00000000000000000000;"`
 	CreatedAt      time.Time `gorm:"type:datetime;not null"`
 	UpdatedAt      time.Time `gorm:"type:datetime;not null"`
+	AdminAdd       uint64    `gorm:"type:int;"`
+	LocationUserId uint64    `gorm:"type:int;"`
 }
 
 type LandUserUse struct {
@@ -165,6 +170,7 @@ type LandUserUse struct {
 	UpdatedAt    time.Time `gorm:"type:datetime;not null"`
 	One          uint64    `gorm:"type:int;not null;"`
 	Two          uint64    `gorm:"type:int;not null;"`
+	IsUseOther   uint64    `gorm:"type:int;not null;"`
 }
 
 type BuyLand struct {
@@ -538,6 +544,17 @@ func (u *UserRepo) GetUserById(ctx context.Context, id uint64) (*biz.User, error
 	}, nil
 }
 
+func (u *UserRepo) GetTodayUserCount(ctx context.Context) (int64, error) {
+	var count int64
+	if err := u.data.DB(ctx).Table("user").
+		Where("created_at >= ?", time.Now().Add(-24*time.Hour).Format("2006-01-02 15:04:05")).
+		Count(&count).Error; err != nil {
+		return 0, errors.New(500, "USER ERROR", err.Error())
+	}
+
+	return count, nil
+}
+
 // GetUserByAddress .
 func (u *UserRepo) GetUserByAddress(ctx context.Context, address string) (*biz.User, error) {
 	var user *User
@@ -588,6 +605,9 @@ func (u *UserRepo) GetUserByAddress(ctx context.Context, address string) (*biz.U
 		LockReward:       user.LockReward,
 		UsdtTwo:          user.UsdtTwo,
 		GiwTwo:           user.GiwTwo,
+		CanRent:          user.CanRent,
+		CanSell:          user.CanSell,
+		CanLand:          user.CanLand,
 	}, nil
 }
 
@@ -1320,6 +1340,52 @@ func (u *UserRepo) GetSeedBuyByID(ctx context.Context, seedID, status uint64) (*
 		UpdatedAt:    seed.UpdatedAt,
 		SellAmount:   seed.SellAmount,
 	}, nil
+}
+
+// GetLocationUserIDUsing LocationUserIDUsing
+func (u *UserRepo) GetLandByLocationUserIDUsing(ctx context.Context, userID uint64, status []uint64) ([]*biz.Land, error) {
+	var (
+		lands []*Land
+	)
+
+	res := make([]*biz.Land, 0)
+	instance := u.data.DB(ctx).Table("land").
+		Where("location_user_id = ?", userID).
+		//Where("limit_date>=?", time.Now().Unix()).
+		Where("status in (?)", status).
+		Where("location_num >?", 0).
+		Order("id asc")
+
+	if err := instance.Find(&lands).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return res, nil
+		}
+
+		return nil, errors.New(500, "LAND ERROR", err.Error())
+	}
+
+	for _, land := range lands {
+		res = append(res, &biz.Land{
+			ID:             land.ID,
+			UserId:         land.UserId,
+			Level:          land.Level,
+			OutPutRate:     land.OutPutRate,
+			RentOutPutRate: land.RentOutPutRate,
+			MaxHealth:      land.MaxHealth,
+			PerHealth:      land.PerHealth,
+			LimitDate:      land.LimitDate,
+			Status:         land.Status,
+			LocationNum:    land.LocationNum,
+			CreatedAt:      land.CreatedAt,
+			UpdatedAt:      land.UpdatedAt,
+			One:            land.One,
+			Two:            land.Two,
+			Three:          land.Three,
+			SellAmount:     land.SellAmount,
+		})
+	}
+
+	return res, nil
 }
 
 // GetLandByUserIDUsing getLandByUserIDUsing
@@ -2524,6 +2590,37 @@ func (u *UserRepo) GetLandByUserIdLocationNum(ctx context.Context, userId uint64
 	}, nil
 }
 
+// GetLandByUserIdLocationUserId
+func (u *UserRepo) GetLandByUserIdLocationUserId(ctx context.Context, locationNum, locationUserId uint64) (*biz.Land, error) {
+	var land Land
+
+	if err := u.data.DB(ctx).Table("land").Where("location_user_id = ?", locationUserId).Where("location_num = ?", locationNum).First(&land).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil // 没有找到返回 nil
+		}
+		return nil, errors.New(500, "LAND ERROR", err.Error())
+	}
+
+	return &biz.Land{
+		ID:             land.ID,
+		UserId:         land.UserId,
+		Level:          land.Level,
+		OutPutRate:     land.OutPutRate,
+		RentOutPutRate: land.RentOutPutRate,
+		MaxHealth:      land.MaxHealth,
+		PerHealth:      land.PerHealth,
+		LimitDate:      land.LimitDate,
+		Status:         land.Status,
+		LocationNum:    land.LocationNum,
+		CreatedAt:      land.CreatedAt,
+		UpdatedAt:      land.UpdatedAt,
+		One:            land.One,
+		Two:            land.Two,
+		Three:          land.Three,
+		SellAmount:     land.SellAmount,
+	}, nil
+}
+
 // GetLandByIDTwo
 func (u *UserRepo) GetLandByIDTwo(ctx context.Context, landID uint64) (*biz.Land, error) {
 	var land Land
@@ -2583,6 +2680,8 @@ func (u *UserRepo) GetLandByID(ctx context.Context, landID uint64) (*biz.Land, e
 		Two:            land.Two,
 		Three:          land.Three,
 		SellAmount:     land.SellAmount,
+		AdminAdd:       land.AdminAdd,
+		LocationUserId: land.LocationUserId,
 	}, nil
 }
 
@@ -2831,7 +2930,7 @@ func (u *UserRepo) UnRentLand(ctx context.Context, landId uint64, userId uint64)
 // LandPullTwo .
 func (u *UserRepo) LandPullTwo(ctx context.Context, landId uint64, userId uint64) error {
 	res := u.data.DB(ctx).Table("land").Where("id=?", landId).Where("user_id=?", userId).
-		Updates(map[string]interface{}{"status": 0, "location_num": 0, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+		Updates(map[string]interface{}{"status": 0, "location_num": 0, "location_user_id": 0, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "LandPull", "用户信息修改失败")
 	}
@@ -2841,7 +2940,7 @@ func (u *UserRepo) LandPullTwo(ctx context.Context, landId uint64, userId uint64
 // LandPull .
 func (u *UserRepo) LandPull(ctx context.Context, landId uint64, userId uint64) error {
 	res := u.data.DB(ctx).Table("land").Where("id=?", landId).Where("user_id=?", userId).Where("status=?", 1).
-		Updates(map[string]interface{}{"status": 0, "location_num": 0, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+		Updates(map[string]interface{}{"status": 0, "location_num": 0, "location_user_id": 0, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "LandPull", "用户信息修改失败")
 	}
@@ -2849,9 +2948,9 @@ func (u *UserRepo) LandPull(ctx context.Context, landId uint64, userId uint64) e
 }
 
 // LandPush .
-func (u *UserRepo) LandPush(ctx context.Context, landId uint64, userId, locationNum uint64) error {
+func (u *UserRepo) LandPush(ctx context.Context, landId uint64, userId, locationUserId, locationNum uint64) error {
 	res := u.data.DB(ctx).Table("land").Where("id=?", landId).Where("user_id=?", userId).Where("status=?", 0).Where("location_num=?", 0).
-		Updates(map[string]interface{}{"status": 1, "location_num": locationNum, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+		Updates(map[string]interface{}{"status": 1, "location_num": locationNum, "location_user_id": locationUserId, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "LandPush", "用户信息修改失败")
 	}
@@ -2940,7 +3039,7 @@ func (u *UserRepo) PlantPlatTwo(ctx context.Context, id, landId uint64, rent boo
 	res := u.data.DB(ctx).Table("land_user_use").Where("id=?", id).Where("status=?", 1).
 		Updates(map[string]interface{}{"status": 2, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil || 1 != res.RowsAffected {
-		return errors.New(500, "sellLand", "用户信息修改失败")
+		return errors.New(500, "PlantPlatTwo", "用户信息修改失败")
 	}
 
 	return nil
@@ -3084,7 +3183,7 @@ func (u *UserRepo) PlantPlatSeven(ctx context.Context, outMax, amount float64, s
 	reward.Two = id
 	res = u.data.DB(ctx).Table("reward").Create(&reward)
 	if res.Error != nil {
-		return errors.New(500, "PlantPlatTwoTwo", "用户信息修改失败")
+		return errors.New(500, "PlantPlatSeven", "用户信息修改失败")
 	}
 
 	return nil
@@ -3184,6 +3283,30 @@ func (u *UserRepo) PlantPlatTwoTwoL(ctx context.Context, id, userId, lowUserId, 
 		reward.Two = id
 		res := u.data.DB(ctx).Table("reward").Create(&reward)
 		if res.Error != nil {
+			return errors.New(500, "PlantPlatTwoTwoL", "用户信息修改失败")
+		}
+	}
+
+	return nil
+}
+
+// PlantPlatTwoTwoLL .
+func (u *UserRepo) PlantPlatTwoTwoLL(ctx context.Context, userId, lowUserId, num uint64, amount float64) error {
+	if amount > 0 {
+		res := u.data.DB(ctx).Table("user").Where("id=?", userId).
+			Updates(map[string]interface{}{"amount_usdt": gorm.Expr("amount_usdt + ?", amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+		if res.Error != nil || 1 != res.RowsAffected {
+			return errors.New(500, "PlantPlatTwoTwoL", "用户信息修改失败")
+		}
+
+		var reward Reward
+
+		reward.Reason = num
+		reward.UserId = userId
+		reward.Amount = amount
+		reward.One = lowUserId
+		resTwo := u.data.DB(ctx).Table("reward").Create(&reward)
+		if resTwo.Error != nil {
 			return errors.New(500, "PlantPlatTwoTwoL", "用户信息修改失败")
 		}
 	}

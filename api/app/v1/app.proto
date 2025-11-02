@@ -453,6 +453,10 @@ message UserInfoReply {
 	string addressThree = 34;
 
 	double giwTwo = 35;
+
+	double rentOne = 40;
+	double rentTwo = 41;
+	double rentThree = 42;
 }
 
 message UserBuyRequest {
@@ -1037,6 +1041,7 @@ message LandPlayRequest {
 		uint64 landTwoId = 3; // 替换土地必须
 		uint64 locationNum = 5;
 		string sign = 4; // 签名
+		string userAddress = 6;
 	}
 
 	SendBody send_body = 1;
