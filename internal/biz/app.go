@@ -5321,7 +5321,7 @@ func (ac *AppUsecase) Sell(ctx context.Context, address string, req *pb.SellRequ
 				}, nil
 			}
 
-			if 1 != land.Two {
+			if 1 != land.One {
 				return &pb.SellReply{
 					Status: "不可出售土地",
 				}, nil
@@ -5637,7 +5637,7 @@ func (ac *AppUsecase) RentLand(ctx context.Context, address string, req *pb.Rent
 			}, nil
 		}
 
-		if 1 != land.One {
+		if 1 != land.Two {
 			return &pb.RentLandReply{
 				Status: "不允许出租类型",
 			}, nil
