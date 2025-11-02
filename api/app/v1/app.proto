@@ -589,9 +589,9 @@ message UserLandReply {
 		double outRate = 5; // 增产率
 		uint64 perHealth = 6; // 种植消耗
 		double rentAmount = 10;
-		uint64 one = 7; // 可出售
-		uint64 two = 8; // 可出租
-		uint64 three = 9; // 可合成
+		uint64 one = 7; // 可出租
+		uint64 two = 8; // 可合成
+		uint64 three = 9; // 可出售
 		string content = 11;
 		string eContent = 12;
 	}
