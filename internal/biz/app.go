@@ -3767,6 +3767,12 @@ func (ac *AppUsecase) AddMessage(ctx context.Context, address string, req *pb.Ad
 		}, nil
 	}
 
+	if 0 >= len(req.SendBody.Content) {
+		return &pb.AddMessageReply{
+			Status: "最少1个字符",
+		}, nil
+	}
+
 	if 100 <= len(req.SendBody.Content) {
 		return &pb.AddMessageReply{
 			Status: "最大100字符",
