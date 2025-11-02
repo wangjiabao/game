@@ -1324,7 +1324,7 @@ func (ac *AppUsecase) UserRecommendL(ctx context.Context, address string, req *p
 
 		res = append(res, &pb.UserRecommendLReply_List{
 			Address:   tmpAddress,
-			Amount:    v.Amount,
+			Amount:    fmt.Sprintf("%.4f", v.Amount),
 			CreatedAt: v.CreatedAt.Add(8 * time.Hour).Format("2006-01-02 15:04:05"),
 		})
 	}

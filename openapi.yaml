@@ -2268,8 +2268,7 @@ components:
                 address:
                     type: string
                 amount:
-                    type: number
-                    format: double
+                    type: string
                 createdAt:
                     type: string
         UserRecommendReply:

@@ -567,7 +567,7 @@ message UserRecommendLReply {
 	repeated List list = 3;
 	message List {
 		string address = 1; // 地址
-		double amount = 2; // 奖励GIT
+		string amount = 2; // 奖励GIT
 		string createdAt = 3; // 奖励时间
 	}
 }
