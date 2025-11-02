@@ -5782,7 +5782,7 @@ func (ac *AppUsecase) LandPlay(ctx context.Context, address string, req *pb.Land
 				return err
 			}
 
-			return ac.userRepo.LandPush(ctx, land2.ID, user.ID, land.LocationNum, userTwoId)
+			return ac.userRepo.LandPush(ctx, land2.ID, user.ID, userTwoId, req.SendBody.LocationNum)
 		}); nil != err {
 			fmt.Println(err, "LandPullPush", user)
 			return &pb.LandPlayReply{
