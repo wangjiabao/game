@@ -2995,7 +2995,7 @@ func (u *UserRepo) BuyLand(ctx context.Context, git, getGit float64, userId, use
 		return errors.New(500, "BuyBox", "用户信息修改失败")
 	}
 
-	res = u.data.DB(ctx).Table("land").Where("id=?", landId).Where("user_id=?", userId).Where("status=?", 4).Where("three=?", 1).Where("limit_date>=?", time.Now().Unix()).
+	res = u.data.DB(ctx).Table("land").Where("id=?", landId).Where("user_id=?", userId).Where("status=?", 4).Where("one=?", 1).Where("limit_date>=?", time.Now().Unix()).
 		Updates(map[string]interface{}{"user_id": userIdGet, "status": 0, "sell_amount": 0, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "BuyLand", "用户信息修改失败")
