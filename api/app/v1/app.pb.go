@@ -6065,9 +6065,9 @@ type UserLandReply_List struct {
 	OutRate    float64 `protobuf:"fixed64,5,opt,name=outRate,proto3" json:"outRate,omitempty"`    // 增产率
 	PerHealth  uint64  `protobuf:"varint,6,opt,name=perHealth,proto3" json:"perHealth,omitempty"` // 种植消耗
 	RentAmount float64 `protobuf:"fixed64,10,opt,name=rentAmount,proto3" json:"rentAmount,omitempty"`
-	One        uint64  `protobuf:"varint,7,opt,name=one,proto3" json:"one,omitempty"`     // 可出租
-	Two        uint64  `protobuf:"varint,8,opt,name=two,proto3" json:"two,omitempty"`     // 可合成
-	Three      uint64  `protobuf:"varint,9,opt,name=three,proto3" json:"three,omitempty"` // 可出售
+	One        uint64  `protobuf:"varint,7,opt,name=one,proto3" json:"one,omitempty"`     // 可出售
+	Two        uint64  `protobuf:"varint,8,opt,name=two,proto3" json:"two,omitempty"`     // 可出租
+	Three      uint64  `protobuf:"varint,9,opt,name=three,proto3" json:"three,omitempty"` // 可合成
 	Content    string  `protobuf:"bytes,11,opt,name=content,proto3" json:"content,omitempty"`
 	EContent   string  `protobuf:"bytes,12,opt,name=eContent,proto3" json:"eContent,omitempty"`
 }
