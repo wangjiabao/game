@@ -143,6 +143,7 @@ type Land struct {
 	UpdatedAt      time.Time `gorm:"type:datetime;not null"`
 	AdminAdd       uint64    `gorm:"type:int;"`
 	LocationUserId uint64    `gorm:"type:int;"`
+	CanReward      uint64    `gorm:"type:int;"`
 }
 
 type LandUserUse struct {
@@ -2797,6 +2798,7 @@ func (u *UserRepo) GetLandByID(ctx context.Context, landID uint64) (*biz.Land, e
 		SellAmount:     land.SellAmount,
 		AdminAdd:       land.AdminAdd,
 		LocationUserId: land.LocationUserId,
+		CanReward:      land.CanReward,
 	}, nil
 }
 
@@ -3492,6 +3494,7 @@ func (u *UserRepo) CreateLand(ctx context.Context, lc *biz.Land) (*biz.Land, err
 	land.Two = lc.Two
 	land.Three = lc.Three
 	land.SellAmount = lc.SellAmount
+	land.CanReward = 1
 
 	res := u.data.DB(ctx).Table("land").Create(&land)
 	if res.Error != nil {

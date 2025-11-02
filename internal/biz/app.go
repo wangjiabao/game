@@ -199,6 +199,7 @@ type Land struct {
 	AdminAdd       uint64
 	SellAmount     float64
 	LocationUserId uint64
+	CanReward      uint64
 }
 
 type LandInfo struct {
@@ -5047,7 +5048,7 @@ func (ac *AppUsecase) Buy(ctx context.Context, address string, req *pb.BuyReques
 		usersMap := make(map[uint64]*User, 0)
 		tmpRecommendUserIds := make([]string, 0)
 		// 直推奖
-		if 0 == land.AdminAdd {
+		if 1 == land.CanReward {
 			// 推荐
 			var (
 				userRecommend *UserRecommend
@@ -7368,6 +7369,7 @@ func (ac *AppUsecase) Withdraw(ctx context.Context, address string, req *pb.With
 }
 
 func (ac *AppUsecase) SetLand(ctx context.Context, req *pb.SetLandRequest) (*pb.SetLandReply, error) {
+	return nil, nil
 	var (
 		user *User
 		err  error
