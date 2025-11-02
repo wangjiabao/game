@@ -58,7 +58,8 @@ func addressCheck(addressParam string) (bool, error) {
 	if nil == ethClient {
 		ethClient, err = ethclient.Dial("https://bsc-dataseed4.binance.org/")
 		if err != nil {
-			panic("eth client err")
+			fmt.Println("eth client err")
+			return false, err
 		}
 	}
 
@@ -66,6 +67,7 @@ func addressCheck(addressParam string) (bool, error) {
 	address := common.HexToAddress(addressParam)
 	bytecode, err = ethClient.CodeAt(context.Background(), address, nil) // nil is latest block
 	if err != nil {
+		fmt.Println("eth address err")
 		return false, err
 	}
 
@@ -801,6 +803,7 @@ func (a *AppService) UserIndexList(ctx context.Context, req *pb.UserIndexListReq
 		)
 		res, err = addressCheck(address)
 		if nil != err {
+			fmt.Println("这里错误", err)
 			return &pb.UserIndexListReply{Status: "无效token"}, nil
 		}
 
