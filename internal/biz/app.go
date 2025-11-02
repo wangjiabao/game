@@ -5870,7 +5870,7 @@ func (ac *AppUsecase) LandPlay(ctx context.Context, address string, req *pb.Land
 		}
 
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-			return ac.userRepo.LandPush(ctx, land.ID, user.ID, req.SendBody.LocationNum, userTwoId)
+			return ac.userRepo.LandPush(ctx, land.ID, user.ID, userTwoId, req.SendBody.LocationNum)
 		}); nil != err {
 			fmt.Println(err, "LandPush", user)
 			return &pb.LandPlayReply{
