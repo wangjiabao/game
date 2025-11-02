@@ -2683,7 +2683,7 @@ func (u *UserRepo) UpdateSeedValue(ctx context.Context, scene uint64, newSeed ui
 func (u *UserRepo) GetLandByUserIdLocationNum(ctx context.Context, userId uint64, locationNum uint64) (*biz.Land, error) {
 	var land Land
 
-	if err := u.data.DB(ctx).Table("land").Where("user_id = ?", userId).Where("location_num = ?", locationNum).First(&land).Error; err != nil {
+	if err := u.data.DB(ctx).Table("land").Where("user_id = ?", userId).Where("location_num = ?", locationNum).Where("location_user_id = ?", 0).First(&land).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil // 没有找到返回 nil
 		}
