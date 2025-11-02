@@ -2633,6 +2633,7 @@ func (ac *AppUsecase) UserOrderList(ctx context.Context, address string, req *pb
 	}
 
 	current := time.Now().Unix()
+	userRed = make(map[uint64]bool, 0)
 	for _, v := range landUserUse {
 		if uint64(current) < v.OverTime {
 			continue
