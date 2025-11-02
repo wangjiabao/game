@@ -752,6 +752,7 @@ message UserMarketRentLandListReply {
 		uint64 perHealth = 7;
 		string content = 50;
 		string eContent = 12;
+		string addressTwo = 13;
 	}
 }
 

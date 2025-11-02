@@ -2067,6 +2067,10 @@ func (ac *AppUsecase) UserMarketRentLandList(ctx context.Context, address string
 
 	userIds := make([]uint64, 0)
 	for _, vLand := range land {
+		if 0 < vLand.LocationUserId {
+			userIds = append(userIds, vLand.LocationUserId)
+		}
+
 		userIds = append(userIds, vLand.UserId)
 	}
 
@@ -2080,8 +2084,16 @@ func (ac *AppUsecase) UserMarketRentLandList(ctx context.Context, address string
 
 	for _, vLand := range land {
 		addressTmp := ""
+		addressTmpTwo := ""
 		if _, ok := usersMap[vLand.UserId]; ok {
 			addressTmp = usersMap[vLand.UserId].Address
+			addressTmpTwo = usersMap[vLand.UserId].Address
+		}
+
+		if 0 < vLand.LocationUserId {
+			if _, ok := usersMap[vLand.LocationUserId]; ok {
+				addressTmp = usersMap[vLand.LocationUserId].Address
+			}
 		}
 
 		res = append(res, &pb.UserMarketRentLandListReply_List{
@@ -2090,6 +2102,7 @@ func (ac *AppUsecase) UserMarketRentLandList(ctx context.Context, address string
 			MaxHealth:  vLand.MaxHealth,
 			RentAmount: vLand.RentOutPutRate,
 			Address:    addressTmp,
+			AddressTwo: addressTmpTwo,
 			OutPutRate: vLand.OutPutRate,
 			PerHealth:  vLand.PerHealth,
 			Content:    "在Magic Manor大陆最肥沃的土地，由神秘的地契合成，层叠强大的成长性，任何劣质的种子都可以得到茁壮的成长。",
