@@ -2092,7 +2092,7 @@ func (ac *AppUsecase) UserMarketRentLandList(ctx context.Context, address string
 
 		if 0 < vLand.LocationUserId {
 			if _, ok := usersMap[vLand.LocationUserId]; ok {
-				addressTmp = usersMap[vLand.LocationUserId].Address
+				addressTmpTwo = usersMap[vLand.LocationUserId].Address
 			}
 		}
 
