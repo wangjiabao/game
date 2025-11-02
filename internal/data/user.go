@@ -3061,19 +3061,19 @@ func (u *UserRepo) PlantPlatSeven(ctx context.Context, outMax, amount float64, s
 	res := u.data.DB(ctx).Table("land_user_use").Where("id=?", id).Where("status=?", 1).Where("sub_time=?", lastTime).
 		Updates(updateColums)
 	if res.Error != nil || 1 != res.RowsAffected {
-		return errors.New(500, "PlantPlatFive", "用户信息修改失败")
+		return errors.New(500, "PlantPlatSeven", "用户信息修改失败")
 	}
 
 	res = u.data.DB(ctx).Table("prop").Where("id=?", propId).
 		Updates(map[string]interface{}{"status": propStatus, "five_one": propNum, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil || 1 != res.RowsAffected {
-		return errors.New(500, "PlantPlatFive", "用户信息修改失败")
+		return errors.New(500, "PlantPlatSeven", "用户信息修改失败")
 	}
 
 	res = u.data.DB(ctx).Table("user").Where("id=?", userId).
 		Updates(map[string]interface{}{"git": gorm.Expr("git + ?", amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil || 1 != res.RowsAffected {
-		return errors.New(500, "PlantPlatFive", "用户信息修改失败")
+		return errors.New(500, "PlantPlatSeven", "用户信息修改失败")
 	}
 
 	var reward Reward

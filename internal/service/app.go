@@ -218,19 +218,19 @@ func (a *AppService) UserInfo(ctx context.Context, req *pb.UserInfoRequest) (*pb
 
 		address = c["Address"].(string)
 
-		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.UserInfoReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.UserInfoReply{Status: "无效token"}, nil
-		}
+		//// 验证
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.UserInfoReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.UserInfoReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.UserInfoReply{Status: "无效token"}, nil
 	}
@@ -252,19 +252,19 @@ func (a *AppService) UserBuy(ctx context.Context, req *pb.UserBuyRequest) (*pb.U
 
 		address = c["Address"].(string)
 
-		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.UserBuyReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.UserBuyReply{Status: "无效token"}, nil
-		}
+		//// 验证
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.UserBuyReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.UserBuyReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.UserBuyReply{Status: "无效token"}, nil
 	}
@@ -286,19 +286,19 @@ func (a *AppService) UserRecommend(ctx context.Context, req *pb.UserRecommendReq
 
 		address = c["Address"].(string)
 
-		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.UserRecommendReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.UserRecommendReply{Status: "无效token"}, nil
-		}
+		//// 验证
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.UserRecommendReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.UserRecommendReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.UserRecommendReply{Status: "无效token"}, nil
 	}
@@ -320,19 +320,19 @@ func (a *AppService) UserRecommendL(ctx context.Context, req *pb.UserRecommendLR
 
 		address = c["Address"].(string)
 
-		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.UserRecommendLReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.UserRecommendLReply{Status: "无效token"}, nil
-		}
+		//// 验证
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.UserRecommendLReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.UserRecommendLReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.UserRecommendLReply{Status: "无效token"}, nil
 	}
@@ -354,19 +354,19 @@ func (a *AppService) UserBuyL(ctx context.Context, req *pb.UserBuyLRequest) (*pb
 
 		address = c["Address"].(string)
 
-		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.UserBuyLReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.UserBuyLReply{Status: "无效token"}, nil
-		}
+		//// 验证
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.UserBuyLReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.UserBuyLReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.UserBuyLReply{Status: "无效token"}, nil
 	}
@@ -388,19 +388,19 @@ func (a *AppService) UserLand(ctx context.Context, req *pb.UserLandRequest) (*pb
 
 		address = c["Address"].(string)
 
-		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.UserLandReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.UserLandReply{Status: "无效token"}, nil
-		}
+		//// 验证
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.UserLandReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.UserLandReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.UserLandReply{Status: "无效token"}, nil
 	}
@@ -422,19 +422,19 @@ func (a *AppService) UserStakeRewardList(ctx context.Context, req *pb.UserStakeR
 
 		address = c["Address"].(string)
 
-		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.UserStakeRewardListReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.UserStakeRewardListReply{Status: "无效token"}, nil
-		}
+		//// 验证
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.UserStakeRewardListReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.UserStakeRewardListReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.UserStakeRewardListReply{Status: "无效token"}, nil
 	}
@@ -456,19 +456,19 @@ func (a *AppService) UserBoxList(ctx context.Context, req *pb.UserBoxListRequest
 
 		address = c["Address"].(string)
 
-		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.UserBoxListReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.UserBoxListReply{Status: "无效token"}, nil
-		}
+		//// 验证
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.UserBoxListReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.UserBoxListReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.UserBoxListReply{Status: "无效token"}, nil
 	}
@@ -490,19 +490,19 @@ func (a *AppService) UserBackList(ctx context.Context, req *pb.UserBackListReque
 
 		address = c["Address"].(string)
 
-		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.UserBackListReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.UserBackListReply{Status: "无效token"}, nil
-		}
+		//// 验证
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.UserBackListReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.UserBackListReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.UserBackListReply{Status: "无效token"}, nil
 	}
@@ -524,19 +524,19 @@ func (a *AppService) UserMarketSeedList(ctx context.Context, req *pb.UserMarketS
 
 		address = c["Address"].(string)
 
-		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.UserMarketSeedListReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.UserMarketSeedListReply{Status: "无效token"}, nil
-		}
+		//// 验证
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.UserMarketSeedListReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.UserMarketSeedListReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.UserMarketSeedListReply{Status: "无效token"}, nil
 	}
@@ -558,19 +558,19 @@ func (a *AppService) UserMarketLandList(ctx context.Context, req *pb.UserMarketL
 
 		address = c["Address"].(string)
 
-		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.UserMarketLandListReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.UserMarketLandListReply{Status: "无效token"}, nil
-		}
+		//// 验证
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.UserMarketLandListReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.UserMarketLandListReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.UserMarketLandListReply{Status: "无效token"}, nil
 	}
@@ -592,19 +592,19 @@ func (a *AppService) UserMarketPropList(ctx context.Context, req *pb.UserMarketP
 
 		address = c["Address"].(string)
 
-		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.UserMarketPropListReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.UserMarketPropListReply{Status: "无效token"}, nil
-		}
+		//// 验证
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.UserMarketPropListReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.UserMarketPropListReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.UserMarketPropListReply{Status: "无效token"}, nil
 	}
@@ -626,19 +626,19 @@ func (a *AppService) UserMarketRentLandList(ctx context.Context, req *pb.UserMar
 
 		address = c["Address"].(string)
 
-		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.UserMarketRentLandListReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.UserMarketRentLandListReply{Status: "无效token"}, nil
-		}
+		//// 验证
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.UserMarketRentLandListReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.UserMarketRentLandListReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.UserMarketRentLandListReply{Status: "无效token"}, nil
 	}
@@ -660,19 +660,19 @@ func (a *AppService) UserMyMarketList(ctx context.Context, req *pb.UserMyMarketL
 
 		address = c["Address"].(string)
 
-		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.UserMyMarketListReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.UserMyMarketListReply{Status: "无效token"}, nil
-		}
+		//// 验证
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.UserMyMarketListReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.UserMyMarketListReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.UserMyMarketListReply{Status: "无效token"}, nil
 	}
@@ -695,18 +695,18 @@ func (a *AppService) UserNoticeList(ctx context.Context, req *pb.UserNoticeListR
 		address = c["Address"].(string)
 
 		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.UserNoticeListReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.UserNoticeListReply{Status: "无效token"}, nil
-		}
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.UserNoticeListReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.UserNoticeListReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.UserNoticeListReply{Status: "无效token"}, nil
 	}
@@ -729,18 +729,18 @@ func (a *AppService) UserStakeGitRewardList(ctx context.Context, req *pb.UserSta
 		address = c["Address"].(string)
 
 		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.UserStakeGitRewardListReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.UserStakeGitRewardListReply{Status: "无效token"}, nil
-		}
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.UserStakeGitRewardListReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.UserStakeGitRewardListReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.UserStakeGitRewardListReply{Status: "无效token"}, nil
 	}
@@ -763,18 +763,18 @@ func (a *AppService) UserStakeGitStakeList(ctx context.Context, req *pb.UserStak
 		address = c["Address"].(string)
 
 		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.UserStakeGitStakeListReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.UserStakeGitStakeListReply{Status: "无效token"}, nil
-		}
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.UserStakeGitStakeListReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.UserStakeGitStakeListReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.UserStakeGitStakeListReply{Status: "无效token"}, nil
 	}
@@ -797,19 +797,19 @@ func (a *AppService) UserIndexList(ctx context.Context, req *pb.UserIndexListReq
 		address = c["Address"].(string)
 
 		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			fmt.Println("这里错误", err)
-			return &pb.UserIndexListReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.UserIndexListReply{Status: "无效token"}, nil
-		}
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	fmt.Println("这里错误", err)
+		//	return &pb.UserIndexListReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.UserIndexListReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.UserIndexListReply{Status: "无效token"}, nil
 	}
@@ -832,18 +832,18 @@ func (a *AppService) UserOrderList(ctx context.Context, req *pb.UserOrderListReq
 		address = c["Address"].(string)
 
 		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.UserOrderListReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.UserOrderListReply{Status: "无效token"}, nil
-		}
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.UserOrderListReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.UserOrderListReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.UserOrderListReply{Status: "无效token"}, nil
 	}
@@ -865,18 +865,18 @@ func (a *AppService) BuyBox(ctx context.Context, req *pb.BuyBoxRequest) (*pb.Buy
 		address = c["Address"].(string)
 
 		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.BuyBoxReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.BuyBoxReply{Status: "无效token"}, nil
-		}
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.BuyBoxReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.BuyBoxReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.BuyBoxReply{Status: "无效token"}, nil
 	}
@@ -909,18 +909,18 @@ func (a *AppService) OpenBox(ctx context.Context, req *pb.OpenBoxRequest) (*pb.O
 		address = c["Address"].(string)
 
 		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.OpenBoxReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.OpenBoxReply{Status: "无效token"}, nil
-		}
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.OpenBoxReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.OpenBoxReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.OpenBoxReply{Status: "无效token"}, nil
 	}
@@ -953,18 +953,18 @@ func (a *AppService) LandPlay(ctx context.Context, req *pb.LandPlayRequest) (*pb
 		address = c["Address"].(string)
 
 		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.LandPlayReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.LandPlayReply{Status: "无效token"}, nil
-		}
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.LandPlayReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.LandPlayReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.LandPlayReply{Status: "无效token"}, nil
 	}
@@ -997,18 +997,18 @@ func (a *AppService) LandPlayOne(ctx context.Context, req *pb.LandPlayOneRequest
 		address = c["Address"].(string)
 
 		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.LandPlayOneReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.LandPlayOneReply{Status: "无效token"}, nil
-		}
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.LandPlayOneReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.LandPlayOneReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.LandPlayOneReply{Status: "无效token"}, nil
 	}
@@ -1041,18 +1041,18 @@ func (a *AppService) LandPlayTwo(ctx context.Context, req *pb.LandPlayTwoRequest
 		address = c["Address"].(string)
 
 		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.LandPlayTwoReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.LandPlayTwoReply{Status: "无效token"}, nil
-		}
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.LandPlayTwoReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.LandPlayTwoReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.LandPlayTwoReply{Status: "无效token"}, nil
 	}
@@ -1085,18 +1085,18 @@ func (a *AppService) LandPlayThree(ctx context.Context, req *pb.LandPlayThreeReq
 		address = c["Address"].(string)
 
 		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.LandPlayThreeReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.LandPlayThreeReply{Status: "无效token"}, nil
-		}
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.LandPlayThreeReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.LandPlayThreeReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.LandPlayThreeReply{Status: "无效token"}, nil
 	}
@@ -1129,18 +1129,18 @@ func (a *AppService) LandPlayFour(ctx context.Context, req *pb.LandPlayFourReque
 		address = c["Address"].(string)
 
 		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.LandPlayFourReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.LandPlayFourReply{Status: "无效token"}, nil
-		}
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.LandPlayFourReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.LandPlayFourReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.LandPlayFourReply{Status: "无效token"}, nil
 	}
@@ -1173,18 +1173,18 @@ func (a *AppService) LandPlayFive(ctx context.Context, req *pb.LandPlayFiveReque
 		address = c["Address"].(string)
 
 		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.LandPlayFiveReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.LandPlayFiveReply{Status: "无效token"}, nil
-		}
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.LandPlayFiveReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.LandPlayFiveReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.LandPlayFiveReply{Status: "无效token"}, nil
 	}
@@ -1217,18 +1217,18 @@ func (a *AppService) LandPlaySix(ctx context.Context, req *pb.LandPlaySixRequest
 		address = c["Address"].(string)
 
 		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.LandPlaySixReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.LandPlaySixReply{Status: "无效token"}, nil
-		}
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.LandPlaySixReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.LandPlaySixReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.LandPlaySixReply{Status: "无效token"}, nil
 	}
@@ -1261,18 +1261,18 @@ func (a *AppService) LandPlaySeven(ctx context.Context, req *pb.LandPlaySevenReq
 		address = c["Address"].(string)
 
 		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.LandPlaySevenReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.LandPlaySevenReply{Status: "无效token"}, nil
-		}
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.LandPlaySevenReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.LandPlaySevenReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.LandPlaySevenReply{Status: "无效token"}, nil
 	}
@@ -1305,18 +1305,18 @@ func (a *AppService) Buy(ctx context.Context, req *pb.BuyRequest) (*pb.BuyReply,
 		address = c["Address"].(string)
 
 		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.BuyReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.BuyReply{Status: "无效token"}, nil
-		}
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.BuyReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.BuyReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.BuyReply{Status: "无效token"}, nil
 	}
@@ -1349,18 +1349,18 @@ func (a *AppService) Sell(ctx context.Context, req *pb.SellRequest) (*pb.SellRep
 		address = c["Address"].(string)
 
 		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.SellReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.SellReply{Status: "无效token"}, nil
-		}
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.SellReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.SellReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.SellReply{Status: "无效token"}, nil
 	}
@@ -1393,18 +1393,18 @@ func (a *AppService) StakeGit(ctx context.Context, req *pb.StakeGitRequest) (*pb
 		address = c["Address"].(string)
 
 		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.StakeGitReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.StakeGitReply{Status: "无效token"}, nil
-		}
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.StakeGitReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.StakeGitReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.StakeGitReply{Status: "无效token"}, nil
 	}
@@ -1437,18 +1437,18 @@ func (a *AppService) RentLand(ctx context.Context, req *pb.RentLandRequest) (*pb
 		address = c["Address"].(string)
 
 		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.RentLandReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.RentLandReply{Status: "无效token"}, nil
-		}
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.RentLandReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.RentLandReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.RentLandReply{Status: "无效token"}, nil
 	}
@@ -1481,18 +1481,18 @@ func (a *AppService) LandAddOutRate(ctx context.Context, req *pb.LandAddOutRateR
 		address = c["Address"].(string)
 
 		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.LandAddOutRateReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.LandAddOutRateReply{Status: "无效token"}, nil
-		}
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.LandAddOutRateReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.LandAddOutRateReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.LandAddOutRateReply{Status: "无效token"}, nil
 	}
@@ -1525,18 +1525,18 @@ func (a *AppService) GetLand(ctx context.Context, req *pb.GetLandRequest) (*pb.G
 		address = c["Address"].(string)
 
 		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.GetLandReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.GetLandReply{Status: "无效token"}, nil
-		}
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.GetLandReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.GetLandReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.GetLandReply{Status: "无效token"}, nil
 	}
@@ -1569,18 +1569,18 @@ func (a *AppService) StakeGet(ctx context.Context, req *pb.StakeGetRequest) (*pb
 		address = c["Address"].(string)
 
 		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.StakeGetReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.StakeGetReply{Status: "无效token"}, nil
-		}
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.StakeGetReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.StakeGetReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.StakeGetReply{Status: "无效token"}, nil
 	}
@@ -1613,18 +1613,18 @@ func (a *AppService) StakeGetPlay(ctx context.Context, req *pb.StakeGetPlayReque
 		address = c["Address"].(string)
 
 		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.StakeGetPlayReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.StakeGetPlayReply{Status: "无效token"}, nil
-		}
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.StakeGetPlayReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.StakeGetPlayReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.StakeGetPlayReply{Status: "无效token"}, nil
 	}
@@ -1657,18 +1657,18 @@ func (a *AppService) Exchange(ctx context.Context, req *pb.ExchangeRequest) (*pb
 		address = c["Address"].(string)
 
 		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.ExchangeReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.ExchangeReply{Status: "无效token"}, nil
-		}
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.ExchangeReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.ExchangeReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.ExchangeReply{Status: "无效token"}, nil
 	}
@@ -1703,18 +1703,18 @@ func (a *AppService) BuyTwo(ctx context.Context, req *pb.BuyTwoRequest) (*pb.Buy
 		address = c["Address"].(string)
 
 		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.BuyTwoReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.BuyTwoReply{Status: "无效token"}, nil
-		}
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.BuyTwoReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.BuyTwoReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.BuyTwoReply{Status: "无效token"}, nil
 	}
@@ -1747,18 +1747,18 @@ func (a *AppService) Withdraw(ctx context.Context, req *pb.WithdrawRequest) (*pb
 		address = c["Address"].(string)
 
 		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.WithdrawReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.WithdrawReply{Status: "无效token"}, nil
-		}
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.WithdrawReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.WithdrawReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.WithdrawReply{Status: "无效token"}, nil
 	}
@@ -1807,18 +1807,18 @@ func (a *AppService) GetBuyLand(ctx context.Context, req *pb.GetBuyLandRequest) 
 		address = c["Address"].(string)
 
 		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.GetBuyLandReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.GetBuyLandReply{Status: "无效token"}, nil
-		}
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.GetBuyLandReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.GetBuyLandReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.GetBuyLandReply{Status: "无效token"}, nil
 	}
@@ -1840,18 +1840,18 @@ func (a *AppService) BuyLandRecord(ctx context.Context, req *pb.BuyLandRecordReq
 		address = c["Address"].(string)
 
 		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.BuyLandRecordReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.BuyLandRecordReply{Status: "无效token"}, nil
-		}
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.BuyLandRecordReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.BuyLandRecordReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.BuyLandRecordReply{Status: "无效token"}, nil
 	}
@@ -1873,18 +1873,18 @@ func (a *AppService) BuyLand(ctx context.Context, req *pb.BuyLandRequest) (*pb.B
 		address = c["Address"].(string)
 
 		// 验证
-		var (
-			res bool
-			err error
-		)
-		res, err = addressCheck(address)
-		if nil != err {
-			return &pb.BuyLandReply{Status: "无效token"}, nil
-		}
-
-		if !res {
-			return &pb.BuyLandReply{Status: "无效token"}, nil
-		}
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.BuyLandReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.BuyLandReply{Status: "无效token"}, nil
+		//}
 	} else {
 		return &pb.BuyLandReply{Status: "无效token"}, nil
 	}
