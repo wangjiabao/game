@@ -5870,39 +5870,67 @@ func (ac *AppUsecase) LandPlay(ctx context.Context, address string, req *pb.Land
 		}
 
 		var (
-			tmpLand      *Land
-			tmpLandTwo   *Land
-			land         *Land
-			tmpUseUserId = user.ID
+			tmpLand    *Land
+			tmpLandTwo *Land
+			land       *Land
 		)
 		if 0 < userTwoId {
-			tmpUseUserId = userTwoId
-		}
+			// 自己
+			tmpLand, err = ac.userRepo.GetLandByUserIdLocationNum(ctx, userTwoId, req.SendBody.LocationNum)
+			if nil != err {
+				return &pb.LandPlayReply{
+					Status: "错误查询",
+				}, nil
+			}
 
-		tmpLand, err = ac.userRepo.GetLandByUserIdLocationNum(ctx, tmpUseUserId, req.SendBody.LocationNum)
-		if nil != err {
-			return &pb.LandPlayReply{
-				Status: "错误查询",
-			}, nil
-		}
+			if nil != tmpLand {
+				return &pb.LandPlayReply{
+					Status: "存在布置土地",
+				}, nil
+			}
 
-		if nil != tmpLand {
-			return &pb.LandPlayReply{
-				Status: "存在布置土地",
-			}, nil
-		}
+			// 别人
+			tmpLandTwo, err = ac.userRepo.GetLandByUserIdLocationUserId(ctx, req.SendBody.LocationNum, userTwoId)
+			if nil != err {
+				return &pb.LandPlayReply{
+					Status: "错误查询",
+				}, nil
+			}
 
-		tmpLandTwo, err = ac.userRepo.GetLandByUserIdLocationUserId(ctx, req.SendBody.LocationNum, tmpUseUserId)
-		if nil != err {
-			return &pb.LandPlayReply{
-				Status: "错误查询",
-			}, nil
-		}
+			if nil != tmpLandTwo {
+				return &pb.LandPlayReply{
+					Status: "存在他人布置土地",
+				}, nil
+			}
 
-		if nil != tmpLandTwo {
-			return &pb.LandPlayReply{
-				Status: "存在他人布置土地",
-			}, nil
+		} else {
+			// 自己
+			tmpLand, err = ac.userRepo.GetLandByUserIdLocationNum(ctx, user.ID, req.SendBody.LocationNum)
+			if nil != err {
+				return &pb.LandPlayReply{
+					Status: "错误查询",
+				}, nil
+			}
+
+			if nil != tmpLand {
+				return &pb.LandPlayReply{
+					Status: "存在布置土地",
+				}, nil
+			}
+
+			// 别人
+			tmpLandTwo, err = ac.userRepo.GetLandByUserIdLocationUserId(ctx, req.SendBody.LocationNum, user.ID)
+			if nil != err {
+				return &pb.LandPlayReply{
+					Status: "错误查询",
+				}, nil
+			}
+
+			if nil != tmpLandTwo {
+				return &pb.LandPlayReply{
+					Status: "存在他人布置土地",
+				}, nil
+			}
 		}
 
 		land, err = ac.userRepo.GetLandByID(ctx, req.SendBody.LandId)
