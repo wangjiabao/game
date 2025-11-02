@@ -3365,6 +3365,8 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 		twoRate   float64
 		threeRate float64
 		uPrice    float64
+		sRate     float64
+		selfSub   uint64
 		//lowRewardU float64
 		err error
 	)
@@ -3394,7 +3396,7 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 
 	// 配置
 	configs, err = ac.userRepo.GetConfigByKeys(ctx,
-		"one_rate", "two_rate", "three_rate", "u_price",
+		"one_rate", "two_rate", "three_rate", "u_price", "s_rate", "self_sub",
 	)
 	if nil != err || nil == configs {
 		return &pb.LandPlayTwoReply{
@@ -3417,6 +3419,13 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 
 		if "u_price" == vConfig.KeyName {
 			uPrice, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+
+		if "s_rate" == vConfig.KeyName {
+			sRate, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+		if "self_sub" == vConfig.KeyName {
+			selfSub, _ = strconv.ParseUint(vConfig.Value, 10, 64)
 		}
 	}
 
@@ -3461,18 +3470,29 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 		}, nil
 	}
 
+	// 开启了系统偷盗全局
+	tmpLandUserUseOutMaxNum := landUserUse.OutMaxNum
+	if 1 == selfSub {
+		tmpAmount := tmpLandUserUseOutMaxNum * sRate
+		if tmpAmount >= tmpLandUserUseOutMaxNum {
+			tmpLandUserUseOutMaxNum = 0
+		} else {
+			tmpLandUserUseOutMaxNum = tmpLandUserUseOutMaxNum - tmpAmount
+		}
+	}
+
 	// 已结束
-	reward := landUserUse.OutMaxNum
+	reward := tmpLandUserUseOutMaxNum
 	now := time.Now().Unix()
 	// 有虫子 todo 杀虫和浇水更新数量和结束时间 偷的时候注意梳理
 	if 0 != landUserUse.Two {
 		if uint64(now) > landUserUse.Two {
-			tmp := landUserUse.OutMaxNum * 0.01 * float64(uint64(now)-landUserUse.Two) / 300
+			tmp := tmpLandUserUseOutMaxNum * 0.01 * float64(uint64(now)-landUserUse.Two) / 300
 
-			if tmp >= landUserUse.OutMaxNum {
+			if tmp >= tmpLandUserUseOutMaxNum {
 				reward = 0
 			} else {
-				reward = landUserUse.OutMaxNum - tmp
+				reward = tmpLandUserUseOutMaxNum - tmp
 			}
 		}
 	}
@@ -4176,10 +4196,12 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 		threeRate  float64
 		uPrice     float64
 		propTwoTwo float64
+		sRate      float64
+		selfSub    uint64
 		//lowRewardU float64
 	)
 	configs, err = ac.userRepo.GetConfigByKeys(ctx,
-		"one_rate", "two_rate", "three_rate", "u_price", "low_reward_u", "prop_two_two",
+		"one_rate", "two_rate", "three_rate", "u_price", "low_reward_u", "prop_two_two", "s_rate", "self_sub",
 	)
 	if nil != err || nil == configs {
 		return &pb.LandPlaySixReply{
@@ -4206,6 +4228,13 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 
 		if "prop_two_two" == vConfig.KeyName {
 			propTwoTwo, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+
+		if "s_rate" == vConfig.KeyName {
+			sRate, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+		if "self_sub" == vConfig.KeyName {
+			selfSub, _ = strconv.ParseUint(vConfig.Value, 10, 64)
 		}
 
 		//if "low_reward_u" == vConfig.KeyName {
@@ -4303,10 +4332,21 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 	}
 
 	tmpOverMax := float64(0)
-	if landUserUse.OutMaxNum > landUserUse.OutMaxNum*propTwoTwo {
-		tmpOverMax = landUserUse.OutMaxNum - landUserUse.OutMaxNum*propTwoTwo
+	// 开启了系统偷盗全局
+	tmpLandUserUseOutMaxNum := landUserUse.OutMaxNum
+	if 1 == selfSub {
+		tmpAmount := tmpLandUserUseOutMaxNum * sRate
+		if tmpAmount >= tmpLandUserUseOutMaxNum {
+			tmpLandUserUseOutMaxNum = 0
+		} else {
+			tmpLandUserUseOutMaxNum = tmpLandUserUseOutMaxNum - tmpAmount
+		}
 	}
-	tmpOverMaxTwo := landUserUse.OutMaxNum * propTwoTwo
+
+	if tmpLandUserUseOutMaxNum > tmpLandUserUseOutMaxNum*propTwoTwo {
+		tmpOverMax = tmpLandUserUseOutMaxNum - tmpLandUserUseOutMaxNum*propTwoTwo
+	}
+	tmpOverMaxTwo := tmpLandUserUseOutMaxNum * propTwoTwo
 
 	if 0 < landUserUse.One {
 		tmpOverMax = 0
@@ -4315,9 +4355,9 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 		// 剩余最大产出
 		rewardTmp := float64(0)
 		if uint64(current) > landUserUse.Two {
-			tmp := landUserUse.OutMaxNum * 0.01 * float64(uint64(uint64(current)-landUserUse.Two)/300)
-			if tmp < landUserUse.OutMaxNum {
-				rewardTmp = landUserUse.OutMaxNum - tmp
+			tmp := tmpLandUserUseOutMaxNum * 0.01 * float64(uint64(uint64(current)-landUserUse.Two)/300)
+			if tmp < tmpLandUserUseOutMaxNum {
+				rewardTmp = tmpLandUserUseOutMaxNum - tmp
 			}
 		}
 
@@ -4566,6 +4606,7 @@ func (ac *AppUsecase) LandPlaySeven(ctx context.Context, address string, req *pb
 		err     error
 		configs []*Config
 		sRate   float64
+		selfSub uint64
 	)
 
 	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
@@ -4584,6 +4625,7 @@ func (ac *AppUsecase) LandPlaySeven(ctx context.Context, address string, req *pb
 	// 配置
 	configs, err = ac.userRepo.GetConfigByKeys(ctx,
 		"s_rate",
+		"self_sub",
 	)
 	if nil != err || nil == configs {
 		return &pb.LandPlaySevenReply{
@@ -4595,6 +4637,16 @@ func (ac *AppUsecase) LandPlaySeven(ctx context.Context, address string, req *pb
 		if "s_rate" == vConfig.KeyName {
 			sRate, _ = strconv.ParseFloat(vConfig.Value, 10)
 		}
+		if "self_sub" == vConfig.KeyName {
+			selfSub, _ = strconv.ParseUint(vConfig.Value, 10, 64)
+		}
+	}
+
+	// 开启了系统偷盗全局
+	if 1 == selfSub {
+		return &pb.LandPlaySevenReply{
+			Status: "偷盗过于频繁",
+		}, nil
 	}
 
 	if 0 >= sRate {
