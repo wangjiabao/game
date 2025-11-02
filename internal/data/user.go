@@ -1540,6 +1540,7 @@ func (u *UserRepo) GetLandByExUserIDByIds(ctx context.Context, ids []uint64, b *
 			Two:            land.Two,
 			Three:          land.Three,
 			SellAmount:     land.SellAmount,
+			LocationUserId: land.LocationUserId,
 		})
 	}
 
@@ -1587,6 +1588,7 @@ func (u *UserRepo) GetLandByExUserID(ctx context.Context, userID uint64, status 
 			Two:            land.Two,
 			Three:          land.Three,
 			SellAmount:     land.SellAmount,
+			LocationUserId: land.LocationUserId,
 		})
 	}
 
