@@ -22,6 +22,13 @@ service App {
 		};
 	};
 
+	rpc AddMessage (AddMessageRequest) returns (AddMessageReply) {
+		option (google.api.http) = {
+			post: "/api/app_server/add_message"
+			body: "send_body"
+		};
+	};
+
 	// 用户信息
 	rpc UserInfo (UserInfoRequest) returns (UserInfoReply) {
 		option (google.api.http) = {
@@ -391,6 +398,20 @@ message EthAuthorizeReply {
 	string status = 2;
 }
 
+message AddMessageRequest {
+	message SendBody{
+		string content = 1;
+		string sign = 4;
+	}
+
+	SendBody send_body = 1;
+}
+
+message AddMessageReply {
+	string token = 1;
+	string status = 2;
+}
+
 message UserInfoRequest {
 
 }
@@ -457,6 +478,15 @@ message UserInfoReply {
 	double rentOne = 40;
 	double rentTwo = 41;
 	double rentThree = 42;
+
+	repeated ListM listM = 43;
+	message ListM {
+		string address = 1; // 地址
+		string content = 2; // 内容
+	}
+
+	uint64 canLand = 44;
+	uint64 red = 45;
 }
 
 message UserBuyRequest {
@@ -823,6 +853,8 @@ message UserIndexListReply {
 		uint64 rewardStatus = 17; // 成熟1,未成熟2
 
 		string plantUserAddress = 18;
+
+		uint64 canUnLand = 19;
 	}
 }
 
@@ -839,6 +871,7 @@ message UserOrderListReply {
 	message List {
 		string address = 1; // 地址
 		double git = 2; // git
+		uint64 red = 3;
 	}
 }
 

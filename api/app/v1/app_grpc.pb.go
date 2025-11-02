@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	App_TestSign_FullMethodName               = "/api.app.v1.App/TestSign"
 	App_EthAuthorize_FullMethodName           = "/api.app.v1.App/EthAuthorize"
+	App_AddMessage_FullMethodName             = "/api.app.v1.App/AddMessage"
 	App_UserInfo_FullMethodName               = "/api.app.v1.App/UserInfo"
 	App_UserBuy_FullMethodName                = "/api.app.v1.App/UserBuy"
 	App_UserBuyL_FullMethodName               = "/api.app.v1.App/UserBuyL"
@@ -76,6 +77,7 @@ const (
 type AppClient interface {
 	TestSign(ctx context.Context, in *TestSignRequest, opts ...grpc.CallOption) (*TestSignReply, error)
 	EthAuthorize(ctx context.Context, in *EthAuthorizeRequest, opts ...grpc.CallOption) (*EthAuthorizeReply, error)
+	AddMessage(ctx context.Context, in *AddMessageRequest, opts ...grpc.CallOption) (*AddMessageReply, error)
 	// 用户信息
 	UserInfo(ctx context.Context, in *UserInfoRequest, opts ...grpc.CallOption) (*UserInfoReply, error)
 	// 认购信息
@@ -187,6 +189,16 @@ func (c *appClient) EthAuthorize(ctx context.Context, in *EthAuthorizeRequest, o
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(EthAuthorizeReply)
 	err := c.cc.Invoke(ctx, App_EthAuthorize_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *appClient) AddMessage(ctx context.Context, in *AddMessageRequest, opts ...grpc.CallOption) (*AddMessageReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AddMessageReply)
+	err := c.cc.Invoke(ctx, App_AddMessage_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -669,6 +681,7 @@ func (c *appClient) SetBuyLand(ctx context.Context, in *SetBuyLandRequest, opts 
 type AppServer interface {
 	TestSign(context.Context, *TestSignRequest) (*TestSignReply, error)
 	EthAuthorize(context.Context, *EthAuthorizeRequest) (*EthAuthorizeReply, error)
+	AddMessage(context.Context, *AddMessageRequest) (*AddMessageReply, error)
 	// 用户信息
 	UserInfo(context.Context, *UserInfoRequest) (*UserInfoReply, error)
 	// 认购信息
@@ -771,6 +784,9 @@ func (UnimplementedAppServer) TestSign(context.Context, *TestSignRequest) (*Test
 }
 func (UnimplementedAppServer) EthAuthorize(context.Context, *EthAuthorizeRequest) (*EthAuthorizeReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EthAuthorize not implemented")
+}
+func (UnimplementedAppServer) AddMessage(context.Context, *AddMessageRequest) (*AddMessageReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddMessage not implemented")
 }
 func (UnimplementedAppServer) UserInfo(context.Context, *UserInfoRequest) (*UserInfoReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UserInfo not implemented")
@@ -966,6 +982,24 @@ func _App_EthAuthorize_Handler(srv interface{}, ctx context.Context, dec func(in
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AppServer).EthAuthorize(ctx, req.(*EthAuthorizeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _App_AddMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddMessageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AppServer).AddMessage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: App_AddMessage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppServer).AddMessage(ctx, req.(*AddMessageRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1830,6 +1864,10 @@ var App_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "EthAuthorize",
 			Handler:    _App_EthAuthorize_Handler,
+		},
+		{
+			MethodName: "AddMessage",
+			Handler:    _App_AddMessage_Handler,
 		},
 		{
 			MethodName: "UserInfo",

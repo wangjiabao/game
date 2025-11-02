@@ -239,6 +239,16 @@ type LandUserUse struct {
 	UpdatedAt    time.Time
 	One          uint64
 	Two          uint64
+	IsUseOther   uint64
+}
+
+type Message struct {
+	ID        uint64
+	Content   string
+	UserId    uint64
+	Status    uint64
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type ExchangeRecord struct {
@@ -385,6 +395,9 @@ type UserRepo interface {
 	GetUserById(ctx context.Context, id uint64) (*User, error)
 	GetUserRecommendByUserId(ctx context.Context, userId uint64) (*UserRecommend, error)
 	GetUserRecommendByCode(ctx context.Context, code string) ([]*UserRecommend, error)
+	GetMessages(ctx context.Context) ([]*Message, error)
+	GetMessagesCount(ctx context.Context, userId uint64) (int64, error)
+	CreateMessages(ctx context.Context, userId uint64, content string) error
 	GetUserRecommendLikeCode(ctx context.Context, code string) ([]*UserRecommend, error)
 	GetUserRecommends(ctx context.Context) ([]*UserRecommend, error)
 	CreateUser(ctx context.Context, uc *User) (*User, error)
@@ -434,6 +447,7 @@ type UserRepo interface {
 	GetUserOrderCount(ctx context.Context) (int64, error)
 	GetUserOrder(ctx context.Context, b *Pagination) ([]*User, error)
 	GetLandUserUseByLandIDsMapUsing(ctx context.Context, userId uint64, landIDs []uint64) (map[uint64]*LandUserUse, error)
+	GetLandMyUseByLandIDsMapUsing(ctx context.Context, userId uint64) (map[uint64]*LandUserUse, error)
 	GetLandUserUseByLandIDsUsing(ctx context.Context, userId uint64) ([]*LandUserUse, error)
 	BuyBox(ctx context.Context, giw float64, originValue, value string, uc *BoxRecord) (uint64, error)
 	BuyLandReward(ctx context.Context, userId, landId uint64, giw float64) error
@@ -1057,8 +1071,74 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		}
 	}
 
+	var (
+		messages []*Message
+	)
+
+	messages, err = ac.userRepo.GetMessages(ctx)
+	if nil != err {
+		return &pb.UserInfoReply{
+			Status: "消息查询失败",
+		}, nil
+	}
+
+	usersMap := make(map[uint64]*User, 0)
+	userIds := make([]uint64, 0)
+	for _, m := range messages {
+		userIds = append(userIds, m.UserId)
+	}
+
+	usersMap, err = ac.userRepo.GetUserByUserIds(ctx, userIds)
+	if nil != err {
+		return &pb.UserInfoReply{
+			Status: "消息查询失败",
+		}, nil
+	}
+
+	resMessage := make([]*pb.UserInfoReply_ListM, 0)
+	for _, m := range messages {
+		if _, ok := usersMap[m.UserId]; ok {
+			resMessage = append(resMessage, &pb.UserInfoReply_ListM{
+				Address: usersMap[m.UserId].Address,
+				Content: m.Content,
+			})
+		}
+	}
+
+	var (
+		landUserUse map[uint64]*LandUserUse
+		userRed     uint64
+	)
+	landUserUse, err = ac.userRepo.GetLandMyUseByLandIDsMapUsing(ctx, user.ID)
+	if nil != err {
+		return &pb.UserInfoReply{
+			Status: "错误查询",
+		}, nil
+	}
+
+	current := time.Now().Unix()
+	for _, v := range landUserUse {
+		if uint64(current) < v.OverTime {
+			continue
+		}
+
+		if 0 != v.One {
+			continue
+		}
+
+		if user.ID == v.IsUseOther {
+			continue
+		}
+
+		// 已结束
+		userRed = 1
+	}
+
 	return &pb.UserInfoReply{
+		Red:                       userRed,
+		ListM:                     resMessage,
 		Status:                    "ok",
+		CanLand:                   user.CanLand,
 		MyAddress:                 user.Address,
 		Level:                     user.Level,
 		Giw:                       user.Giw,
@@ -2299,8 +2379,17 @@ func (ac *AppUsecase) UserIndexList(ctx context.Context, address string, req *pb
 		user     *User
 		lands    []*Land
 		landsTwo []*Land
+		reqUser  *User
 		err      error
 	)
+
+	reqUser, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
+	if nil != err || nil == reqUser {
+		return &pb.UserIndexListReply{
+			Status: "不存在用户",
+		}, nil
+	}
+
 	if 20 < len(req.Address) {
 		address = req.Address
 	}
@@ -2441,6 +2530,11 @@ func (ac *AppUsecase) UserIndexList(ctx context.Context, address string, req *pb
 				}
 			}
 
+			tmpCanUnLand := uint64(0)
+			if 1 == vLand.Status && reqUser.ID == vLand.UserId {
+				tmpCanUnLand = 1
+			}
+
 			resTmp[vLand.LocationNum] = &pb.UserIndexListReply_List{
 				LocationNum:      vLand.LocationNum,
 				LandId:           vLand.ID,
@@ -2458,6 +2552,7 @@ func (ac *AppUsecase) UserIndexList(ctx context.Context, address string, req *pb
 				Reward:           0,
 				PlantUserAddress: plantUserAddressTmp,
 				RewardStatus:     2,
+				CanUnLand:        tmpCanUnLand,
 			}
 		}
 	}
@@ -2526,12 +2621,46 @@ func (ac *AppUsecase) UserOrderList(ctx context.Context, address string, req *pb
 		}, nil
 	}
 
+	var (
+		landUserUse map[uint64]*LandUserUse
+		userRed     map[uint64]bool
+	)
+	landUserUse, err = ac.userRepo.GetLandMyUseByLandIDsMapUsing(ctx, user.ID)
+	if nil != err {
+		return &pb.UserOrderListReply{
+			Status: "错误查询",
+		}, nil
+	}
+
+	current := time.Now().Unix()
+	for _, v := range landUserUse {
+		if uint64(current) < v.OverTime {
+			continue
+		}
+
+		if 0 != v.One {
+			continue
+		}
+
+		if user.ID == v.IsUseOther {
+			continue
+		}
+
+		// 已结束
+		userRed[v.IsUseOther] = true
+	}
+
 	res := make([]*pb.UserOrderListReply_List, 0)
 
 	for _, v := range users {
+		tmpRed := uint64(0)
+		if _, ok := userRed[v.ID]; ok {
+			tmpRed = 1
+		}
 		res = append(res, &pb.UserOrderListReply_List{
 			Address: v.Address,
 			Git:     v.Git,
+			Red:     tmpRed,
 		})
 	}
 
@@ -3175,6 +3304,10 @@ func (ac *AppUsecase) LandPlayOne(ctx context.Context, address string, req *pb.L
 		statusTmp = 8
 	}
 
+	isUserOther := land.UserId
+	if 0 < land.LocationUserId {
+		isUserOther = land.LocationUserId
+	}
 	if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 		err = ac.userRepo.Plant(ctx, statusTmp, originStatusTmp, land.PerHealth, &LandUserUse{
 			LandId:      land.ID,
@@ -3190,6 +3323,7 @@ func (ac *AppUsecase) LandPlayOne(ctx context.Context, address string, req *pb.L
 			OutMaxNum:   seed.OutMaxAmount * land.OutPutRate,
 			One:         one, // 水时间
 			Two:         two, // 虫子时间
+			IsUseOther:  isUserOther,
 		})
 		if nil != err {
 			return err
@@ -3596,6 +3730,56 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 	}
 
 	return &pb.LandPlayTwoReply{
+		Status: "ok",
+	}, nil
+}
+
+var rngMutexAddM sync.Mutex
+
+func (ac *AppUsecase) AddMessage(ctx context.Context, address string, req *pb.AddMessageRequest) (*pb.AddMessageReply, error) {
+	var (
+		user  *User
+		count int64
+		err   error
+	)
+
+	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
+	if nil != err || nil == user {
+		return &pb.AddMessageReply{
+			Status: "不存在用户",
+		}, nil
+	}
+
+	if 1 == user.LockUse {
+		return &pb.AddMessageReply{
+			Status: "锁定用户",
+		}, nil
+	}
+
+	rngMutexAddM.Lock()
+	defer rngMutexAddM.Unlock()
+
+	count, err = ac.userRepo.GetMessagesCount(ctx, user.ID)
+	if nil != err || 50 < count {
+		return &pb.AddMessageReply{
+			Status: "内容今日发送上限50条",
+		}, nil
+	}
+
+	if 100 <= len(req.SendBody.Content) {
+		return &pb.AddMessageReply{
+			Status: "最大100字符",
+		}, nil
+	}
+
+	err = ac.userRepo.CreateMessages(ctx, user.ID, req.SendBody.Content)
+	if nil != err {
+		return &pb.AddMessageReply{
+			Status: "发生失败",
+		}, nil
+	}
+
+	return &pb.AddMessageReply{
 		Status: "ok",
 	}, nil
 }

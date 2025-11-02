@@ -6,6 +6,30 @@ info:
     title: App API
     version: 0.0.1
 paths:
+    /api/app_server/add_message:
+        post:
+            tags:
+                - App
+            operationId: App_AddMessage
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/AddMessageRequest_SendBody'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AddMessageReply'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
     /api/app_server/buy:
         post:
             tags:
@@ -1201,6 +1225,20 @@ paths:
                                 $ref: '#/components/schemas/Status'
 components:
     schemas:
+        AddMessageReply:
+            type: object
+            properties:
+                token:
+                    type: string
+                status:
+                    type: string
+        AddMessageRequest_SendBody:
+            type: object
+            properties:
+                content:
+                    type: string
+                sign:
+                    type: string
         BuyBoxReply:
             type: object
             properties:
@@ -1820,6 +1858,8 @@ components:
                     type: string
                 plantUserAddress:
                     type: string
+                canUnLand:
+                    type: string
         UserInfoReply:
             type: object
             properties:
@@ -1938,6 +1978,21 @@ components:
                 rentThree:
                     type: number
                     format: double
+                listM:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/UserInfoReply_ListM'
+                canLand:
+                    type: string
+                red:
+                    type: string
+        UserInfoReply_ListM:
+            type: object
+            properties:
+                address:
+                    type: string
+                content:
+                    type: string
         UserLandReply:
             type: object
             properties:
@@ -2194,6 +2249,8 @@ components:
                 git:
                     type: number
                     format: double
+                red:
+                    type: string
         UserRecommendLReply:
             type: object
             properties:

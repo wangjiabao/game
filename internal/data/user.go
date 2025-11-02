@@ -280,6 +280,15 @@ type StakeGetTotal struct {
 	UpdatedAt time.Time `gorm:"type:datetime;not null"`
 }
 
+type Message struct {
+	ID        uint64    `gorm:"primarykey;type:int"`
+	Content   string    `gorm:"type:varchar(200);not null;comment:消息内容"`
+	UserId    uint64    `gorm:"type:int;not null;comment:用户id"`
+	Status    uint64    `gorm:"type:int;not null;default:0"`
+	CreatedAt time.Time `gorm:"type:datetime;not null"`
+	UpdatedAt time.Time `gorm:"type:datetime;not null"`
+}
+
 type StakeGit struct {
 	ID        uint64    `gorm:"primarykey;type:int"`
 	UserId    uint64    `gorm:"type:int;not null;comment:用户id"`
@@ -658,6 +667,61 @@ func (u *UserRepo) GetUserRecommendByCode(ctx context.Context, code string) ([]*
 	}
 
 	return res, nil
+}
+
+// GetMessages .
+func (u *UserRepo) GetMessages(ctx context.Context) ([]*biz.Message, error) {
+	var (
+		m []*Message
+	)
+
+	res := make([]*biz.Message, 0)
+	instance := u.data.DB(ctx).Table("message").Where("status=?", 0).Order("id desc").Limit(10)
+	if err := instance.Find(&m).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return res, nil
+		}
+
+		return nil, errors.New(500, "message ERROR", err.Error())
+	}
+
+	for _, v := range m {
+		res = append(res, &biz.Message{
+			ID:        v.ID,
+			Content:   v.Content,
+			UserId:    v.UserId,
+			Status:    v.Status,
+			CreatedAt: v.CreatedAt,
+		})
+	}
+
+	return res, nil
+}
+
+func (u *UserRepo) GetMessagesCount(ctx context.Context, userId uint64) (int64, error) {
+	var count int64
+	if err := u.data.DB(ctx).Table("message").Where("user_id=?", userId).
+		Where("created_at >= ?", time.Now().Add(-24*time.Hour).Format("2006-01-02 15:04:05")).
+		Count(&count).Error; err != nil {
+		return 0, errors.New(500, "USER ERROR", err.Error())
+	}
+
+	return count, nil
+}
+
+func (u *UserRepo) CreateMessages(ctx context.Context, userId uint64, content string) error {
+	var m Message
+
+	m.Content = content
+	m.UserId = userId
+	m.Status = 0
+
+	res := u.data.DB(ctx).Table("message").Create(&m)
+	if res.Error != nil {
+		return errors.New(500, "message c", "用户信息修改失败")
+	}
+
+	return nil
 }
 
 // GetUserRecommendLikeCode .
@@ -1400,6 +1464,7 @@ func (u *UserRepo) GetLandByUserIDUsing(ctx context.Context, userID uint64, stat
 		//Where("limit_date>=?", time.Now().Unix()).
 		Where("status in (?)", status).
 		Where("location_num >?", 0).
+		Where("location_user_id =?", 0).
 		Order("id asc")
 
 	if err := instance.Find(&lands).Error; err != nil {
@@ -2281,12 +2346,62 @@ func (u *UserRepo) GetLandUserUseByLandIDsUsing(ctx context.Context, userId uint
 	return res, nil
 }
 
+func (u *UserRepo) GetLandMyUseByLandIDsMapUsing(ctx context.Context, userId uint64) (map[uint64]*biz.LandUserUse, error) {
+	var landUserUses []*LandUserUse
+	res := make(map[uint64]*biz.LandUserUse)
+
+	instance := u.data.DB(ctx).Table("land_user_use").
+		Where("user_id = ?", userId).
+		Where("status = ?", 1).
+		Order("id desc")
+
+	if err := instance.Find(&landUserUses).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return res, nil
+		}
+		return nil, errors.New(500, "LAND USER USE ERROR", err.Error())
+	}
+
+	// 归类数据到 map
+	for _, landUserUse := range landUserUses {
+		res[landUserUse.LandId] = &biz.LandUserUse{
+			ID:           landUserUse.ID,
+			LandId:       landUserUse.LandId,
+			Level:        landUserUse.Level,
+			UserId:       landUserUse.UserId,
+			OwnerUserId:  landUserUse.OwnerUserId,
+			SeedId:       landUserUse.SeedId,
+			SeedTypeId:   landUserUse.SeedTypeId,
+			Status:       landUserUse.Status,
+			BeginTime:    landUserUse.BeginTime,
+			TotalTime:    landUserUse.TotalTime,
+			OverTime:     landUserUse.OverTime,
+			OutMaxNum:    landUserUse.OutMaxNum,
+			OutNum:       landUserUse.OutNum,
+			InsectStatus: landUserUse.InsectStatus,
+			OutSubNum:    landUserUse.OutSubNum,
+			StealNum:     landUserUse.StealNum,
+			StopStatus:   landUserUse.StopStatus,
+			StopTime:     landUserUse.StopTime,
+			SubTime:      landUserUse.SubTime,
+			UseChan:      landUserUse.UseChan,
+			CreatedAt:    landUserUse.CreatedAt,
+			UpdatedAt:    landUserUse.UpdatedAt,
+			One:          landUserUse.One,
+			Two:          landUserUse.Two,
+			IsUseOther:   landUserUse.IsUseOther,
+		}
+	}
+
+	return res, nil
+}
+
 func (u *UserRepo) GetLandUserUseByLandIDsMapUsing(ctx context.Context, userId uint64, landIDs []uint64) (map[uint64]*biz.LandUserUse, error) {
 	var landUserUses []*LandUserUse
 	res := make(map[uint64]*biz.LandUserUse)
 
 	instance := u.data.DB(ctx).Table("land_user_use").
-		Where("owner_user_id = ?", userId).
+		//Where("owner_user_id = ?", userId).
 		Where("land_id IN (?)", landIDs).
 		Where("status = ?", 1).
 		Order("id desc")
@@ -3011,6 +3126,7 @@ func (u *UserRepo) Plant(ctx context.Context, status, originStatus, perHealth ui
 		UseChan:      landUserUse.UseChan,
 		One:          landUserUse.One,
 		Two:          landUserUse.Two,
+		IsUseOther:   landUserUse.IsUseOther,
 	})
 	if res.Error != nil {
 		return errors.New(500, "OpenBox", "创建土地使用记录失败")

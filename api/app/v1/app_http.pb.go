@@ -19,6 +19,7 @@ var _ = binding.EncodeURL
 
 const _ = http.SupportPackageIsVersion1
 
+const OperationAppAddMessage = "/api.app.v1.App/AddMessage"
 const OperationAppBuy = "/api.app.v1.App/Buy"
 const OperationAppBuyBox = "/api.app.v1.App/BuyBox"
 const OperationAppBuyLand = "/api.app.v1.App/BuyLand"
@@ -70,6 +71,7 @@ const OperationAppUserStakeRewardList = "/api.app.v1.App/UserStakeRewardList"
 const OperationAppWithdraw = "/api.app.v1.App/Withdraw"
 
 type AppHTTPServer interface {
+	AddMessage(context.Context, *AddMessageRequest) (*AddMessageReply, error)
 	// Buy  购买道具
 	Buy(context.Context, *BuyRequest) (*BuyReply, error)
 	// BuyBox  购买盲盒
@@ -165,6 +167,7 @@ func RegisterAppHTTPServer(s *http.Server, srv AppHTTPServer) {
 	r := s.Route("/")
 	r.GET("/api/app_server/test_sign", _App_TestSign0_HTTP_Handler(srv))
 	r.POST("/api/app_server/eth_authorize", _App_EthAuthorize0_HTTP_Handler(srv))
+	r.POST("/api/app_server/add_message", _App_AddMessage0_HTTP_Handler(srv))
 	r.GET("/api/app_server/user_info", _App_UserInfo0_HTTP_Handler(srv))
 	r.GET("/api/app_server/user_buy", _App_UserBuy0_HTTP_Handler(srv))
 	r.GET("/api/app_server/user_buy_l", _App_UserBuyL0_HTTP_Handler(srv))
@@ -251,6 +254,28 @@ func _App_EthAuthorize0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) e
 			return err
 		}
 		reply := out.(*EthAuthorizeReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _App_AddMessage0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in AddMessageRequest
+		if err := ctx.Bind(&in.SendBody); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAppAddMessage)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.AddMessage(ctx, req.(*AddMessageRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*AddMessageReply)
 		return ctx.Result(200, reply)
 	}
 }
@@ -1215,6 +1240,7 @@ func _App_SetBuyLand0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) err
 }
 
 type AppHTTPClient interface {
+	AddMessage(ctx context.Context, req *AddMessageRequest, opts ...http.CallOption) (rsp *AddMessageReply, err error)
 	Buy(ctx context.Context, req *BuyRequest, opts ...http.CallOption) (rsp *BuyReply, err error)
 	BuyBox(ctx context.Context, req *BuyBoxRequest, opts ...http.CallOption) (rsp *BuyBoxReply, err error)
 	BuyLand(ctx context.Context, req *BuyLandRequest, opts ...http.CallOption) (rsp *BuyLandReply, err error)
@@ -1272,6 +1298,19 @@ type AppHTTPClientImpl struct {
 
 func NewAppHTTPClient(client *http.Client) AppHTTPClient {
 	return &AppHTTPClientImpl{client}
+}
+
+func (c *AppHTTPClientImpl) AddMessage(ctx context.Context, in *AddMessageRequest, opts ...http.CallOption) (*AddMessageReply, error) {
+	var out AddMessageReply
+	pattern := "/api/app_server/add_message"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationAppAddMessage))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in.SendBody, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
 }
 
 func (c *AppHTTPClientImpl) Buy(ctx context.Context, in *BuyRequest, opts ...http.CallOption) (*BuyReply, error) {
