@@ -1858,6 +1858,8 @@ components:
                     type: string
                 plantUserAddress:
                     type: string
+                landUserAddress:
+                    type: string
                 canUnLand:
                     type: string
         UserInfoReply:

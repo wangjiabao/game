@@ -855,6 +855,8 @@ message UserIndexListReply {
 
 		string plantUserAddress = 18;
 
+		string landUserAddress = 20;
+
 		uint64 canUnLand = 19;
 	}
 }

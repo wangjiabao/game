@@ -2435,7 +2435,9 @@ func (ac *AppUsecase) UserIndexList(ctx context.Context, address string, req *pb
 	}
 
 	landIds := make([]uint64, 0)
+	userIds := make([]uint64, 0)
 	for _, vLand := range lands {
+		userIds = append(userIds, vLand.UserId)
 		landIds = append(landIds, vLand.ID)
 	}
 
@@ -2449,7 +2451,6 @@ func (ac *AppUsecase) UserIndexList(ctx context.Context, address string, req *pb
 		}, nil
 	}
 
-	userIds := make([]uint64, 0)
 	for _, vLand := range landUserUse {
 		userIds = append(userIds, vLand.UserId)
 	}
@@ -2466,6 +2467,10 @@ func (ac *AppUsecase) UserIndexList(ctx context.Context, address string, req *pb
 	now := time.Now().Unix()
 	for _, vLand := range lands {
 		plantUserAddressTmp := ""
+		landUserAddress := ""
+		if _, ok3 := usersMap[vLand.UserId]; ok3 {
+			landUserAddress = usersMap[vLand.UserId].Address
+		}
 
 		if _, ok := landUserUse[vLand.ID]; ok {
 			if _, ok2 := usersMap[landUserUse[vLand.ID].UserId]; ok2 {
@@ -2529,6 +2534,7 @@ func (ac *AppUsecase) UserIndexList(ctx context.Context, address string, req *pb
 				RewardStatus:     tmpRewardStatus,
 				LandStatus:       vLand.Status,
 				OneOne:           tmpOneOne,
+				LandUserAddress:  landUserAddress,
 			}
 		} else {
 			// 过期的从放置在移除
@@ -2567,6 +2573,7 @@ func (ac *AppUsecase) UserIndexList(ctx context.Context, address string, req *pb
 				PlantUserAddress: plantUserAddressTmp,
 				RewardStatus:     2,
 				CanUnLand:        tmpCanUnLand,
+				LandUserAddress:  landUserAddress,
 			}
 		}
 	}
@@ -2588,6 +2595,7 @@ func (ac *AppUsecase) UserIndexList(ctx context.Context, address string, req *pb
 				Status:           0,
 				Reward:           0,
 				PlantUserAddress: "",
+				LandUserAddress:  "",
 			})
 		} else {
 			res = append(res, resTmp[i])
