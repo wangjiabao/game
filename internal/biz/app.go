@@ -826,6 +826,8 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		rentRateOne        float64
 		rentRateTwo        float64
 		rentRateThree      float64
+		sysContent         string
+		sysContentE        string
 	)
 	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
 	if nil != err || nil == user {
@@ -856,6 +858,8 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		"rent_rate_one",
 		"rent_rate_three",
 		"rent_rate_two",
+		"sys_content",
+		"sys_content_e",
 	)
 	if nil != err || nil == configs {
 		return &pb.UserInfoReply{
@@ -922,8 +926,11 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		if "rent_rate_three" == vConfig.KeyName {
 			rentRateThree, _ = strconv.ParseFloat(vConfig.Value, 10)
 		}
-		if "rent_rate_two" == vConfig.KeyName {
-			rentRateTwo, _ = strconv.ParseFloat(vConfig.Value, 10)
+		if "sys_content" == vConfig.KeyName {
+			sysContent = vConfig.Value
+		}
+		if "sys_content_e" == vConfig.KeyName {
+			sysContentE = vConfig.Value
 		}
 	}
 
@@ -1182,6 +1189,8 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		RentOne:                   rentRateOne,
 		RentThree:                 rentRateThree,
 		RentTwo:                   rentRateTwo,
+		SySContent:                sysContent,
+		SySContentE:               sysContentE,
 	}, nil
 }
 
@@ -2949,25 +2958,25 @@ func (ac *AppUsecase) OpenBox(ctx context.Context, address string, req *pb.OpenB
 	}
 
 	var (
-		propInfos    []*PropInfo
+		//	propInfos    []*PropInfo
 		propInfosMap map[uint64]*PropInfo
 	)
-	propInfos, err = ac.userRepo.GetAllPropInfo(ctx)
-	if nil != err {
-		return &pb.OpenBoxReply{
-			Status: "异常配置",
-		}, nil
-	}
-
+	//propInfos, err = ac.userRepo.GetAllPropInfo(ctx)
+	//if nil != err {
+	//	return &pb.OpenBoxReply{
+	//		Status: "异常配置",
+	//	}, nil
+	//}
+	//
 	propInfosMap = make(map[uint64]*PropInfo)
-	for _, v := range propInfos {
-		propInfosMap[v.PropType] = v
-
-		blindBoxItems = append(blindBoxItems, struct {
-			Name   uint64
-			Weight float64
-		}{Name: v.PropType, Weight: v.GetRate})
-	}
+	//for _, v := range propInfos {
+	//	propInfosMap[v.PropType] = v
+	//
+	//	blindBoxItems = append(blindBoxItems, struct {
+	//		Name   uint64
+	//		Weight float64
+	//	}{Name: v.PropType, Weight: v.GetRate})
+	//}
 
 	if 0 >= len(blindBoxItems) {
 		return &pb.OpenBoxReply{

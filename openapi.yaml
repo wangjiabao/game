@@ -1988,6 +1988,10 @@ components:
                     type: string
                 red:
                     type: string
+                sySContent:
+                    type: string
+                sySContentE:
+                    type: string
         UserInfoReply_ListM:
             type: object
             properties:

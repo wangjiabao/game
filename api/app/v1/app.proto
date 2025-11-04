@@ -487,6 +487,8 @@ message UserInfoReply {
 
 	uint64 canLand = 44;
 	uint64 red = 45;
+	string sySContent = 46;
+	string sySContentE = 47;
 }
 
 message UserBuyRequest {
