@@ -3050,7 +3050,7 @@ func (u *UserRepo) UnRentLand(ctx context.Context, landId uint64, userId uint64)
 
 // LandPullTwo .
 func (u *UserRepo) LandPullTwo(ctx context.Context, landId uint64, userId uint64) error {
-	res := u.data.DB(ctx).Table("land").Where("id=?", landId).Where("user_id=?", userId).
+	res := u.data.DB(ctx).Table("land").Where("id=?", landId).
 		Updates(map[string]interface{}{"status": 0, "location_num": 0, "location_user_id": 0, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "LandPull", "用户信息修改失败")
