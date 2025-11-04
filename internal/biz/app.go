@@ -7611,6 +7611,10 @@ func (ac *AppUsecase) SetBuyLand(ctx context.Context, req *pb.SetBuyLandRequest)
 				continue
 			}
 
+			if 0 == userIdTmp {
+				continue
+			}
+
 			if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 				err = ac.userRepo.BackUserGit(ctx, v.UserID, v.ID, v.Amount)
 				if nil != err {
@@ -7727,6 +7731,10 @@ func (ac *AppUsecase) SetBuyLand(ctx context.Context, req *pb.SetBuyLandRequest)
 			if 0 == k {
 				userIdTmp = v.UserID
 				tmpAmount = v.Amount
+				continue
+			}
+
+			if 0 == userIdTmp {
 				continue
 			}
 
