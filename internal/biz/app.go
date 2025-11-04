@@ -926,6 +926,9 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		if "rent_rate_three" == vConfig.KeyName {
 			rentRateThree, _ = strconv.ParseFloat(vConfig.Value, 10)
 		}
+		if "rent_rate_two" == vConfig.KeyName {
+			rentRateTwo, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
 		if "sys_content" == vConfig.KeyName {
 			sysContent = vConfig.Value
 		}
