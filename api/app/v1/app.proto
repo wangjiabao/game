@@ -489,6 +489,10 @@ message UserInfoReply {
 	uint64 red = 45;
 	string sySContent = 46;
 	string sySContentE = 47;
+	double maxPlay = 51;
+	double minPlay = 52;
+	double maxStake = 53;
+	double minStake = 54;
 }
 
 message UserBuyRequest {

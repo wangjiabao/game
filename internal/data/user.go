@@ -3282,19 +3282,19 @@ func (u *UserRepo) PlantPlatSeven(ctx context.Context, outMax, amount float64, s
 	res := u.data.DB(ctx).Table("land_user_use").Where("id=?", id).Where("status=?", 1).Where("sub_time=?", lastTime).
 		Updates(updateColums)
 	if res.Error != nil || 1 != res.RowsAffected {
-		return errors.New(500, "PlantPlatSeven", "用户信息修改失败")
+		return errors.New(500, "PlantPlatSeven1", "用户信息修改失败1")
 	}
 
 	res = u.data.DB(ctx).Table("prop").Where("id=?", propId).
 		Updates(map[string]interface{}{"status": propStatus, "five_one": propNum, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil || 1 != res.RowsAffected {
-		return errors.New(500, "PlantPlatSeven", "用户信息修改失败")
+		return errors.New(500, "PlantPlatSeven2", "用户信息修改失败2")
 	}
 
 	res = u.data.DB(ctx).Table("user").Where("id=?", userId).
 		Updates(map[string]interface{}{"git": gorm.Expr("git + ?", amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil || 1 != res.RowsAffected {
-		return errors.New(500, "PlantPlatSeven", "用户信息修改失败")
+		return errors.New(500, "PlantPlatSeven3", "用户信息修改失败3")
 	}
 
 	var reward Reward
@@ -3305,7 +3305,7 @@ func (u *UserRepo) PlantPlatSeven(ctx context.Context, outMax, amount float64, s
 	reward.Two = id
 	res = u.data.DB(ctx).Table("reward").Create(&reward)
 	if res.Error != nil {
-		return errors.New(500, "PlantPlatSeven", "用户信息修改失败")
+		return errors.New(500, "PlantPlatSeven4", "用户信息修改失败4")
 	}
 
 	return nil
@@ -3645,7 +3645,7 @@ func (u *UserRepo) SetUnStakeGit(ctx context.Context, id, userId uint64, amount 
 
 // SetStakeGet .
 func (u *UserRepo) SetStakeGet(ctx context.Context, userId uint64, git, amount float64) error {
-	res := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("git>=?", amount).
+	res := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("git>=?", git).
 		Updates(map[string]interface{}{"git": gorm.Expr("git - ?", git), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "SetStakeGet", "用户信息修改失败")

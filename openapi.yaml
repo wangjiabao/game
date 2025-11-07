@@ -1992,6 +1992,18 @@ components:
                     type: string
                 sySContentE:
                     type: string
+                maxPlay:
+                    type: number
+                    format: double
+                minPlay:
+                    type: number
+                    format: double
+                maxStake:
+                    type: number
+                    format: double
+                minStake:
+                    type: number
+                    format: double
         UserInfoReply_ListM:
             type: object
             properties:

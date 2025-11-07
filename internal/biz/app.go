@@ -828,6 +828,10 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		rentRateThree      float64
 		sysContent         string
 		sysContentE        string
+		maxStake           float64
+		minStake           float64
+		minPlay            float64
+		maxPlay            float64
 	)
 	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
 	if nil != err || nil == user {
@@ -860,6 +864,10 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		"rent_rate_two",
 		"sys_content",
 		"sys_content_e",
+		"max_stake",
+		"min_stake",
+		"max_play",
+		"min_play",
 	)
 	if nil != err || nil == configs {
 		return &pb.UserInfoReply{
@@ -934,6 +942,18 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		}
 		if "sys_content_e" == vConfig.KeyName {
 			sysContentE = vConfig.Value
+		}
+		if "max_play" == vConfig.KeyName {
+			maxPlay, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+		if "min_play" == vConfig.KeyName {
+			minPlay, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+		if "max_stake" == vConfig.KeyName {
+			maxStake, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+		if "min_stake" == vConfig.KeyName {
+			minStake, _ = strconv.ParseFloat(vConfig.Value, 10)
 		}
 	}
 
@@ -1194,6 +1214,10 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		RentTwo:                   rentRateTwo,
 		SySContent:                sysContent,
 		SySContentE:               sysContentE,
+		MinPlay:                   minPlay,
+		MaxPlay:                   maxPlay,
+		MaxStake:                  maxStake,
+		MinStake:                  minStake,
 	}, nil
 }
 
@@ -2880,6 +2904,7 @@ func (ac *AppUsecase) BuyBox(ctx context.Context, address string, req *pb.BuyBox
 // 随机数生成器
 var rngBox *rand2.Rand
 var rngPlant *rand2.Rand
+var rngPlay *rand2.Rand
 
 // 随机数生成器的初始化锁
 var rngMutexBox sync.Mutex
@@ -3504,6 +3529,13 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 		}, nil
 	}
 
+	// 有虫子
+	if 0 != landUserUse.Two {
+		return &pb.LandPlayTwoReply{
+			Status: "有虫子请先杀虫",
+		}, nil
+	}
+
 	// 开启了系统偷盗全局
 	tmpLandUserUseOutMaxNum := landUserUse.OutMaxNum
 	if 1 == selfSub {
@@ -3514,22 +3546,8 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 			tmpLandUserUseOutMaxNum = tmpLandUserUseOutMaxNum - tmpAmount
 		}
 	}
-
 	// 已结束
 	reward := tmpLandUserUseOutMaxNum
-	now := time.Now().Unix()
-	// 有虫子 todo 杀虫和浇水更新数量和结束时间 偷的时候注意梳理
-	if 0 != landUserUse.Two {
-		if uint64(now) > landUserUse.Two {
-			tmp := tmpLandUserUseOutMaxNum * 0.01 * float64(uint64(now)-landUserUse.Two) / 300
-
-			if tmp >= tmpLandUserUseOutMaxNum {
-				reward = 0
-			} else {
-				reward = tmpLandUserUseOutMaxNum - tmp
-			}
-		}
-	}
 
 	var (
 		land *Land
@@ -3979,6 +3997,26 @@ func (ac *AppUsecase) LandPlayFour(ctx context.Context, address string, req *pb.
 		}, nil
 	}
 
+	// 配置
+	var (
+		configs    []*Config
+		twoSubRate float64
+	)
+	configs, err = ac.userRepo.GetConfigByKeys(ctx,
+		"two_sub_reward",
+	)
+	if nil != err || nil == configs {
+		return &pb.LandPlayFourReply{
+			Status: "配置错误",
+		}, nil
+	}
+
+	for _, vConfig := range configs {
+		if "two_sub_reward" == vConfig.KeyName {
+			twoSubRate, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+
+	}
 	var (
 		prop *Prop
 	)
@@ -4053,8 +4091,8 @@ func (ac *AppUsecase) LandPlayFour(ctx context.Context, address string, req *pb.
 
 	// 剩余最大产出
 	rewardTmp := float64(0)
-	if uint64(current) > landUserUse.Two {
-		tmp := landUserUse.OutMaxNum * 0.01 * float64(uint64(uint64(current)-landUserUse.Two)/300)
+	if uint64(current) >= landUserUse.Two {
+		tmp := landUserUse.OutMaxNum * twoSubRate
 		if tmp < landUserUse.OutMaxNum {
 			rewardTmp = landUserUse.OutMaxNum - tmp
 		}
@@ -4347,6 +4385,17 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 		}, nil
 	}
 
+	// 必须先清理了，才能铲除
+	if 0 < landUserUse.One {
+		return &pb.LandPlaySixReply{
+			Status: "暂停生长不能铲除",
+		}, nil
+	} else if 0 < landUserUse.Two {
+		return &pb.LandPlaySixReply{
+			Status: "蛀虫状态不能铲除",
+		}, nil
+	}
+
 	current := time.Now().Unix()
 	// todo
 	if uint64(current) < landUserUse.OverTime+3600 {
@@ -4382,29 +4431,29 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 	}
 	tmpOverMaxTwo := tmpLandUserUseOutMaxNum * propTwoTwo
 
-	if 0 < landUserUse.One {
-		tmpOverMax = 0
-		tmpOverMaxTwo = 0
-	} else if 0 < landUserUse.Two {
-		// 剩余最大产出
-		rewardTmp := float64(0)
-		if uint64(current) > landUserUse.Two {
-			tmp := tmpLandUserUseOutMaxNum * 0.01 * float64(uint64(uint64(current)-landUserUse.Two)/300)
-			if tmp < tmpLandUserUseOutMaxNum {
-				rewardTmp = tmpLandUserUseOutMaxNum - tmp
-			}
-		}
-
-		if 0 >= rewardTmp {
-			tmpOverMax = 0
-			tmpOverMaxTwo = 0
-		} else {
-			if rewardTmp > rewardTmp*propTwoTwo {
-				tmpOverMax = rewardTmp - rewardTmp*propTwoTwo
-			}
-			tmpOverMaxTwo = rewardTmp * propTwoTwo
-		}
-	}
+	//if 0 < landUserUse.One {
+	//	tmpOverMax = 0
+	//	tmpOverMaxTwo = 0
+	//} else if 0 < landUserUse.Two {
+	//	// 剩余最大产出
+	//	rewardTmp := float64(0)
+	//	if uint64(current) > landUserUse.Two {
+	//		tmp := tmpLandUserUseOutMaxNum * 0.01 * float64(uint64(uint64(current)-landUserUse.Two)/300)
+	//		if tmp < tmpLandUserUseOutMaxNum {
+	//			rewardTmp = tmpLandUserUseOutMaxNum - tmp
+	//		}
+	//	}
+	//
+	//	if 0 >= rewardTmp {
+	//		tmpOverMax = 0
+	//		tmpOverMaxTwo = 0
+	//	} else {
+	//		if rewardTmp > rewardTmp*propTwoTwo {
+	//			tmpOverMax = rewardTmp - rewardTmp*propTwoTwo
+	//		}
+	//		tmpOverMaxTwo = rewardTmp * propTwoTwo
+	//	}
+	//}
 
 	// 推荐
 	var (
@@ -6435,11 +6484,43 @@ func (ac *AppUsecase) StakeGet(ctx context.Context, address string, req *pb.Stak
 		}, nil
 	}
 
+	var (
+		configs  []*Config
+		maxStake float64
+		minStake float64
+	)
+	// 配置
+	configs, err = ac.userRepo.GetConfigByKeys(ctx,
+		"max_stake",
+		"min_stake",
+	)
+	if nil != err || nil == configs {
+		return &pb.StakeGetReply{
+			Status: "配置错误",
+		}, nil
+	}
+
+	for _, vConfig := range configs {
+		if "max_stake" == vConfig.KeyName {
+			maxStake, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+
+		if "min_stake" == vConfig.KeyName {
+			minStake, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+	}
+
 	// 质押
 	if 1 == req.SendBody.Num {
-		if 100 > req.SendBody.Amount {
+		if uint64(minStake) > req.SendBody.Amount {
 			return &pb.StakeGetReply{
-				Status: "ispay金额要多于100",
+				Status: "ispay金额低于限制",
+			}, nil
+		}
+
+		if uint64(maxStake) < req.SendBody.Amount {
+			return &pb.StakeGetReply{
+				Status: "ispay金额要高于限制",
 			}, nil
 		}
 
@@ -6594,9 +6675,53 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 		}, nil
 	}
 
-	if 100 > req.SendBody.Amount {
+	var (
+		configs       []*Config
+		maxPlay       float64
+		minPlay       float64
+		winRate       float64
+		stakeOverRate float64
+	)
+	// 配置
+	configs, err = ac.userRepo.GetConfigByKeys(ctx,
+		"max_play",
+		"min_play",
+		"stake_over_rate",
+		"win_rate",
+	)
+	if nil != err || nil == configs {
 		return &pb.StakeGetPlayReply{
-			Status: "最少100",
+			Status: "配置错误",
+		}, nil
+	}
+
+	for _, vConfig := range configs {
+		if "max_play" == vConfig.KeyName {
+			maxPlay, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+
+		if "min_play" == vConfig.KeyName {
+			minPlay, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+
+		if "win_rate" == vConfig.KeyName {
+			winRate, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+
+		if "stake_over_rate" == vConfig.KeyName {
+			stakeOverRate, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+	}
+
+	if uint64(minPlay) > req.SendBody.Amount {
+		return &pb.StakeGetPlayReply{
+			Status: "最少限制",
+		}, nil
+	}
+
+	if uint64(maxPlay) < req.SendBody.Amount {
+		return &pb.StakeGetPlayReply{
+			Status: "最大限制",
 		}, nil
 	}
 
@@ -6622,30 +6747,41 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 		}, nil
 	}
 
-	rand2.New(rand2.NewSource(time.Now().UnixNano()))
-	outcome := rand2.Intn(2)
-
-	if outcome == 0 { // 赢：需要池子中有足够资金支付奖金
+	if nil == rngPlay {
 		var (
-			configs       []*Config
-			stakeOverRate float64
+			seedInt     int64
+			randomSeeds []*RandomSeed
 		)
-
-		// 配置
-		configs, err = ac.userRepo.GetConfigByKeys(ctx,
-			"stake_over_rate",
-		)
-		if nil != err || nil == configs {
+		randomSeeds, err = ac.userRepo.GetAllRandomSeeds(ctx)
+		if nil != err {
 			return &pb.StakeGetPlayReply{
-				Status: "配置错误",
+				Status: "异常",
 			}, nil
 		}
-		for _, vConfig := range configs {
-			if "stake_over_rate" == vConfig.KeyName {
-				stakeOverRate, _ = strconv.ParseFloat(vConfig.Value, 10)
+
+		for _, v := range randomSeeds {
+			if 3 == v.Scene {
+				seedInt = int64(v.SeedValue)
+				break
 			}
 		}
 
+		if 0 >= seedInt {
+			seedInt = time.Now().UnixNano()
+			err = ac.userRepo.UpdateSeedValue(ctx, 3, uint64(seedInt))
+			if nil != err {
+				return &pb.StakeGetPlayReply{
+					Status: "异常",
+				}, nil
+			}
+		}
+
+		rngPlay = rand2.New(rand2.NewSource(seedInt))
+	}
+
+	r := rngPlay.Float64()
+
+	if r < winRate { // 赢：需要池子中有足够资金支付奖金
 		tmpGit := float64(req.SendBody.Amount) - float64(req.SendBody.Amount)*stakeOverRate
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 			err = ac.userRepo.SetStakeGetPlay(ctx, user.ID, tmpGit, float64(req.SendBody.Amount))
