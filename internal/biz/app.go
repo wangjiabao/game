@@ -6843,9 +6843,9 @@ func (ac *AppUsecase) SetGit(ctx context.Context, req *pb.SetGitRequest) (*pb.Se
 }
 
 func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.ExchangeRequest) (*pb.ExchangeReply, error) {
-	return &pb.ExchangeReply{
-		Status: "ok",
-	}, nil
+	//return &pb.ExchangeReply{
+	//	Status: "ok",
+	//}, nil
 
 	var (
 		user *User
