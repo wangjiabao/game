@@ -6485,14 +6485,16 @@ func (ac *AppUsecase) StakeGet(ctx context.Context, address string, req *pb.Stak
 	}
 
 	var (
-		configs  []*Config
-		maxStake float64
-		minStake float64
+		configs    []*Config
+		maxStake   float64
+		minStake   float64
+		minUnStake float64
 	)
 	// 配置
 	configs, err = ac.userRepo.GetConfigByKeys(ctx,
 		"max_stake",
 		"min_stake",
+		"min_stake_two",
 	)
 	if nil != err || nil == configs {
 		return &pb.StakeGetReply{
@@ -6507,6 +6509,10 @@ func (ac *AppUsecase) StakeGet(ctx context.Context, address string, req *pb.Stak
 
 		if "min_stake" == vConfig.KeyName {
 			minStake, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+
+		if "min_stake_two" == vConfig.KeyName {
+			minUnStake, _ = strconv.ParseFloat(vConfig.Value, 10)
 		}
 	}
 
@@ -6577,9 +6583,9 @@ func (ac *AppUsecase) StakeGet(ctx context.Context, address string, req *pb.Stak
 			}, nil
 		}
 
-		if 100 > req.SendBody.Amount {
+		if uint64(minUnStake) > req.SendBody.Amount {
 			return &pb.StakeGetReply{
-				Status: "ispay最小提现100",
+				Status: "ispay最小提现限制",
 			}, nil
 		}
 
