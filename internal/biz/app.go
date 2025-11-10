@@ -832,6 +832,7 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		minStake           float64
 		minPlay            float64
 		maxPlay            float64
+		minStakeTwo        float64
 	)
 	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
 	if nil != err || nil == user {
@@ -868,6 +869,7 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		"min_stake",
 		"max_play",
 		"min_play",
+		"min_stake_two",
 	)
 	if nil != err || nil == configs {
 		return &pb.UserInfoReply{
@@ -954,6 +956,9 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		}
 		if "min_stake" == vConfig.KeyName {
 			minStake, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+		if "min_stake_two" == vConfig.KeyName {
+			minStakeTwo, _ = strconv.ParseFloat(vConfig.Value, 10)
 		}
 	}
 
@@ -1218,6 +1223,7 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		MaxPlay:                   maxPlay,
 		MaxStake:                  maxStake,
 		MinStake:                  minStake,
+		MinStakeTwo:               minStakeTwo,
 	}, nil
 }
 

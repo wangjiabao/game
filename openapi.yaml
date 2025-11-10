@@ -2004,6 +2004,9 @@ components:
                 minStake:
                     type: number
                     format: double
+                minStakeTwo:
+                    type: number
+                    format: double
         UserInfoReply_ListM:
             type: object
             properties:

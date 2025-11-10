@@ -493,6 +493,7 @@ message UserInfoReply {
 	double minPlay = 52;
 	double maxStake = 53;
 	double minStake = 54;
+	double minStakeTwo = 55;
 }
 
 message UserBuyRequest {
