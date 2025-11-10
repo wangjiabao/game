@@ -825,7 +825,7 @@ message UserStakeRewardListReply {
 		string address = 1; // 地址
 		string content = 2; // 消息内容
 		double amount = 3; // 参与金额
-		double reward = 4; // 赢的钱
+		string reward = 4; // 赢的钱
 		uint64 status = 5; // 1赢，2输
 	}
 }

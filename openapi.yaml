@@ -2379,8 +2379,7 @@ components:
                     type: number
                     format: double
                 reward:
-                    type: number
-                    format: double
+                    type: string
                 status:
                     type: string
         WithdrawReply:

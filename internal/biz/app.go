@@ -2416,7 +2416,7 @@ func (ac *AppUsecase) UserStakeRewardList(ctx context.Context, address string, r
 			Address: addressTmp,
 			Content: "",
 			Amount:  v.Amount,
-			Reward:  v.Reward,
+			Reward:  fmt.Sprintf("%.3f", v.Reward),
 			Status:  uint64(v.Status),
 		})
 	}
