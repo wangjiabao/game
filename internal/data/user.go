@@ -1271,7 +1271,7 @@ func (u *UserRepo) GetSeedByExUserID(ctx context.Context, userID uint64, status 
 	if nil != b {
 		instance = instance.Scopes(Paginate(b.PageNum, b.PageSize))
 	}
-
+	instance = instance.Order("sell_amount asc")
 	if err := instance.Find(&seeds).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return res, nil
@@ -1564,6 +1564,7 @@ func (u *UserRepo) GetLandByExUserID(ctx context.Context, userID uint64, status 
 		instance = instance.Scopes(Paginate(b.PageNum, b.PageSize))
 	}
 
+	instance = instance.Order("sell_amount asc")
 	if err := instance.Find(&lands).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return res, nil
@@ -1921,6 +1922,7 @@ func (u *UserRepo) GetPropsByExUserID(ctx context.Context, userID uint64, status
 		instance = instance.Scopes(Paginate(b.PageNum, b.PageSize))
 	}
 
+	instance = instance.Order("sell_amount asc")
 	if err := instance.Find(&props).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return res, nil
