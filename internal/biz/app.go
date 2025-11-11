@@ -421,6 +421,7 @@ type UserRepo interface {
 	GetLandByLocationUserIDUsing(ctx context.Context, userID uint64, status []uint64) ([]*Land, error)
 	GetLandByUserID(ctx context.Context, userID uint64, status []uint64, b *Pagination) ([]*Land, error)
 	GetLandByExUserID(ctx context.Context, userID uint64, status []uint64, b *Pagination) ([]*Land, error)
+	GetLandByExUserIDOrdeSellAmount(ctx context.Context, userID uint64, status []uint64, b *Pagination) ([]*Land, error)
 	GetLandByExUserIDByIds(ctx context.Context, ids []uint64, b *Pagination) ([]*Land, error)
 	GetUserRewardPage(ctx context.Context, userId uint64, reason []uint64, b *Pagination) ([]*Reward, error)
 	GetUserRewardTwoPage(ctx context.Context, userId uint64, reason uint64, b *Pagination) ([]*RewardTwo, error)
@@ -1883,7 +1884,7 @@ func (ac *AppUsecase) UserMarketLandList(ctx context.Context, address string, re
 		land []*Land
 	)
 	landStatus := []uint64{4}
-	land, err = ac.userRepo.GetLandByExUserID(ctx, user.ID, landStatus, nil)
+	land, err = ac.userRepo.GetLandByExUserIDOrdeSellAmount(ctx, user.ID, landStatus, nil)
 	if nil != err {
 		return &pb.UserMarketLandListReply{
 			Status: "错误查询",

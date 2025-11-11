@@ -1266,12 +1266,12 @@ func (u *UserRepo) GetSeedByExUserID(ctx context.Context, userID uint64, status 
 	)
 
 	res := make([]*biz.Seed, 0)
-	instance := u.data.DB(ctx).Table("seed").Where("user_id != ?", userID).Where("status in (?)", status).Order("id asc")
+	instance := u.data.DB(ctx).Table("seed").Where("user_id != ?", userID).Where("status in (?)", status).Order("sell_amount asc")
 
 	if nil != b {
 		instance = instance.Scopes(Paginate(b.PageNum, b.PageSize))
 	}
-	instance = instance.Order("sell_amount asc")
+
 	if err := instance.Find(&seeds).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return res, nil
@@ -1549,6 +1549,54 @@ func (u *UserRepo) GetLandByExUserIDByIds(ctx context.Context, ids []uint64, b *
 	return res, nil
 }
 
+// GetLandByExUserIDOrdeSellAmount getLandByExUserIDOrdeSellAmount
+func (u *UserRepo) GetLandByExUserIDOrdeSellAmount(ctx context.Context, userID uint64, status []uint64, b *biz.Pagination) ([]*biz.Land, error) {
+	var (
+		lands []*Land
+	)
+
+	res := make([]*biz.Land, 0)
+	instance := u.data.DB(ctx).Table("land").Where("user_id != ?", userID).Where("limit_date>=?", time.Now().Unix()).
+		Where("status in (?)", status).
+		Order("sell_amount asc")
+
+	if nil != b {
+		instance = instance.Scopes(Paginate(b.PageNum, b.PageSize))
+	}
+
+	if err := instance.Find(&lands).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return res, nil
+		}
+
+		return nil, errors.New(500, "LAND ERROR", err.Error())
+	}
+
+	for _, land := range lands {
+		res = append(res, &biz.Land{
+			ID:             land.ID,
+			UserId:         land.UserId,
+			Level:          land.Level,
+			OutPutRate:     land.OutPutRate,
+			RentOutPutRate: land.RentOutPutRate,
+			MaxHealth:      land.MaxHealth,
+			PerHealth:      land.PerHealth,
+			LimitDate:      land.LimitDate,
+			Status:         land.Status,
+			LocationNum:    land.LocationNum,
+			CreatedAt:      land.CreatedAt,
+			UpdatedAt:      land.UpdatedAt,
+			One:            land.One,
+			Two:            land.Two,
+			Three:          land.Three,
+			SellAmount:     land.SellAmount,
+			LocationUserId: land.LocationUserId,
+		})
+	}
+
+	return res, nil
+}
+
 // GetLandByExUserID getLandByExUserID
 func (u *UserRepo) GetLandByExUserID(ctx context.Context, userID uint64, status []uint64, b *biz.Pagination) ([]*biz.Land, error) {
 	var (
@@ -1564,7 +1612,6 @@ func (u *UserRepo) GetLandByExUserID(ctx context.Context, userID uint64, status 
 		instance = instance.Scopes(Paginate(b.PageNum, b.PageSize))
 	}
 
-	instance = instance.Order("sell_amount asc")
 	if err := instance.Find(&lands).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return res, nil
@@ -1916,13 +1963,12 @@ func (u *UserRepo) GetPropsByExUserID(ctx context.Context, userID uint64, status
 	)
 
 	res := make([]*biz.Prop, 0)
-	instance := u.data.DB(ctx).Table("prop").Where("user_id != ?", userID).Where("status in (?)", status).Order("id asc")
+	instance := u.data.DB(ctx).Table("prop").Where("user_id != ?", userID).Where("status in (?)", status).Order("sell_amount asc")
 
 	if nil != b {
 		instance = instance.Scopes(Paginate(b.PageNum, b.PageSize))
 	}
 
-	instance = instance.Order("sell_amount asc")
 	if err := instance.Find(&props).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return res, nil
