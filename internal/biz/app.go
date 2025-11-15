@@ -393,6 +393,7 @@ type UserRepo interface {
 	GetUserByUserIds(ctx context.Context, userIds []uint64) (map[uint64]*User, error)
 	GetUserByAddress(ctx context.Context, address string) (*User, error)
 	GetTodayUserCount(ctx context.Context) (int64, error)
+	GetTodayUserWithdrawCount(ctx context.Context, userId uint64) (int64, error)
 	GetUserById(ctx context.Context, id uint64) (*User, error)
 	GetUserRecommendByUserId(ctx context.Context, userId uint64) (*UserRecommend, error)
 	GetUserRecommendByCode(ctx context.Context, code string) ([]*UserRecommend, error)
@@ -6820,7 +6821,7 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 		}
 
 		return &pb.StakeGetPlayReply{Status: "ok", PlayStatus: 1, Amount: tmpGit}, nil
-	} else { // 输：下注金额加入池子
+	} else {                                                         // 输：下注金额加入池子
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 			err = ac.userRepo.SetStakeGetPlaySub(ctx, user.ID, float64(req.SendBody.Amount))
 			if nil != err {
@@ -7479,6 +7480,24 @@ func (ac *AppUsecase) Withdraw(ctx context.Context, address string, req *pb.With
 	}
 
 	if 2 == req.SendBody.WithdrawType {
+
+		var (
+			withdrawCount int64
+		)
+
+		withdrawCount, err = ac.userRepo.GetTodayUserWithdrawCount(ctx, user.ID)
+		if err != nil {
+			return &pb.WithdrawReply{
+				Status: "错误稍后",
+			}, nil
+		}
+
+		if 0 != withdrawCount {
+			return &pb.WithdrawReply{
+				Status: "每24小时可提现1次",
+			}, nil
+		}
+
 		if req.SendBody.Amount > uint64(user.AmountUsdt) {
 			return &pb.WithdrawReply{
 				Status: "可提usdt余额不足",

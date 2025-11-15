@@ -565,6 +565,18 @@ func (u *UserRepo) GetTodayUserCount(ctx context.Context) (int64, error) {
 	return count, nil
 }
 
+func (u *UserRepo) GetTodayUserWithdrawCount(ctx context.Context, userId uint64) (int64, error) {
+	var count int64
+	if err := u.data.DB(ctx).Table("withdraw").
+		Where("user_id", userId).
+		Where("created_at >= ?", time.Now().Add(-24*time.Hour).Format("2006-01-02 15:04:05")).
+		Count(&count).Error; err != nil {
+		return 0, errors.New(500, "USER ERROR", err.Error())
+	}
+
+	return count, nil
+}
+
 // GetUserByAddress .
 func (u *UserRepo) GetUserByAddress(ctx context.Context, address string) (*biz.User, error) {
 	var user *User
