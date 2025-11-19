@@ -63,6 +63,7 @@ type User struct {
 	CanSell          uint64
 	CanRent          uint64
 	CanLand          uint64
+	WithdrawMax      uint64
 }
 
 type BoxRecord struct {
@@ -446,9 +447,10 @@ type UserRepo interface {
 	GetStakeGitByUserID(ctx context.Context, userID int64) (*StakeGit, error)
 	GetStakeGitRecordsByUserID(ctx context.Context, userID uint64, b *Pagination) ([]*StakeGitRecord, error)
 	GetStakeGitRecordsByID(ctx context.Context, id, userId uint64) (*StakeGitRecord, error)
+	GetWithdrawTodayRecordsByUserID(ctx context.Context, userID uint64) ([]*Withdraw, error)
 	GetWithdrawRecordsByUserID(ctx context.Context, userID int64, b *Pagination) ([]*Withdraw, error)
 	GetUserOrderCount(ctx context.Context) (int64, error)
-	GetUserOrder(ctx context.Context, b *Pagination) ([]*User, error)
+	GetUserOrder(ctx context.Context, b *Pagination, address string) ([]*User, error)
 	GetLandUserUseByLandIDsMapUsing(ctx context.Context, userId uint64, landIDs []uint64) (map[uint64]*LandUserUse, error)
 	GetLandMyUseByLandIDsMapUsing(ctx context.Context, userId uint64) (map[uint64]*LandUserUse, error)
 	GetLandUserUseByLandIDsUsing(ctx context.Context, userId uint64) ([]*LandUserUse, error)
@@ -472,6 +474,7 @@ type UserRepo interface {
 	PlantPlatFour(ctx context.Context, outMax float64, id, propId, propStatus, propNum uint64) error
 	PlantPlatFive(ctx context.Context, overTime, id, propId, propStatus, propNum uint64) error
 	PlantPlatSix(ctx context.Context, id, propId, propStatus, propNum, landId uint64) error
+	GetTodayRewardPlantPlatSevenUserWithdrawCount(ctx context.Context, userId uint64) (int64, error)
 	PlantPlatSeven(ctx context.Context, outMax, amount float64, subTime, lastTime, id, propId, propStatus, propNum, userId uint64) error
 	PlantPlatTwoTwo(ctx context.Context, id, userId, rentUserId uint64, amount, rentAmount float64) error
 	PlantPlatTwoTwoL(ctx context.Context, id, userId, lowUserId, num uint64, amount float64) error
@@ -2655,6 +2658,12 @@ func (ac *AppUsecase) UserIndexList(ctx context.Context, address string, req *pb
 
 // UserOrderList userOrderList.
 func (ac *AppUsecase) UserOrderList(ctx context.Context, address string, req *pb.UserOrderListRequest) (*pb.UserOrderListReply, error) {
+	if 15 < len(req.Address) && len(req.Address) > 100 {
+		return &pb.UserOrderListReply{
+			Status: "参数错误",
+		}, nil
+	}
+
 	var (
 		user *User
 		err  error
@@ -2670,21 +2679,32 @@ func (ac *AppUsecase) UserOrderList(ctx context.Context, address string, req *pb
 		count int64
 		users []*User
 	)
-	count, err = ac.userRepo.GetUserOrderCount(ctx)
-	if nil != err {
-		return &pb.UserOrderListReply{
-			Status: "查询错误",
-		}, nil
-	}
+	if 15 < len(req.Address) {
+		users, err = ac.userRepo.GetUserOrder(ctx, nil, req.Address)
+		if nil != err {
+			return &pb.UserOrderListReply{
+				Status: "查询错误",
+			}, nil
+		}
 
-	users, err = ac.userRepo.GetUserOrder(ctx, &Pagination{
-		PageNum:  int(req.Page),
-		PageSize: 20,
-	})
-	if nil != err {
-		return &pb.UserOrderListReply{
-			Status: "查询错误",
-		}, nil
+		count = int64(len(users))
+	} else {
+		count, err = ac.userRepo.GetUserOrderCount(ctx)
+		if nil != err {
+			return &pb.UserOrderListReply{
+				Status: "查询错误",
+			}, nil
+		}
+
+		users, err = ac.userRepo.GetUserOrder(ctx, &Pagination{
+			PageNum:  int(req.Page),
+			PageSize: 20,
+		}, "")
+		if nil != err {
+			return &pb.UserOrderListReply{
+				Status: "查询错误",
+			}, nil
+		}
 	}
 
 	var (
@@ -4784,6 +4804,17 @@ func (ac *AppUsecase) LandPlaySeven(ctx context.Context, address string, req *pb
 	}
 
 	var (
+		rewardCount int64
+	)
+
+	rewardCount, err = ac.userRepo.GetTodayRewardPlantPlatSevenUserWithdrawCount(ctx, user.ID)
+	if nil != err || 0 < rewardCount {
+		return &pb.LandPlaySevenReply{
+			Status: "24小时内只能偷取1次",
+		}, nil
+	}
+
+	var (
 		landUserUse *LandUserUse
 	)
 	landUserUse, err = ac.userRepo.GetLandUserUseByID(ctx, req.SendBody.LandUseId)
@@ -6821,7 +6852,7 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 		}
 
 		return &pb.StakeGetPlayReply{Status: "ok", PlayStatus: 1, Amount: tmpGit}, nil
-	} else {                                                         // 输：下注金额加入池子
+	} else { // 输：下注金额加入池子
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 			err = ac.userRepo.SetStakeGetPlaySub(ctx, user.ID, float64(req.SendBody.Amount))
 			if nil != err {
@@ -7482,36 +7513,45 @@ func (ac *AppUsecase) Withdraw(ctx context.Context, address string, req *pb.With
 	if 2 == req.SendBody.WithdrawType {
 
 		var (
-			withdrawCount int64
+			withdrawList []*Withdraw
 		)
 
-		withdrawCount, err = ac.userRepo.GetTodayUserWithdrawCount(ctx, user.ID)
+		withdrawList, err = ac.userRepo.GetWithdrawTodayRecordsByUserID(ctx, user.ID)
 		if err != nil {
 			return &pb.WithdrawReply{
-				Status: "错误稍后",
+				Status: "查询错误",
 			}, nil
 		}
 
-		if 0 != withdrawCount {
+		if 0 != len(withdrawList) {
 			return &pb.WithdrawReply{
 				Status: "每24小时可提现1次",
 			}, nil
 		}
 
-		if req.SendBody.Amount > uint64(user.AmountUsdt) {
-			return &pb.WithdrawReply{
-				Status: "可提usdt余额不足",
-			}, nil
+		if 0 < user.WithdrawMax {
+			if user.WithdrawMax < req.SendBody.Amount {
+				return &pb.WithdrawReply{
+					Status: "大于最大值",
+				}, nil
+			}
+		} else {
+			if withdrawMaxTwo < req.SendBody.Amount {
+				return &pb.WithdrawReply{
+					Status: "大于最大值",
+				}, nil
+			}
 		}
+
 		if withdrawMinTwo > req.SendBody.Amount {
 			return &pb.WithdrawReply{
 				Status: "低于最小值",
 			}, nil
 		}
 
-		if withdrawMaxTwo < req.SendBody.Amount {
+		if req.SendBody.Amount > uint64(user.AmountUsdt) {
 			return &pb.WithdrawReply{
-				Status: "大于最大值",
+				Status: "可提usdt余额不足",
 			}, nil
 		}
 

@@ -53,6 +53,7 @@ type User struct {
 	CanSell          uint64    `gorm:"type:int;"`
 	CanRent          uint64    `gorm:"type:int;"`
 	CanLand          uint64    `gorm:"type:int;"`
+	WithdrawMax      uint64    `gorm:"type:int;"`
 }
 
 type UserRecommend struct {
@@ -577,6 +578,19 @@ func (u *UserRepo) GetTodayUserWithdrawCount(ctx context.Context, userId uint64)
 	return count, nil
 }
 
+func (u *UserRepo) GetTodayRewardPlantPlatSevenUserWithdrawCount(ctx context.Context, userId uint64) (int64, error) {
+	var count int64
+	if err := u.data.DB(ctx).Table("reward").
+		Where("user_id", userId).
+		Where("reason", 13).
+		Where("created_at >= ?", time.Now().Add(-24*time.Hour).Format("2006-01-02 15:04:05")).
+		Count(&count).Error; err != nil {
+		return 0, errors.New(500, "USER ERROR", err.Error())
+	}
+
+	return count, nil
+}
+
 // GetUserByAddress .
 func (u *UserRepo) GetUserByAddress(ctx context.Context, address string) (*biz.User, error) {
 	var user *User
@@ -630,6 +644,7 @@ func (u *UserRepo) GetUserByAddress(ctx context.Context, address string) (*biz.U
 		CanRent:          user.CanRent,
 		CanSell:          user.CanSell,
 		CanLand:          user.CanLand,
+		WithdrawMax:      user.WithdrawMax,
 	}, nil
 }
 
@@ -2249,6 +2264,40 @@ func (u *UserRepo) GetStakeGitRecordsByID(ctx context.Context, id, userId uint64
 	}, nil
 }
 
+func (u *UserRepo) GetWithdrawTodayRecordsByUserID(ctx context.Context, userID uint64) ([]*biz.Withdraw, error) {
+	var (
+		records []*Withdraw
+	)
+
+	res := make([]*biz.Withdraw, 0)
+	instance := u.data.DB(ctx).Table("withdraw").
+		Where("user_id = ?", userID).
+		Where("created_at >= ?", time.Now().Add(-24*time.Hour).Format("2006-01-02 15:04:05"))
+
+	if err := instance.Find(&records).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return res, nil
+		}
+		return nil, errors.New(500, "WITHDRAW RECORD ERROR", err.Error())
+	}
+
+	for _, record := range records {
+		res = append(res, &biz.Withdraw{
+			ID:             record.ID,
+			UserID:         record.UserId,
+			Amount:         record.Amount,
+			RelAmount:      record.RelAmount,
+			Status:         record.Status,
+			CreatedAt:      record.CreatedAt,
+			UpdatedAt:      record.UpdatedAt,
+			RelAmountFloat: record.RelAmountFloat,
+			AmountFloat:    record.AmountFloat,
+		})
+	}
+
+	return res, nil
+}
+
 func (u *UserRepo) GetWithdrawRecordsByUserID(ctx context.Context, userID int64, b *biz.Pagination) ([]*biz.Withdraw, error) {
 	var (
 		records []*Withdraw
@@ -2300,13 +2349,17 @@ func (u *UserRepo) GetUserOrderCount(ctx context.Context) (int64, error) {
 	return count, nil
 }
 
-func (u *UserRepo) GetUserOrder(ctx context.Context, b *biz.Pagination) ([]*biz.User, error) {
+func (u *UserRepo) GetUserOrder(ctx context.Context, b *biz.Pagination, address string) ([]*biz.User, error) {
 	var users []*User
 
 	res := make([]*biz.User, 0)
 	instance := u.data.DB(ctx).Table("user").
 		//Where("git>?", 0).
 		Order("git desc")
+
+	if 0 < len(address) {
+		instance = instance.Where("address = ?", address)
+	}
 
 	if nil != b {
 		instance = instance.Scopes(Paginate(b.PageNum, b.PageSize))
