@@ -64,6 +64,7 @@ type User struct {
 	CanRent          uint64
 	CanLand          uint64
 	WithdrawMax      uint64
+	CanSellProp      uint64
 }
 
 type BoxRecord struct {
@@ -5332,6 +5333,12 @@ func (ac *AppUsecase) Sell(ctx context.Context, address string, req *pb.SellRequ
 		}
 
 		if 1 == req.SendBody.SellType {
+			if 1 != user.CanSellProp {
+				return &pb.SellReply{
+					Status: "暂未开放",
+				}, nil
+			}
+
 			var (
 				seed *Seed
 			)
@@ -5357,6 +5364,12 @@ func (ac *AppUsecase) Sell(ctx context.Context, address string, req *pb.SellRequ
 				}, nil
 			}
 		} else if 2 == req.SendBody.SellType {
+			if 1 != user.CanSellProp {
+				return &pb.SellReply{
+					Status: "暂未开放",
+				}, nil
+			}
+
 			var (
 				prop *Prop
 			)
