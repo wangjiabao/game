@@ -980,6 +980,10 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		}, nil
 	}
 
+	if 0 < user.WithdrawMax {
+		withdrawMax = user.WithdrawMax
+	}
+
 	// 推荐
 	var (
 		userRecommend   *UserRecommend
