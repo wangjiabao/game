@@ -601,6 +601,7 @@ message UserLandReply {
 		uint64 three = 9; // 可合成
 		string content = 11;
 		string eContent = 12;
+		string addressTwo = 13;
 	}
 }
 

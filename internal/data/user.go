@@ -1376,6 +1376,7 @@ func (u *UserRepo) GetLandByUserID(ctx context.Context, userID uint64, status []
 			Two:            land.Two,
 			Three:          land.Three,
 			SellAmount:     land.SellAmount,
+			LocationUserId: land.LocationUserId,
 		})
 	}
 

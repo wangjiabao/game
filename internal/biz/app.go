@@ -1501,10 +1501,32 @@ func (ac *AppUsecase) UserLand(ctx context.Context, address string, req *pb.User
 		}, nil
 	}
 
+	userIds := []uint64{}
+	for _, v := range lands {
+		if 0 < v.LocationUserId {
+			userIds = append(userIds, v.LocationUserId)
+		}
+	}
+
+	usersMap := make(map[uint64]*User)
+	if 0 < len(userIds) {
+		usersMap, err = ac.userRepo.GetUserByUserIds(ctx, userIds)
+		if nil != err {
+			return &pb.UserLandReply{
+				Status: "不存在数据，用户",
+			}, nil
+		}
+	}
+
 	for _, v := range lands {
 		statusTmp := v.Status
 		if 8 == v.Status {
 			statusTmp = 3
+		}
+
+		tmpAddress := ""
+		if _, ok := usersMap[v.LocationUserId]; ok {
+			tmpAddress = usersMap[v.LocationUserId].Address
 		}
 
 		res = append(res, &pb.UserLandReply_List{
@@ -1520,6 +1542,7 @@ func (ac *AppUsecase) UserLand(ctx context.Context, address string, req *pb.User
 			Three:      v.Three,
 			Content:    "在Magic Manor大陆最肥沃的土地，由神秘的地契合成，层叠强大的成长性，任何劣质的种子都可以得到茁壮的成长。",
 			EContent:   "The most fertile land in the Magic Manorcontinent is composed of mysterious landdeeds. lt has strong growth potential, andany low-quality seeds can grow vigorously.",
+			AddressTwo: tmpAddress,
 		})
 	}
 

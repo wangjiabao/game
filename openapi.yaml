@@ -2058,6 +2058,8 @@ components:
                     type: string
                 eContent:
                     type: string
+                addressTwo:
+                    type: string
         UserMarketLandListReply:
             type: object
             properties:
