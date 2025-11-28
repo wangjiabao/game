@@ -424,6 +424,7 @@ type UserRepo interface {
 	GetLandByUserIDUsing(ctx context.Context, userID uint64, status []uint64) ([]*Land, error)
 	GetLandByLocationUserIDUsing(ctx context.Context, userID uint64, status []uint64) ([]*Land, error)
 	GetLandByUserID(ctx context.Context, userID uint64, status []uint64, b *Pagination) ([]*Land, error)
+	GetLandByUserIDCount(ctx context.Context, userID uint64, status []uint64) (int64, error)
 	GetLandByExUserID(ctx context.Context, userID uint64, status []uint64, b *Pagination) ([]*Land, error)
 	GetLandByExUserIDOrdeSellAmount(ctx context.Context, userID uint64, status []uint64, b *Pagination) ([]*Land, error)
 	GetLandByExUserIDByIds(ctx context.Context, ids []uint64, b *Pagination) ([]*Land, error)
@@ -1487,6 +1488,7 @@ func (ac *AppUsecase) UserLand(ctx context.Context, address string, req *pb.User
 	var (
 		user  *User
 		lands []*Land
+		count int64
 		err   error
 	)
 	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
@@ -1495,8 +1497,24 @@ func (ac *AppUsecase) UserLand(ctx context.Context, address string, req *pb.User
 			Status: "不存在用户",
 		}, nil
 	}
+
 	status := []uint64{0, 1, 2, 3, 4, 5, 8}
-	lands, err = ac.userRepo.GetLandByUserID(ctx, user.ID, status, nil)
+
+	pageInit := 1
+	if 1 < req.Page {
+		pageInit = int(req.Page)
+	}
+	count, err = ac.userRepo.GetLandByUserIDCount(ctx, user.ID, status)
+	if nil != err {
+		return &pb.UserLandReply{
+			Status: "不存在用户",
+		}, nil
+	}
+
+	lands, err = ac.userRepo.GetLandByUserID(ctx, user.ID, status, &Pagination{
+		PageNum:  pageInit,
+		PageSize: 100,
+	})
 	if nil != err {
 		return &pb.UserLandReply{
 			Status: "不存在用户",
@@ -1550,7 +1568,7 @@ func (ac *AppUsecase) UserLand(ctx context.Context, address string, req *pb.User
 
 	return &pb.UserLandReply{
 		Status: "ok",
-		Count:  uint64(len(res)),
+		Count:  uint64(count),
 		List:   res,
 	}, nil
 }
