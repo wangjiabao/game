@@ -5454,46 +5454,111 @@ func (ac *AppUsecase) Sell(ctx context.Context, address string, req *pb.SellRequ
 				}, nil
 			}
 
-			var (
-				land *Land
-			)
-			land, err = ac.userRepo.GetLandByID(ctx, req.SendBody.Id)
-			if nil != err || nil == land {
-				return &pb.SellReply{
-					Status: "不存在土地",
-				}, nil
-			}
+			if 0 < req.SendBody.Id {
+				var (
+					land *Land
+				)
+				land, err = ac.userRepo.GetLandByID(ctx, req.SendBody.Id)
+				if nil != err || nil == land {
+					return &pb.SellReply{
+						Status: "不存在土地",
+					}, nil
+				}
 
-			if user.ID != land.UserId {
-				return &pb.SellReply{
-					Status: "不是自己的",
-				}, nil
-			}
+				if user.ID != land.UserId {
+					return &pb.SellReply{
+						Status: "不是自己的",
+					}, nil
+				}
 
-			if 0 != land.LocationNum {
-				return &pb.SellReply{
-					Status: "土地布置中",
-				}, nil
-			}
+				if 0 != land.LocationNum {
+					return &pb.SellReply{
+						Status: "土地布置中",
+					}, nil
+				}
 
-			if 0 != land.Status {
-				return &pb.SellReply{
-					Status: "不符合上架状态",
-				}, nil
-			}
+				if 0 != land.Status {
+					return &pb.SellReply{
+						Status: "不符合上架状态",
+					}, nil
+				}
 
-			if 1 != land.One {
-				return &pb.SellReply{
-					Status: "不可出售土地",
-				}, nil
-			}
+				if 1 != land.One {
+					return &pb.SellReply{
+						Status: "不可出售土地",
+					}, nil
+				}
 
-			if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-				return ac.userRepo.SellLand(ctx, land.ID, user.ID, tmpSellAmount)
-			}); nil != err {
-				fmt.Println(err, "sellProp", user)
+				if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+					return ac.userRepo.SellLand(ctx, land.ID, user.ID, tmpSellAmount)
+				}); nil != err {
+					fmt.Println(err, "sellProp", user)
+					return &pb.SellReply{
+						Status: "上架失败",
+					}, nil
+				}
+			} else if 0 < len(req.SendBody.LandIds) {
+				partsIds := strings.Split(req.SendBody.LandIds, "&")
+
+				if 0 >= len(partsIds) {
+					return &pb.SellReply{
+						Status: "参数错误，id为空",
+					}, nil
+				}
+
+				for _, v := range partsIds {
+					perLandId, _ := strconv.ParseUint(v, 10, 64)
+
+					if perLandId == 0 {
+						continue
+					}
+					var (
+						land *Land
+					)
+					land, err = ac.userRepo.GetLandByID(ctx, perLandId)
+					if nil != err || nil == land {
+						return &pb.SellReply{
+							Status: "不存在土地",
+						}, nil
+					}
+
+					if user.ID != land.UserId {
+						return &pb.SellReply{
+							Status: "不是自己的",
+						}, nil
+					}
+
+					if 0 != land.LocationNum {
+						return &pb.SellReply{
+							Status: "土地布置中",
+						}, nil
+					}
+
+					if 0 != land.Status {
+						return &pb.SellReply{
+							Status: "不符合上架状态",
+						}, nil
+					}
+
+					if 1 != land.One {
+						return &pb.SellReply{
+							Status: "不可出售土地",
+						}, nil
+					}
+
+					if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+						return ac.userRepo.SellLand(ctx, land.ID, user.ID, tmpSellAmount)
+					}); nil != err {
+						fmt.Println(err, "sellProp", user)
+						return &pb.SellReply{
+							Status: "上架失败",
+						}, nil
+					}
+
+				}
+			} else {
 				return &pb.SellReply{
-					Status: "上架失败",
+					Status: "参数错误",
 				}, nil
 			}
 		} else {
@@ -5776,48 +5841,115 @@ func (ac *AppUsecase) RentLand(ctx context.Context, address string, req *pb.Rent
 			}, nil
 		}
 
-		var (
-			land *Land
-		)
-		land, err = ac.userRepo.GetLandByID(ctx, req.SendBody.LandId)
-		if nil != err || nil == land {
+		if 0 < req.SendBody.LandId {
+			var (
+				land *Land
+			)
+			land, err = ac.userRepo.GetLandByID(ctx, req.SendBody.LandId)
+			if nil != err || nil == land {
+				return &pb.RentLandReply{
+					Status: "不存在土地",
+				}, nil
+			}
+
+			if user.ID != land.UserId {
+				return &pb.RentLandReply{
+					Status: "不是自己的",
+				}, nil
+			}
+
+			if 1 != land.Status {
+				return &pb.RentLandReply{
+					Status: "请将土地布置在农场",
+				}, nil
+			}
+
+			if 1 != land.Two {
+				return &pb.RentLandReply{
+					Status: "不允许出租类型",
+				}, nil
+			}
+
+			if land.PerHealth > land.MaxHealth {
+				return &pb.RentLandReply{
+					Status: "肥沃度不足",
+				}, nil
+			}
+
+			if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+				return ac.userRepo.RentLand(ctx, land.ID, user.ID, rentRate)
+			}); nil != err {
+				fmt.Println(err, "rendLand", user)
+				return &pb.RentLandReply{
+					Status: "上架失败",
+				}, nil
+			}
+		} else if 0 < len(req.SendBody.LandIds) {
+
+			partsIds := strings.Split(req.SendBody.LandIds, "&")
+
+			if 0 >= len(partsIds) {
+				return &pb.RentLandReply{
+					Status: "参数错误，id为空",
+				}, nil
+			}
+
+			for _, v := range partsIds {
+				perLandId, _ := strconv.ParseUint(v, 10, 64)
+
+				if perLandId == 0 {
+					continue
+				}
+
+				var (
+					land *Land
+				)
+				land, err = ac.userRepo.GetLandByID(ctx, perLandId)
+				if nil != err || nil == land {
+					return &pb.RentLandReply{
+						Status: "不存在土地",
+					}, nil
+				}
+
+				if user.ID != land.UserId {
+					return &pb.RentLandReply{
+						Status: "不是自己的",
+					}, nil
+				}
+
+				if 1 != land.Status {
+					return &pb.RentLandReply{
+						Status: "请将土地布置在农场",
+					}, nil
+				}
+
+				if 1 != land.Two {
+					return &pb.RentLandReply{
+						Status: "不允许出租类型",
+					}, nil
+				}
+
+				if land.PerHealth > land.MaxHealth {
+					return &pb.RentLandReply{
+						Status: "肥沃度不足",
+					}, nil
+				}
+
+				if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+					return ac.userRepo.RentLand(ctx, land.ID, user.ID, rentRate)
+				}); nil != err {
+					fmt.Println(err, "rendLand", user)
+					return &pb.RentLandReply{
+						Status: "上架失败",
+					}, nil
+				}
+			}
+		} else {
 			return &pb.RentLandReply{
-				Status: "不存在土地",
+				Status: "参数错误",
 			}, nil
 		}
 
-		if user.ID != land.UserId {
-			return &pb.RentLandReply{
-				Status: "不是自己的",
-			}, nil
-		}
-
-		if 1 != land.Status {
-			return &pb.RentLandReply{
-				Status: "请将土地布置在农场",
-			}, nil
-		}
-
-		if 1 != land.Two {
-			return &pb.RentLandReply{
-				Status: "不允许出租类型",
-			}, nil
-		}
-
-		if land.PerHealth > land.MaxHealth {
-			return &pb.RentLandReply{
-				Status: "肥沃度不足",
-			}, nil
-		}
-
-		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-			return ac.userRepo.RentLand(ctx, land.ID, user.ID, rentRate)
-		}); nil != err {
-			fmt.Println(err, "rendLand", user)
-			return &pb.RentLandReply{
-				Status: "上架失败",
-			}, nil
-		}
 	} else if 2 == req.SendBody.Num {
 		var (
 			land *Land

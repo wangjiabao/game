@@ -985,6 +985,7 @@ message SellRequest {
 		uint64 sellType = 3; // 出售类型，1种子，2道具，3土地
 		uint64 amount = 4; // 出售价格
 		string sign = 2; // 签名
+		string landIds = 6; // 土地id 1&2&3
 	}
 
 	SendBody send_body = 1;
@@ -1027,6 +1028,7 @@ message RentLandRequest {
 		uint64 landId = 1; // 土地id
 		uint64 rate = 3; // 收获比例 1-5个挡位
 		string sign = 2; // 签名
+		string landIds = 6; // 土地id 1&2&3
 	}
 
 	SendBody send_body = 1;

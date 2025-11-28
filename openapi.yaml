@@ -1561,6 +1561,8 @@ components:
                     type: string
                 sign:
                     type: string
+                landIds:
+                    type: string
         SellReply:
             type: object
             properties:
@@ -1578,6 +1580,8 @@ components:
                 amount:
                     type: string
                 sign:
+                    type: string
+                landIds:
                     type: string
         SetBuyLandReply:
             type: object
