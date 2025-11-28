@@ -55,6 +55,7 @@ type User struct {
 	CanLand          uint64    `gorm:"type:int;"`
 	WithdrawMax      uint64    `gorm:"type:int;"`
 	CanSellProp      uint64    `gorm:"type:int;"`
+	CanPlayAdd       uint64    `gorm:"type:int;"`
 }
 
 type UserRecommend struct {
@@ -647,6 +648,7 @@ func (u *UserRepo) GetUserByAddress(ctx context.Context, address string) (*biz.U
 		CanLand:          user.CanLand,
 		WithdrawMax:      user.WithdrawMax,
 		CanSellProp:      user.CanSellProp,
+		CanPlayAdd:       user.CanPlayAdd,
 	}, nil
 }
 

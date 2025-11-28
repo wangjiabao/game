@@ -2015,6 +2015,8 @@ components:
                 minStakeTwo:
                     type: number
                     format: double
+                canPlayAdd:
+                    type: string
         UserInfoReply_ListM:
             type: object
             properties:

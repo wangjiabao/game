@@ -65,6 +65,7 @@ type User struct {
 	CanLand          uint64
 	WithdrawMax      uint64
 	CanSellProp      uint64
+	CanPlayAdd       uint64
 }
 
 type BoxRecord struct {
@@ -1234,6 +1235,7 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		MaxStake:                  maxStake,
 		MinStake:                  minStake,
 		MinStakeTwo:               minStakeTwo,
+		CanPlayAdd:                user.CanPlayAdd,
 	}, nil
 }
 
@@ -6309,10 +6311,12 @@ func (ac *AppUsecase) LandAddOutRate(ctx context.Context, address string, req *p
 		}, nil
 	}
 
-	if user.ID != land.UserId {
-		return &pb.LandAddOutRateReply{
-			Status: "不是自己的",
-		}, nil
+	if 1 != user.CanPlayAdd {
+		if user.ID != land.UserId {
+			return &pb.LandAddOutRateReply{
+				Status: "不是自己的",
+			}, nil
+		}
 	}
 
 	if 1 != land.Status && 0 != land.Status && 3 != land.Status {

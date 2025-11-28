@@ -494,6 +494,7 @@ message UserInfoReply {
 	double maxStake = 53;
 	double minStake = 54;
 	double minStakeTwo = 55;
+	uint64 canPlayAdd =  56;
 }
 
 message UserBuyRequest {
