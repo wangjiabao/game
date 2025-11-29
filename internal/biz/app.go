@@ -3469,7 +3469,7 @@ func (ac *AppUsecase) LandPlayOne(ctx context.Context, address string, req *pb.L
 
 }
 
-var rngMutexPlantTwo sync.Mutex
+//var rngMutexPlantTwo sync.Mutex
 
 // LandPlayTwo 收果实
 func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.LandPlayTwoRequest) (*pb.LandPlayTwoReply, error) {
@@ -3499,8 +3499,8 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 		}, nil
 	}
 
-	rngMutexPlantTwo.Lock()
-	defer rngMutexPlantTwo.Unlock()
+	//rngMutexPlantTwo.Lock()
+	//defer rngMutexPlantTwo.Unlock()
 
 	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
 	if nil != err || nil == user {
