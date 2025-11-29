@@ -426,6 +426,7 @@ type UserRepo interface {
 	GetLandByUserID(ctx context.Context, userID uint64, status []uint64, b *Pagination) ([]*Land, error)
 	GetLandByUserIDCount(ctx context.Context, userID uint64, status []uint64) (int64, error)
 	GetLandByExUserID(ctx context.Context, userID uint64, status []uint64, b *Pagination) ([]*Land, error)
+	GetLandByExUserIDCount(ctx context.Context, userID uint64, status []uint64) (int64, error)
 	GetLandByExUserIDOrdeSellAmount(ctx context.Context, userID uint64, status []uint64, b *Pagination) ([]*Land, error)
 	GetLandByExUserIDByIds(ctx context.Context, ids []uint64, b *Pagination) ([]*Land, error)
 	GetUserRewardPage(ctx context.Context, userId uint64, reason []uint64, b *Pagination) ([]*Reward, error)
@@ -433,15 +434,19 @@ type UserRepo interface {
 	GetUserRewardPageCount(ctx context.Context, userId uint64, reason []uint64) (int64, error)
 	GetUserRewardTwoPageCount(ctx context.Context, userId uint64, reason uint64) (int64, error)
 	GetSeedByUserID(ctx context.Context, userID uint64, status []uint64, b *Pagination) ([]*Seed, error)
+	GetSeedByUserIDCount(ctx context.Context, status []uint64, userID uint64) (int64, error)
 	GetSeedByExUserID(ctx context.Context, userID uint64, status []uint64, b *Pagination) ([]*Seed, error)
+	GetSeedByExUserIDCount(ctx context.Context, status []uint64, userID uint64) (int64, error)
 	GetLandUserUseByUserIDUseing(ctx context.Context, userID uint64, status uint64, b *Pagination) ([]*LandUserUse, error)
 	GetExchangeRecordsByUserID(ctx context.Context, userID uint64, b *Pagination) ([]*ExchangeRecord, error)
 	GetLandUserUseByID(ctx context.Context, id uint64) (*LandUserUse, error)
 	GetMarketRecordsByUserID(ctx context.Context, userID uint64, status uint64, b *Pagination) ([]*Market, error)
 	GetNoticesByUserID(ctx context.Context, userID uint64, b *Pagination) ([]*Notice, error)
 	GetNoticesCountByUserID(ctx context.Context, userID uint64) (int64, error)
+	GetPropsByUserIDCount(ctx context.Context, status []uint64, userID uint64) (int64, error)
 	GetPropsByUserID(ctx context.Context, userID uint64, status []uint64, b *Pagination) ([]*Prop, error)
 	GetPropsByUserIDPropType(ctx context.Context, userID uint64, propType []uint64) ([]*Prop, error)
+	GetPropsByExUserIDCount(ctx context.Context, status []uint64, userID uint64) (int64, error)
 	GetPropsByExUserID(ctx context.Context, userID uint64, status []uint64, b *Pagination) ([]*Prop, error)
 	GetStakeGetsByUserID(ctx context.Context, userID uint64, b *Pagination) ([]*StakeGet, error)
 	GetStakeGetPlayRecordsByUserID(ctx context.Context, userID uint64, status uint64, b *Pagination) ([]*StakeGetPlayRecord, error)
@@ -1733,8 +1738,9 @@ func (ac *AppUsecase) UserBoxList(ctx context.Context, address string, req *pb.U
 func (ac *AppUsecase) UserBackList(ctx context.Context, address string, req *pb.UserBackListRequest) (*pb.UserBackListReply, error) {
 	res := make([]*pb.UserBackListReply_List, 0)
 	var (
-		user *User
-		err  error
+		count int64
+		user  *User
+		err   error
 	)
 	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
 	if nil != err || nil == user {
@@ -1743,116 +1749,223 @@ func (ac *AppUsecase) UserBackList(ctx context.Context, address string, req *pb.
 		}, nil
 	}
 
-	var (
-		seed []*Seed
-	)
-	seedStatus := []uint64{0, 4}
-	seed, err = ac.userRepo.GetSeedByUserID(ctx, user.ID, seedStatus, nil)
-	if nil != err {
-		return &pb.UserBackListReply{
-			Status: "查询种子错误",
-		}, nil
-	}
+	if 1 == req.Num {
+		var (
+			prop []*Prop
+		)
+		// 11化肥，12水，13手套，14除虫剂，15铲子，16盲盒，17地契
+		propStatus := []uint64{1, 2, 4}
 
-	for _, vSeed := range seed {
-		tmpStatus := uint64(1)
-		if 4 == vSeed.Status {
-			tmpStatus = 4
+		count, err = ac.userRepo.GetPropsByUserIDCount(ctx, propStatus, user.ID)
+		if nil != err {
+			return &pb.UserBackListReply{
+				Status: "道具错误",
+			}, nil
 		}
 
-		res = append(res, &pb.UserBackListReply_List{
-			Id:       vSeed.ID,
-			Type:     1,
-			Num:      vSeed.SeedId,
-			UseNum:   0,
-			Status:   tmpStatus,
-			OutMax:   vSeed.OutMaxAmount,
-			Time:     vSeed.OutOverTime,
-			Amount:   vSeed.SellAmount,
-			Content:  "一种来自区块链世界算法加密的种子，打开盲盒或合成获得，每一颗种子都不同，找到适合他的土地后，会有惊人的产出！",
-			EContent: "A seed from the blockchain world algorithm encryption, open the blind box or synthetic access, each seed is different, find suitable for his land, there will be amazing output!",
+		prop, err = ac.userRepo.GetPropsByUserID(ctx, user.ID, propStatus, &Pagination{
+			PageNum:  int(req.Page),
+			PageSize: 100,
 		})
-	}
-
-	var (
-		prop []*Prop
-	)
-	// 11化肥，12水，13手套，14除虫剂，15铲子，16盲盒，17地契
-	propStatus := []uint64{1, 2, 4}
-	prop, err = ac.userRepo.GetPropsByUserID(ctx, user.ID, propStatus, nil)
-	if nil != err {
-		return &pb.UserBackListReply{
-			Status: "道具错误",
-		}, nil
-	}
-
-	for _, vProp := range prop {
-
-		useNum := uint64(0)
-		contentTmp := ""
-		eContentTmp := ""
-		if 12 == vProp.PropType {
-			useNum = uint64(vProp.ThreeOne) // 水
-			contentTmp = "一种植物在成长过程中也许会用到的特殊用水，缺水的植物会停止成长，使用后您的植物将永远不会缺水。"
-			eContentTmp = "A plant may use special water duringits growth. Plants that are short ofwater will stop growing. After using it,your plants will never be short of water."
-		} else if 13 == vProp.PropType {
-			useNum = uint64(vProp.FiveOne) // 手套
-			contentTmp = "带上手套后，可偷取任何邻居家的已经成熟的植物，可获得一定的ISPAY，但是使用的次数有限。"
-			eContentTmp = "After wearing gloves, you can stealany mature plants from your neighbor'shouse and obtain a certain amount ofGlT, but the number of uses is limited."
-		} else if 14 == vProp.PropType {
-			useNum = uint64(vProp.FourOne) // 除虫剂
-			contentTmp = "由Magic Manor大陆中的巫师制作，不除虫子的植物，每5分钟减产1%;直到最后为产量为0，它可以杀死Magic Manor大陆中的任何害虫。"
-			eContentTmp = "Made by wizards in the Magic Manorcontinent, plants that do not eliminateinsects will reduce their yield by 1% every5 minutes; until the final yield is O, it can killany pests in the Magic Manor continent."
-		} else if 15 == vProp.PropType {
-			useNum = uint64(vProp.TwoOne) // 铲子
-			contentTmp = "可铲除出租土地上已经成熟的植物，不可铲除自己种植的植物，但是成熟时间必须大于1H。"
-			eContentTmp = "Mature plants on the leased land canbe eradicated, but self-grown plantscannot be eradicated, but the maturitytime must be greater than 1H."
-		} else if 11 == vProp.PropType {
-			contentTmp = "一种通过算法生成的增加产量道具，合成士地和增加土地肥沃度。"
-			eContentTmp = "An algorithmically generated item thatincreases yield, synthesizes land, andincreases land fertility."
-		} else if 17 == vProp.PropType {
-			contentTmp = "在Magic Manor大陆深处埋徵着一张”地契”，它是初创统治者亲手制作，代表着整个Magic Manor最肥沃的土地，找到它的人不仅可以拥有土地，还能解锁谷中隐藏的古老秘密。\n\t\t获取方式:每新增1亿ISPAY产出业绩，自动获得1张地契:作用:1张地契加5块化肥，可合成一个崭新的1级土地;地契描述"
-			eContentTmp = "There is a \"land deed\" buried deep in the Magic Manorcontinent. lt was made by the original ruler himself andrepresents the most fertile land in the entire MagicManor. Whoever finds it will not only claim the land, butalso unlock ancient secrets hidden within the valley.How to obtain: For every 100 milion new GlT outputs,you will automatically obtain a land deed;Function: 1 land deed and 5 fertilizers can be combinedinto a brand new level 1 land."
+		if nil != err {
+			return &pb.UserBackListReply{
+				Status: "道具错误",
+			}, nil
 		}
 
-		res = append(res, &pb.UserBackListReply_List{
-			Id:       vProp.ID,
-			Type:     2,
-			Num:      uint64(vProp.PropType),
-			UseNum:   useNum,
-			Status:   uint64(vProp.Status),
-			OutMax:   0,
-			Amount:   vProp.SellAmount,
-			Content:  contentTmp,
-			EContent: eContentTmp,
+		for _, vProp := range prop {
+			useNum := uint64(0)
+			contentTmp := ""
+			eContentTmp := ""
+			if 12 == vProp.PropType {
+				useNum = uint64(vProp.ThreeOne) // 水
+				contentTmp = "一种植物在成长过程中也许会用到的特殊用水，缺水的植物会停止成长，使用后您的植物将永远不会缺水。"
+				eContentTmp = "A plant may use special water duringits growth. Plants that are short ofwater will stop growing. After using it,your plants will never be short of water."
+			} else if 13 == vProp.PropType {
+				useNum = uint64(vProp.FiveOne) // 手套
+				contentTmp = "带上手套后，可偷取任何邻居家的已经成熟的植物，可获得一定的ISPAY，但是使用的次数有限。"
+				eContentTmp = "After wearing gloves, you can stealany mature plants from your neighbor'shouse and obtain a certain amount ofGlT, but the number of uses is limited."
+			} else if 14 == vProp.PropType {
+				useNum = uint64(vProp.FourOne) // 除虫剂
+				contentTmp = "由Magic Manor大陆中的巫师制作，不除虫子的植物，每5分钟减产1%;直到最后为产量为0，它可以杀死Magic Manor大陆中的任何害虫。"
+				eContentTmp = "Made by wizards in the Magic Manorcontinent, plants that do not eliminateinsects will reduce their yield by 1% every5 minutes; until the final yield is O, it can killany pests in the Magic Manor continent."
+			} else if 15 == vProp.PropType {
+				useNum = uint64(vProp.TwoOne) // 铲子
+				contentTmp = "可铲除出租土地上已经成熟的植物，不可铲除自己种植的植物，但是成熟时间必须大于1H。"
+				eContentTmp = "Mature plants on the leased land canbe eradicated, but self-grown plantscannot be eradicated, but the maturitytime must be greater than 1H."
+			} else if 11 == vProp.PropType {
+				contentTmp = "一种通过算法生成的增加产量道具，合成士地和增加土地肥沃度。"
+				eContentTmp = "An algorithmically generated item thatincreases yield, synthesizes land, andincreases land fertility."
+			} else if 17 == vProp.PropType {
+				contentTmp = "在Magic Manor大陆深处埋徵着一张”地契”，它是初创统治者亲手制作，代表着整个Magic Manor最肥沃的土地，找到它的人不仅可以拥有土地，还能解锁谷中隐藏的古老秘密。\n\t\t获取方式:每新增1亿ISPAY产出业绩，自动获得1张地契:作用:1张地契加5块化肥，可合成一个崭新的1级土地;地契描述"
+				eContentTmp = "There is a \"land deed\" buried deep in the Magic Manorcontinent. lt was made by the original ruler himself andrepresents the most fertile land in the entire MagicManor. Whoever finds it will not only claim the land, butalso unlock ancient secrets hidden within the valley.How to obtain: For every 100 milion new GlT outputs,you will automatically obtain a land deed;Function: 1 land deed and 5 fertilizers can be combinedinto a brand new level 1 land."
+			}
+
+			res = append(res, &pb.UserBackListReply_List{
+				Id:       vProp.ID,
+				Type:     2,
+				Num:      uint64(vProp.PropType),
+				UseNum:   useNum,
+				Status:   uint64(vProp.Status),
+				OutMax:   0,
+				Amount:   vProp.SellAmount,
+				Content:  contentTmp,
+				EContent: eContentTmp,
+			})
+		}
+	} else if 2 == req.Num {
+		var (
+			seed []*Seed
+		)
+		seedStatus := []uint64{0, 4}
+		count, err = ac.userRepo.GetSeedByUserIDCount(ctx, seedStatus, user.ID)
+		if nil != err {
+			return &pb.UserBackListReply{
+				Status: "查询种子错误",
+			}, nil
+		}
+
+		seed, err = ac.userRepo.GetSeedByUserID(ctx, user.ID, seedStatus, &Pagination{
+			PageNum:  int(req.Page),
+			PageSize: 100,
 		})
-	}
+		if nil != err {
+			return &pb.UserBackListReply{
+				Status: "查询种子错误",
+			}, nil
+		}
 
-	var (
-		box []*BoxRecord
-	)
+		for _, vSeed := range seed {
+			tmpStatus := uint64(1)
+			if 4 == vSeed.Status {
+				tmpStatus = 4
+			}
 
-	box, err = ac.userRepo.GetUserBoxRecordOpen(ctx, user.ID, 0, false, nil)
-	if nil != err {
-		return &pb.UserBackListReply{
-			Status: "查询盒子错误",
-		}, nil
-	}
+			res = append(res, &pb.UserBackListReply_List{
+				Id:       vSeed.ID,
+				Type:     1,
+				Num:      vSeed.SeedId,
+				UseNum:   0,
+				Status:   tmpStatus,
+				OutMax:   vSeed.OutMaxAmount,
+				Time:     vSeed.OutOverTime,
+				Amount:   vSeed.SellAmount,
+				Content:  "一种来自区块链世界算法加密的种子，打开盲盒或合成获得，每一颗种子都不同，找到适合他的土地后，会有惊人的产出！",
+				EContent: "A seed from the blockchain world algorithm encryption, open the blind box or synthetic access, each seed is different, find suitable for his land, there will be amazing output!",
+			})
+		}
+	} else {
+		var (
+			seed []*Seed
+		)
+		seedStatus := []uint64{0, 4}
+		seed, err = ac.userRepo.GetSeedByUserID(ctx, user.ID, seedStatus, nil)
+		if nil != err {
+			return &pb.UserBackListReply{
+				Status: "查询种子错误",
+			}, nil
+		}
 
-	for _, v := range box {
-		res = append(res, &pb.UserBackListReply_List{
-			Id:     v.ID,
-			Type:   2,
-			Num:    16,
-			UseNum: 0,
-			Status: 0,
-			OutMax: 0,
-		})
+		for _, vSeed := range seed {
+			tmpStatus := uint64(1)
+			if 4 == vSeed.Status {
+				tmpStatus = 4
+			}
+
+			res = append(res, &pb.UserBackListReply_List{
+				Id:       vSeed.ID,
+				Type:     1,
+				Num:      vSeed.SeedId,
+				UseNum:   0,
+				Status:   tmpStatus,
+				OutMax:   vSeed.OutMaxAmount,
+				Time:     vSeed.OutOverTime,
+				Amount:   vSeed.SellAmount,
+				Content:  "一种来自区块链世界算法加密的种子，打开盲盒或合成获得，每一颗种子都不同，找到适合他的土地后，会有惊人的产出！",
+				EContent: "A seed from the blockchain world algorithm encryption, open the blind box or synthetic access, each seed is different, find suitable for his land, there will be amazing output!",
+			})
+		}
+
+		var (
+			prop []*Prop
+		)
+		// 11化肥，12水，13手套，14除虫剂，15铲子，16盲盒，17地契
+		propStatus := []uint64{1, 2, 4}
+		prop, err = ac.userRepo.GetPropsByUserID(ctx, user.ID, propStatus, nil)
+		if nil != err {
+			return &pb.UserBackListReply{
+				Status: "道具错误",
+			}, nil
+		}
+
+		for _, vProp := range prop {
+
+			useNum := uint64(0)
+			contentTmp := ""
+			eContentTmp := ""
+			if 12 == vProp.PropType {
+				useNum = uint64(vProp.ThreeOne) // 水
+				contentTmp = "一种植物在成长过程中也许会用到的特殊用水，缺水的植物会停止成长，使用后您的植物将永远不会缺水。"
+				eContentTmp = "A plant may use special water duringits growth. Plants that are short ofwater will stop growing. After using it,your plants will never be short of water."
+			} else if 13 == vProp.PropType {
+				useNum = uint64(vProp.FiveOne) // 手套
+				contentTmp = "带上手套后，可偷取任何邻居家的已经成熟的植物，可获得一定的ISPAY，但是使用的次数有限。"
+				eContentTmp = "After wearing gloves, you can stealany mature plants from your neighbor'shouse and obtain a certain amount ofGlT, but the number of uses is limited."
+			} else if 14 == vProp.PropType {
+				useNum = uint64(vProp.FourOne) // 除虫剂
+				contentTmp = "由Magic Manor大陆中的巫师制作，不除虫子的植物，每5分钟减产1%;直到最后为产量为0，它可以杀死Magic Manor大陆中的任何害虫。"
+				eContentTmp = "Made by wizards in the Magic Manorcontinent, plants that do not eliminateinsects will reduce their yield by 1% every5 minutes; until the final yield is O, it can killany pests in the Magic Manor continent."
+			} else if 15 == vProp.PropType {
+				useNum = uint64(vProp.TwoOne) // 铲子
+				contentTmp = "可铲除出租土地上已经成熟的植物，不可铲除自己种植的植物，但是成熟时间必须大于1H。"
+				eContentTmp = "Mature plants on the leased land canbe eradicated, but self-grown plantscannot be eradicated, but the maturitytime must be greater than 1H."
+			} else if 11 == vProp.PropType {
+				contentTmp = "一种通过算法生成的增加产量道具，合成士地和增加土地肥沃度。"
+				eContentTmp = "An algorithmically generated item thatincreases yield, synthesizes land, andincreases land fertility."
+			} else if 17 == vProp.PropType {
+				contentTmp = "在Magic Manor大陆深处埋徵着一张”地契”，它是初创统治者亲手制作，代表着整个Magic Manor最肥沃的土地，找到它的人不仅可以拥有土地，还能解锁谷中隐藏的古老秘密。\n\t\t获取方式:每新增1亿ISPAY产出业绩，自动获得1张地契:作用:1张地契加5块化肥，可合成一个崭新的1级土地;地契描述"
+				eContentTmp = "There is a \"land deed\" buried deep in the Magic Manorcontinent. lt was made by the original ruler himself andrepresents the most fertile land in the entire MagicManor. Whoever finds it will not only claim the land, butalso unlock ancient secrets hidden within the valley.How to obtain: For every 100 milion new GlT outputs,you will automatically obtain a land deed;Function: 1 land deed and 5 fertilizers can be combinedinto a brand new level 1 land."
+			}
+
+			res = append(res, &pb.UserBackListReply_List{
+				Id:       vProp.ID,
+				Type:     2,
+				Num:      uint64(vProp.PropType),
+				UseNum:   useNum,
+				Status:   uint64(vProp.Status),
+				OutMax:   0,
+				Amount:   vProp.SellAmount,
+				Content:  contentTmp,
+				EContent: eContentTmp,
+			})
+		}
+
+		var (
+			box []*BoxRecord
+		)
+
+		box, err = ac.userRepo.GetUserBoxRecordOpen(ctx, user.ID, 0, false, nil)
+		if nil != err {
+			return &pb.UserBackListReply{
+				Status: "查询盒子错误",
+			}, nil
+		}
+
+		for _, v := range box {
+			res = append(res, &pb.UserBackListReply_List{
+				Id:     v.ID,
+				Type:   2,
+				Num:    16,
+				UseNum: 0,
+				Status: 0,
+				OutMax: 0,
+			})
+		}
 	}
 
 	return &pb.UserBackListReply{
 		Status: "ok",
-		Count:  0,
+		Count:  uint64(count),
 		List:   res,
 	}, nil
 }
@@ -1871,11 +1984,27 @@ func (ac *AppUsecase) UserMarketSeedList(ctx context.Context, address string, re
 	}
 	res := make([]*pb.UserMarketSeedListReply_List, 0)
 	var (
-		seed []*Seed
+		seed  []*Seed
+		count int64
 	)
 
 	seedStatus := []uint64{4}
-	seed, err = ac.userRepo.GetSeedByExUserID(ctx, user.ID, seedStatus, nil)
+	count, err = ac.userRepo.GetSeedByExUserIDCount(ctx, seedStatus, user.ID)
+	if nil != err {
+		return &pb.UserMarketSeedListReply{
+			Status: "查询错误",
+		}, nil
+	}
+
+	pageInit := 1
+	if 1 < req.Page {
+		pageInit = int(req.Page)
+	}
+
+	seed, err = ac.userRepo.GetSeedByExUserID(ctx, user.ID, seedStatus, &Pagination{
+		PageNum:  pageInit,
+		PageSize: 100,
+	})
 	if nil != err {
 		return &pb.UserMarketSeedListReply{
 			Status: "查询错误",
@@ -1885,7 +2014,7 @@ func (ac *AppUsecase) UserMarketSeedList(ctx context.Context, address string, re
 	if 0 >= len(seed) {
 		return &pb.UserMarketSeedListReply{
 			Status: "ok",
-			Count:  0,
+			Count:  uint64(count),
 			List:   res,
 		}, nil
 	}
@@ -1923,7 +2052,7 @@ func (ac *AppUsecase) UserMarketSeedList(ctx context.Context, address string, re
 
 	return &pb.UserMarketSeedListReply{
 		Status: "ok",
-		Count:  0,
+		Count:  uint64(count),
 		List:   res,
 	}, nil
 }
@@ -1931,8 +2060,9 @@ func (ac *AppUsecase) UserMarketSeedList(ctx context.Context, address string, re
 // UserMarketLandList userMarketLandList.
 func (ac *AppUsecase) UserMarketLandList(ctx context.Context, address string, req *pb.UserMarketLandListRequest) (*pb.UserMarketLandListReply, error) {
 	var (
-		user *User
-		err  error
+		user  *User
+		err   error
+		count int64
 	)
 	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
 	if nil != err || nil == user {
@@ -1946,7 +2076,23 @@ func (ac *AppUsecase) UserMarketLandList(ctx context.Context, address string, re
 		land []*Land
 	)
 	landStatus := []uint64{4}
-	land, err = ac.userRepo.GetLandByExUserIDOrdeSellAmount(ctx, user.ID, landStatus, nil)
+
+	count, err = ac.userRepo.GetLandByExUserIDCount(ctx, user.ID, landStatus)
+	if nil != err {
+		return &pb.UserMarketLandListReply{
+			Status: "错误查询",
+		}, nil
+	}
+
+	pageInit := 1
+	if 1 < req.Page {
+		pageInit = int(req.Page)
+	}
+
+	land, err = ac.userRepo.GetLandByExUserIDOrdeSellAmount(ctx, user.ID, landStatus, &Pagination{
+		PageNum:  pageInit,
+		PageSize: 100,
+	})
 	if nil != err {
 		return &pb.UserMarketLandListReply{
 			Status: "错误查询",
@@ -1956,7 +2102,7 @@ func (ac *AppUsecase) UserMarketLandList(ctx context.Context, address string, re
 	if 0 >= len(land) {
 		return &pb.UserMarketLandListReply{
 			Status: "ok",
-			Count:  0,
+			Count:  uint64(count),
 			List:   res,
 		}, nil
 	}
@@ -1995,7 +2141,7 @@ func (ac *AppUsecase) UserMarketLandList(ctx context.Context, address string, re
 
 	return &pb.UserMarketLandListReply{
 		Status: "ok",
-		Count:  0,
+		Count:  uint64(count),
 		List:   res,
 	}, nil
 }
@@ -2003,8 +2149,9 @@ func (ac *AppUsecase) UserMarketLandList(ctx context.Context, address string, re
 // UserMarketPropList userMarketPropList.
 func (ac *AppUsecase) UserMarketPropList(ctx context.Context, address string, req *pb.UserMarketPropListRequest) (*pb.UserMarketPropListReply, error) {
 	var (
-		user *User
-		err  error
+		user  *User
+		err   error
+		count int64
 	)
 	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
 	if nil != err || nil == user {
@@ -2018,8 +2165,25 @@ func (ac *AppUsecase) UserMarketPropList(ctx context.Context, address string, re
 		prop []*Prop
 	)
 	propStatus := []uint64{4}
+
 	// 11化肥，12水，13手套，14除虫剂，15铲子，16盲盒，17地契
-	prop, err = ac.userRepo.GetPropsByExUserID(ctx, user.ID, propStatus, nil)
+	count, err = ac.userRepo.GetPropsByExUserIDCount(ctx, propStatus, user.ID)
+	if nil != err {
+		return &pb.UserMarketPropListReply{
+			Status: "错误查询",
+		}, nil
+	}
+
+	pageInit := 1
+	if 1 < req.Page {
+		pageInit = int(req.Page)
+	}
+
+	// 11化肥，12水，13手套，14除虫剂，15铲子，16盲盒，17地契
+	prop, err = ac.userRepo.GetPropsByExUserID(ctx, user.ID, propStatus, &Pagination{
+		PageNum:  pageInit,
+		PageSize: 100,
+	})
 	if nil != err {
 		return &pb.UserMarketPropListReply{
 			Status: "错误查询",
@@ -2029,7 +2193,7 @@ func (ac *AppUsecase) UserMarketPropList(ctx context.Context, address string, re
 	if 0 >= len(prop) {
 		return &pb.UserMarketPropListReply{
 			Status: "ok",
-			Count:  0,
+			Count:  uint64(count),
 			List:   res,
 		}, nil
 	}
@@ -2093,7 +2257,7 @@ func (ac *AppUsecase) UserMarketPropList(ctx context.Context, address string, re
 
 	return &pb.UserMarketPropListReply{
 		Status: "ok",
-		Count:  0,
+		Count:  uint64(count),
 		List:   res,
 	}, nil
 }
@@ -2113,7 +2277,8 @@ func (ac *AppUsecase) UserMarketRentLandList(ctx context.Context, address string
 
 	res := make([]*pb.UserMarketRentLandListReply_List, 0)
 	var (
-		land []*Land
+		count int64
+		land  []*Land
 	)
 
 	if 2 == req.RentType {
@@ -2154,7 +2319,21 @@ func (ac *AppUsecase) UserMarketRentLandList(ctx context.Context, address string
 		}
 	} else {
 		landStatus := []uint64{3}
-		land, err = ac.userRepo.GetLandByExUserID(ctx, user.ID, landStatus, nil)
+		count, err = ac.userRepo.GetLandByExUserIDCount(ctx, user.ID, landStatus)
+		if nil != err {
+			return &pb.UserMarketRentLandListReply{
+				Status: "错误查询",
+			}, nil
+		}
+
+		reqPage := 1
+		if 0 < req.Page {
+			reqPage = int(req.Page)
+		}
+		land, err = ac.userRepo.GetLandByExUserID(ctx, user.ID, landStatus, &Pagination{
+			PageNum:  reqPage,
+			PageSize: 100,
+		})
 		if nil != err {
 			return &pb.UserMarketRentLandListReply{
 				Status: "错误查询",
@@ -2217,7 +2396,7 @@ func (ac *AppUsecase) UserMarketRentLandList(ctx context.Context, address string
 
 	return &pb.UserMarketRentLandListReply{
 		Status: "ok",
-		Count:  0,
+		Count:  uint64(count),
 		List:   res,
 	}, nil
 }
@@ -2226,8 +2405,9 @@ func (ac *AppUsecase) UserMarketRentLandList(ctx context.Context, address string
 func (ac *AppUsecase) UserMyMarketList(ctx context.Context, address string, req *pb.UserMyMarketListRequest) (*pb.UserMyMarketListReply, error) {
 	res := make([]*pb.UserMyMarketListReply_List, 0)
 	var (
-		user *User
-		err  error
+		count int64
+		user  *User
+		err   error
 	)
 	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
 	if nil != err || nil == user {
@@ -2236,133 +2416,289 @@ func (ac *AppUsecase) UserMyMarketList(ctx context.Context, address string, req 
 		}, nil
 	}
 
-	var (
-		seed []*Seed
-	)
-	seedStatus := []uint64{4}
-	seed, err = ac.userRepo.GetSeedByUserID(ctx, user.ID, seedStatus, nil)
-	if nil != err {
-		return &pb.UserMyMarketListReply{
-			Status: "查询种子错误",
-		}, nil
-	}
-
-	for _, vSeed := range seed {
-		res = append(res, &pb.UserMyMarketListReply_List{
-			Id:         vSeed.ID,
-			Type:       1,
-			Num:        vSeed.SeedId,
-			UseNum:     0,
-			OutMax:     vSeed.OutMaxAmount,
-			Level:      0,
-			Status:     0,
-			MaxHealth:  0,
-			Amount:     vSeed.SellAmount,
-			RentAmount: 0,
-			Time:       vSeed.OutOverTime,
-			Address:    address,
-			Content:    "一种来自区块链世界算法加密的种子，打开盲盒或合成获得，每一颗种子都不同，找到适合他的土地后，会有惊人的产出！",
-			EContent:   "A seed from the blockchain world algorithm encryption, open the blind box or synthetic access, each seed is different, find suitable for his land, there will be amazing output!",
-		})
-	}
-
-	var (
-		prop []*Prop
-	)
-	// 11化肥，12水，13手套，14除虫剂，15铲子，16盲盒，17地契
-	propStatus := []uint64{4}
-	prop, err = ac.userRepo.GetPropsByUserID(ctx, user.ID, propStatus, nil)
-	if nil != err {
-		return &pb.UserMyMarketListReply{
-			Status: "道具错误",
-		}, nil
-	}
-
-	for _, vProp := range prop {
-
-		useNum := uint64(0)
-		contentTmp := ""
-		eContentTmp := ""
-		if 12 == vProp.PropType {
-			useNum = uint64(vProp.ThreeOne) // 水
-			contentTmp = "一种植物在成长过程中也许会用到的特殊用水，缺水的植物会停止成长，使用后您的植物将永远不会缺水。"
-			eContentTmp = "A plant may use special water duringits growth. Plants that are short ofwater will stop growing. After using it,your plants will never be short of water."
-		} else if 13 == vProp.PropType {
-			useNum = uint64(vProp.FiveOne) // 手套
-			contentTmp = "带上手套后，可偷取任何邻居家的已经成熟的植物，可获得一定的ISPAY，但是使用的次数有限。"
-			eContentTmp = "After wearing gloves, you can stealany mature plants from your neighbor'shouse and obtain a certain amount ofGlT, but the number of uses is limited."
-		} else if 14 == vProp.PropType {
-			useNum = uint64(vProp.FourOne) // 除虫剂
-			contentTmp = "由Magic Manor大陆中的巫师制作，不除虫子的植物，每5分钟减产1%;直到最后为产量为0，它可以杀死Magic Manor大陆中的任何害虫。"
-			eContentTmp = "Made by wizards in the Magic Manorcontinent, plants that do not eliminateinsects will reduce their yield by 1% every5 minutes; until the final yield is O, it can killany pests in the Magic Manor continent."
-		} else if 15 == vProp.PropType {
-			useNum = uint64(vProp.TwoOne) // 铲子
-			contentTmp = "可铲除出租土地上已经成熟的植物，不可铲除自己种植的植物，但是成熟时间必须大于1H。"
-			eContentTmp = "Mature plants on the leased land canbe eradicated, but self-grown plantscannot be eradicated, but the maturitytime must be greater than 1H."
-		} else if 11 == vProp.PropType {
-			contentTmp = "一种通过算法生成的增加产量道具，合成士地和增加土地肥沃度。"
-			eContentTmp = "An algorithmically generated item thatincreases yield, synthesizes land, andincreases land fertility."
-		} else if 17 == vProp.PropType {
-			contentTmp = "在Magic Manor大陆深处埋徵着一张”地契”，它是初创统治者亲手制作，代表着整个Magic Manor最肥沃的土地，找到它的人不仅可以拥有土地，还能解锁谷中隐藏的古老秘密。\n\t\t获取方式:每新增1亿ISPAY产出业绩，自动获得1张地契:作用:1张地契加5块化肥，可合成一个崭新的1级土地;地契描述"
-			eContentTmp = "There is a \"land deed\" buried deep in the Magic Manorcontinent. lt was made by the original ruler himself andrepresents the most fertile land in the entire MagicManor. Whoever finds it will not only claim the land, butalso unlock ancient secrets hidden within the valley.How to obtain: For every 100 milion new GlT outputs,you will automatically obtain a land deed;Function: 1 land deed and 5 fertilizers can be combinedinto a brand new level 1 land."
+	if 1 == req.Num {
+		var (
+			prop []*Prop
+		)
+		// 11化肥，12水，13手套，14除虫剂，15铲子，16盲盒，17地契
+		propStatus := []uint64{4}
+		count, err = ac.userRepo.GetPropsByUserIDCount(ctx, propStatus, user.ID)
+		if nil != err {
+			return &pb.UserMyMarketListReply{
+				Status: "道具错误",
+			}, nil
 		}
 
-		res = append(res, &pb.UserMyMarketListReply_List{
-			Id:         vProp.ID,
-			Type:       2,
-			Num:        uint64(vProp.PropType),
-			UseNum:     useNum,
-			OutMax:     0,
-			Level:      0,
-			Status:     0,
-			MaxHealth:  0,
-			Amount:     vProp.SellAmount,
-			RentAmount: 0,
-			Address:    address,
-			Content:    contentTmp,
-			EContent:   eContentTmp,
+		prop, err = ac.userRepo.GetPropsByUserID(ctx, user.ID, propStatus, &Pagination{
+			PageNum:  int(req.Page),
+			PageSize: 100,
 		})
-	}
-
-	var (
-		land []*Land
-	)
-	landStatus := []uint64{3, 4, 8}
-	land, err = ac.userRepo.GetLandByUserID(ctx, user.ID, landStatus, nil)
-	if nil != err {
-		return &pb.UserMyMarketListReply{
-			Status: "错误查询",
-		}, nil
-	}
-
-	for _, vLand := range land {
-		statusTmp := uint64(1)
-		if 4 == vLand.Status {
-			statusTmp = 2
+		if nil != err {
+			return &pb.UserMyMarketListReply{
+				Status: "道具错误",
+			}, nil
 		}
 
-		res = append(res, &pb.UserMyMarketListReply_List{
-			Id:         vLand.ID,
-			Type:       3,
-			Num:        0,
-			UseNum:     0,
-			OutMax:     0,
-			Level:      vLand.Level,
-			Status:     statusTmp,
-			MaxHealth:  vLand.MaxHealth,
-			Amount:     vLand.SellAmount,
-			RentAmount: vLand.RentOutPutRate,
-			PerHealth:  vLand.PerHealth,
-			OutPutRate: uint64(vLand.OutPutRate),
-			Address:    address,
-			Content:    "在Magic Manor大陆最肥沃的土地，由神秘的地契合成，层叠强大的成长性，任何劣质的种子都可以得到茁壮的成长。",
-			EContent:   "The most fertile land in the Magic Manorcontinent is composed of mysterious landdeeds. lt has strong growth potential, andany low-quality seeds can grow vigorously.",
+		for _, vProp := range prop {
+
+			useNum := uint64(0)
+			contentTmp := ""
+			eContentTmp := ""
+			if 12 == vProp.PropType {
+				useNum = uint64(vProp.ThreeOne) // 水
+				contentTmp = "一种植物在成长过程中也许会用到的特殊用水，缺水的植物会停止成长，使用后您的植物将永远不会缺水。"
+				eContentTmp = "A plant may use special water duringits growth. Plants that are short ofwater will stop growing. After using it,your plants will never be short of water."
+			} else if 13 == vProp.PropType {
+				useNum = uint64(vProp.FiveOne) // 手套
+				contentTmp = "带上手套后，可偷取任何邻居家的已经成熟的植物，可获得一定的ISPAY，但是使用的次数有限。"
+				eContentTmp = "After wearing gloves, you can stealany mature plants from your neighbor'shouse and obtain a certain amount ofGlT, but the number of uses is limited."
+			} else if 14 == vProp.PropType {
+				useNum = uint64(vProp.FourOne) // 除虫剂
+				contentTmp = "由Magic Manor大陆中的巫师制作，不除虫子的植物，每5分钟减产1%;直到最后为产量为0，它可以杀死Magic Manor大陆中的任何害虫。"
+				eContentTmp = "Made by wizards in the Magic Manorcontinent, plants that do not eliminateinsects will reduce their yield by 1% every5 minutes; until the final yield is O, it can killany pests in the Magic Manor continent."
+			} else if 15 == vProp.PropType {
+				useNum = uint64(vProp.TwoOne) // 铲子
+				contentTmp = "可铲除出租土地上已经成熟的植物，不可铲除自己种植的植物，但是成熟时间必须大于1H。"
+				eContentTmp = "Mature plants on the leased land canbe eradicated, but self-grown plantscannot be eradicated, but the maturitytime must be greater than 1H."
+			} else if 11 == vProp.PropType {
+				contentTmp = "一种通过算法生成的增加产量道具，合成士地和增加土地肥沃度。"
+				eContentTmp = "An algorithmically generated item thatincreases yield, synthesizes land, andincreases land fertility."
+			} else if 17 == vProp.PropType {
+				contentTmp = "在Magic Manor大陆深处埋徵着一张”地契”，它是初创统治者亲手制作，代表着整个Magic Manor最肥沃的土地，找到它的人不仅可以拥有土地，还能解锁谷中隐藏的古老秘密。\n\t\t获取方式:每新增1亿ISPAY产出业绩，自动获得1张地契:作用:1张地契加5块化肥，可合成一个崭新的1级土地;地契描述"
+				eContentTmp = "There is a \"land deed\" buried deep in the Magic Manorcontinent. lt was made by the original ruler himself andrepresents the most fertile land in the entire MagicManor. Whoever finds it will not only claim the land, butalso unlock ancient secrets hidden within the valley.How to obtain: For every 100 milion new GlT outputs,you will automatically obtain a land deed;Function: 1 land deed and 5 fertilizers can be combinedinto a brand new level 1 land."
+			}
+
+			res = append(res, &pb.UserMyMarketListReply_List{
+				Id:         vProp.ID,
+				Type:       2,
+				Num:        uint64(vProp.PropType),
+				UseNum:     useNum,
+				OutMax:     0,
+				Level:      0,
+				Status:     0,
+				MaxHealth:  0,
+				Amount:     vProp.SellAmount,
+				RentAmount: 0,
+				Address:    address,
+				Content:    contentTmp,
+				EContent:   eContentTmp,
+			})
+		}
+	} else if 2 == req.Num {
+		var (
+			seed []*Seed
+		)
+		seedStatus := []uint64{4}
+		count, err = ac.userRepo.GetSeedByUserIDCount(ctx, seedStatus, user.ID)
+		if nil != err {
+			return &pb.UserMyMarketListReply{
+				Status: "查询种子错误",
+			}, nil
+		}
+
+		seed, err = ac.userRepo.GetSeedByUserID(ctx, user.ID, seedStatus, &Pagination{
+			PageNum:  int(req.Page),
+			PageSize: 100,
 		})
+		if nil != err {
+			return &pb.UserMyMarketListReply{
+				Status: "查询种子错误",
+			}, nil
+		}
+
+		for _, vSeed := range seed {
+			res = append(res, &pb.UserMyMarketListReply_List{
+				Id:         vSeed.ID,
+				Type:       1,
+				Num:        vSeed.SeedId,
+				UseNum:     0,
+				OutMax:     vSeed.OutMaxAmount,
+				Level:      0,
+				Status:     0,
+				MaxHealth:  0,
+				Amount:     vSeed.SellAmount,
+				RentAmount: 0,
+				Time:       vSeed.OutOverTime,
+				Address:    address,
+				Content:    "一种来自区块链世界算法加密的种子，打开盲盒或合成获得，每一颗种子都不同，找到适合他的土地后，会有惊人的产出！",
+				EContent:   "A seed from the blockchain world algorithm encryption, open the blind box or synthetic access, each seed is different, find suitable for his land, there will be amazing output!",
+			})
+		}
+	} else if 3 == req.Num {
+		var (
+			land []*Land
+		)
+		landStatus := []uint64{3, 4, 8}
+		count, err = ac.userRepo.GetLandByUserIDCount(ctx, user.ID, landStatus)
+		if nil != err {
+			return &pb.UserMyMarketListReply{
+				Status: "错误查询",
+			}, nil
+		}
+
+		land, err = ac.userRepo.GetLandByUserID(ctx, user.ID, landStatus, &Pagination{
+			PageNum:  int(req.Page),
+			PageSize: 100,
+		})
+		if nil != err {
+			return &pb.UserMyMarketListReply{
+				Status: "错误查询",
+			}, nil
+		}
+
+		for _, vLand := range land {
+			statusTmp := uint64(1)
+			if 4 == vLand.Status {
+				statusTmp = 2
+			}
+
+			res = append(res, &pb.UserMyMarketListReply_List{
+				Id:         vLand.ID,
+				Type:       3,
+				Num:        0,
+				UseNum:     0,
+				OutMax:     0,
+				Level:      vLand.Level,
+				Status:     statusTmp,
+				MaxHealth:  vLand.MaxHealth,
+				Amount:     vLand.SellAmount,
+				RentAmount: vLand.RentOutPutRate,
+				PerHealth:  vLand.PerHealth,
+				OutPutRate: uint64(vLand.OutPutRate),
+				Address:    address,
+				Content:    "在Magic Manor大陆最肥沃的土地，由神秘的地契合成，层叠强大的成长性，任何劣质的种子都可以得到茁壮的成长。",
+				EContent:   "The most fertile land in the Magic Manorcontinent is composed of mysterious landdeeds. lt has strong growth potential, andany low-quality seeds can grow vigorously.",
+			})
+		}
+	} else {
+		var (
+			seed []*Seed
+		)
+		seedStatus := []uint64{4}
+		seed, err = ac.userRepo.GetSeedByUserID(ctx, user.ID, seedStatus, nil)
+		if nil != err {
+			return &pb.UserMyMarketListReply{
+				Status: "查询种子错误",
+			}, nil
+		}
+
+		for _, vSeed := range seed {
+			res = append(res, &pb.UserMyMarketListReply_List{
+				Id:         vSeed.ID,
+				Type:       1,
+				Num:        vSeed.SeedId,
+				UseNum:     0,
+				OutMax:     vSeed.OutMaxAmount,
+				Level:      0,
+				Status:     0,
+				MaxHealth:  0,
+				Amount:     vSeed.SellAmount,
+				RentAmount: 0,
+				Time:       vSeed.OutOverTime,
+				Address:    address,
+				Content:    "一种来自区块链世界算法加密的种子，打开盲盒或合成获得，每一颗种子都不同，找到适合他的土地后，会有惊人的产出！",
+				EContent:   "A seed from the blockchain world algorithm encryption, open the blind box or synthetic access, each seed is different, find suitable for his land, there will be amazing output!",
+			})
+		}
+
+		var (
+			prop []*Prop
+		)
+		// 11化肥，12水，13手套，14除虫剂，15铲子，16盲盒，17地契
+		propStatus := []uint64{4}
+		prop, err = ac.userRepo.GetPropsByUserID(ctx, user.ID, propStatus, nil)
+		if nil != err {
+			return &pb.UserMyMarketListReply{
+				Status: "道具错误",
+			}, nil
+		}
+
+		for _, vProp := range prop {
+
+			useNum := uint64(0)
+			contentTmp := ""
+			eContentTmp := ""
+			if 12 == vProp.PropType {
+				useNum = uint64(vProp.ThreeOne) // 水
+				contentTmp = "一种植物在成长过程中也许会用到的特殊用水，缺水的植物会停止成长，使用后您的植物将永远不会缺水。"
+				eContentTmp = "A plant may use special water duringits growth. Plants that are short ofwater will stop growing. After using it,your plants will never be short of water."
+			} else if 13 == vProp.PropType {
+				useNum = uint64(vProp.FiveOne) // 手套
+				contentTmp = "带上手套后，可偷取任何邻居家的已经成熟的植物，可获得一定的ISPAY，但是使用的次数有限。"
+				eContentTmp = "After wearing gloves, you can stealany mature plants from your neighbor'shouse and obtain a certain amount ofGlT, but the number of uses is limited."
+			} else if 14 == vProp.PropType {
+				useNum = uint64(vProp.FourOne) // 除虫剂
+				contentTmp = "由Magic Manor大陆中的巫师制作，不除虫子的植物，每5分钟减产1%;直到最后为产量为0，它可以杀死Magic Manor大陆中的任何害虫。"
+				eContentTmp = "Made by wizards in the Magic Manorcontinent, plants that do not eliminateinsects will reduce their yield by 1% every5 minutes; until the final yield is O, it can killany pests in the Magic Manor continent."
+			} else if 15 == vProp.PropType {
+				useNum = uint64(vProp.TwoOne) // 铲子
+				contentTmp = "可铲除出租土地上已经成熟的植物，不可铲除自己种植的植物，但是成熟时间必须大于1H。"
+				eContentTmp = "Mature plants on the leased land canbe eradicated, but self-grown plantscannot be eradicated, but the maturitytime must be greater than 1H."
+			} else if 11 == vProp.PropType {
+				contentTmp = "一种通过算法生成的增加产量道具，合成士地和增加土地肥沃度。"
+				eContentTmp = "An algorithmically generated item thatincreases yield, synthesizes land, andincreases land fertility."
+			} else if 17 == vProp.PropType {
+				contentTmp = "在Magic Manor大陆深处埋徵着一张”地契”，它是初创统治者亲手制作，代表着整个Magic Manor最肥沃的土地，找到它的人不仅可以拥有土地，还能解锁谷中隐藏的古老秘密。\n\t\t获取方式:每新增1亿ISPAY产出业绩，自动获得1张地契:作用:1张地契加5块化肥，可合成一个崭新的1级土地;地契描述"
+				eContentTmp = "There is a \"land deed\" buried deep in the Magic Manorcontinent. lt was made by the original ruler himself andrepresents the most fertile land in the entire MagicManor. Whoever finds it will not only claim the land, butalso unlock ancient secrets hidden within the valley.How to obtain: For every 100 milion new GlT outputs,you will automatically obtain a land deed;Function: 1 land deed and 5 fertilizers can be combinedinto a brand new level 1 land."
+			}
+
+			res = append(res, &pb.UserMyMarketListReply_List{
+				Id:         vProp.ID,
+				Type:       2,
+				Num:        uint64(vProp.PropType),
+				UseNum:     useNum,
+				OutMax:     0,
+				Level:      0,
+				Status:     0,
+				MaxHealth:  0,
+				Amount:     vProp.SellAmount,
+				RentAmount: 0,
+				Address:    address,
+				Content:    contentTmp,
+				EContent:   eContentTmp,
+			})
+		}
+
+		var (
+			land []*Land
+		)
+		landStatus := []uint64{3, 4, 8}
+		land, err = ac.userRepo.GetLandByUserID(ctx, user.ID, landStatus, nil)
+		if nil != err {
+			return &pb.UserMyMarketListReply{
+				Status: "错误查询",
+			}, nil
+		}
+
+		for _, vLand := range land {
+			statusTmp := uint64(1)
+			if 4 == vLand.Status {
+				statusTmp = 2
+			}
+
+			res = append(res, &pb.UserMyMarketListReply_List{
+				Id:         vLand.ID,
+				Type:       3,
+				Num:        0,
+				UseNum:     0,
+				OutMax:     0,
+				Level:      vLand.Level,
+				Status:     statusTmp,
+				MaxHealth:  vLand.MaxHealth,
+				Amount:     vLand.SellAmount,
+				RentAmount: vLand.RentOutPutRate,
+				PerHealth:  vLand.PerHealth,
+				OutPutRate: uint64(vLand.OutPutRate),
+				Address:    address,
+				Content:    "在Magic Manor大陆最肥沃的土地，由神秘的地契合成，层叠强大的成长性，任何劣质的种子都可以得到茁壮的成长。",
+				EContent:   "The most fertile land in the Magic Manorcontinent is composed of mysterious landdeeds. lt has strong growth potential, andany low-quality seeds can grow vigorously.",
+			})
+		}
 	}
 
 	return &pb.UserMyMarketListReply{
 		Status: "ok",
-		Count:  0,
+		Count:  uint64(count),
 		List:   res,
 	}, nil
 }
@@ -3979,10 +4315,12 @@ func (ac *AppUsecase) LandPlayThree(ctx context.Context, address string, req *pb
 		}, nil
 	}
 
-	if user.ID != prop.UserId {
-		return &pb.LandPlayThreeReply{
-			Status: "不是自己的",
-		}, nil
+	if 1 != user.CanPlayAdd {
+		if user.ID != prop.UserId {
+			return &pb.LandPlayThreeReply{
+				Status: "不是自己的",
+			}, nil
+		}
 	}
 
 	if 11 != prop.PropType {
@@ -6434,12 +6772,10 @@ func (ac *AppUsecase) LandAddOutRate(ctx context.Context, address string, req *p
 		}, nil
 	}
 
-	if 1 != user.CanPlayAdd {
-		if user.ID != land.UserId {
-			return &pb.LandAddOutRateReply{
-				Status: "不是自己的",
-			}, nil
-		}
+	if user.ID != land.UserId {
+		return &pb.LandAddOutRateReply{
+			Status: "不是自己的",
+		}, nil
 	}
 
 	if 1 != land.Status && 0 != land.Status && 3 != land.Status {

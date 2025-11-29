@@ -657,6 +657,7 @@ message UserBoxListReply {
 
 message UserBackListRequest {
 	uint64 page = 1; // 页数
+	uint64 num = 2; // 1道具 2种子 3盲盒
 }
 
 message UserBackListReply {
@@ -768,6 +769,7 @@ message UserMarketRentLandListReply {
 }
 
 message UserMyMarketListRequest {
+	uint64 num = 2; // 1道具，2种子，3土地
 	uint64 page = 1; // 页数
 }
 

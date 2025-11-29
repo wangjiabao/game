@@ -751,6 +751,10 @@ paths:
                   in: query
                   schema:
                     type: string
+                - name: num
+                  in: query
+                  schema:
+                    type: string
             responses:
                 "200":
                     description: OK
@@ -937,6 +941,10 @@ paths:
             description: 市场 我的
             operationId: App_UserMyMarketList
             parameters:
+                - name: num
+                  in: query
+                  schema:
+                    type: string
                 - name: page
                   in: query
                   schema:

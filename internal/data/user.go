@@ -1243,6 +1243,25 @@ func (u *UserRepo) GetUserRewardTwoPageCount(ctx context.Context, userId uint64,
 	return count, nil
 }
 
+func (u *UserRepo) GetSeedByUserIDCount(ctx context.Context, status []uint64, userID uint64) (int64, error) {
+	var count int64
+
+	instance := u.data.DB(ctx).Table("seed")
+
+	if 0 < userID {
+		instance = instance.Where("user_id = ?", userID)
+	}
+
+	instance = instance.Where("status in (?)", status)
+
+	err := instance.Count(&count).Error
+	if err != nil {
+		return 0, errors.New(500, "SEED RECORD COUNT ERROR", err.Error())
+	}
+
+	return count, nil
+}
+
 // GetSeedByUserID 查询用户的种子数据
 func (u *UserRepo) GetSeedByUserID(ctx context.Context, userID uint64, status []uint64, b *biz.Pagination) ([]*biz.Seed, error) {
 	var (
@@ -1288,6 +1307,19 @@ func (u *UserRepo) GetSeedByUserID(ctx context.Context, userID uint64, status []
 	}
 
 	return res, nil
+}
+
+func (u *UserRepo) GetSeedByExUserIDCount(ctx context.Context, status []uint64, userID uint64) (int64, error) {
+	var count int64
+
+	instance := u.data.DB(ctx).Table("seed").Where("user_id != ?", userID).Where("status in (?)", status).Order("sell_amount asc")
+
+	err := instance.Count(&count).Error
+	if err != nil {
+		return 0, errors.New(500, "SEED RECORD COUNT ERROR", err.Error())
+	}
+
+	return count, nil
 }
 
 // GetSeedByExUserID 查询用户的种子数据
@@ -1649,6 +1681,20 @@ func (u *UserRepo) GetLandByExUserIDOrdeSellAmount(ctx context.Context, userID u
 	return res, nil
 }
 
+func (u *UserRepo) GetLandByExUserIDCount(ctx context.Context, userID uint64, status []uint64) (int64, error) {
+	var count int64
+	instance := u.data.DB(ctx).Table("land").Where("user_id != ?", userID).Where("limit_date>=?", time.Now().Unix()).
+		Where("status in (?)", status)
+
+	err := instance.Count(&count).Error
+
+	if err != nil {
+		return 0, errors.New(500, "USER COUNT ERROR", err.Error())
+	}
+
+	return count, nil
+}
+
 // GetLandByExUserID getLandByExUserID
 func (u *UserRepo) GetLandByExUserID(ctx context.Context, userID uint64, status []uint64, b *biz.Pagination) ([]*biz.Land, error) {
 	var (
@@ -1917,6 +1963,25 @@ func (u *UserRepo) GetNoticesCountByUserID(ctx context.Context, userID uint64) (
 	return count, nil
 }
 
+func (u *UserRepo) GetPropsByUserIDCount(ctx context.Context, status []uint64, userID uint64) (int64, error) {
+	var count int64
+
+	instance := u.data.DB(ctx).Table("prop")
+
+	if 0 < userID {
+		instance = instance.Where("user_id = ?", userID)
+	}
+
+	instance = instance.Where("status in (?)", status)
+
+	err := instance.Count(&count).Error
+	if err != nil {
+		return 0, errors.New(500, "PROP RECORD COUNT ERROR", err.Error())
+	}
+
+	return count, nil
+}
+
 func (u *UserRepo) GetPropsByUserID(ctx context.Context, userID uint64, status []uint64, b *biz.Pagination) ([]*biz.Prop, error) {
 	var (
 		props []*Prop
@@ -2007,6 +2072,19 @@ func (u *UserRepo) GetPropsByUserIDPropType(ctx context.Context, userID uint64, 
 	}
 
 	return res, nil
+}
+
+func (u *UserRepo) GetPropsByExUserIDCount(ctx context.Context, status []uint64, userID uint64) (int64, error) {
+	var count int64
+
+	instance := u.data.DB(ctx).Table("prop").Where("user_id != ?", userID).Where("status in (?)", status).Order("sell_amount asc")
+
+	err := instance.Count(&count).Error
+	if err != nil {
+		return 0, errors.New(500, "PROP RECORD COUNT ERROR", err.Error())
+	}
+
+	return count, nil
 }
 
 func (u *UserRepo) GetPropsByExUserID(ctx context.Context, userID uint64, status []uint64, b *biz.Pagination) ([]*biz.Prop, error) {
