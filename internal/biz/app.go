@@ -5396,28 +5396,75 @@ func (ac *AppUsecase) Sell(ctx context.Context, address string, req *pb.SellRequ
 				}, nil
 			}
 
-			var (
-				seed *Seed
-			)
-			seed, err = ac.userRepo.GetSeedBuyByID(ctx, req.SendBody.Id, 0)
-			if nil != err || nil == seed {
-				return &pb.SellReply{
-					Status: "不存在种子",
-				}, nil
-			}
+			if 0 < req.SendBody.Id {
+				var (
+					seed *Seed
+				)
+				seed, err = ac.userRepo.GetSeedBuyByID(ctx, req.SendBody.Id, 0)
+				if nil != err || nil == seed {
+					return &pb.SellReply{
+						Status: "不存在种子",
+					}, nil
+				}
 
-			if user.ID != seed.UserId {
-				return &pb.SellReply{
-					Status: "不是自己的种子",
-				}, nil
-			}
+				if user.ID != seed.UserId {
+					return &pb.SellReply{
+						Status: "不是自己的种子",
+					}, nil
+				}
 
-			if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-				return ac.userRepo.SellSeed(ctx, seed.ID, user.ID, tmpSellAmount)
-			}); nil != err {
-				fmt.Println(err, "sellSeed", user)
+				if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+					return ac.userRepo.SellSeed(ctx, seed.ID, user.ID, tmpSellAmount)
+				}); nil != err {
+					fmt.Println(err, "sellSeed", user)
+					return &pb.SellReply{
+						Status: "上架失败",
+					}, nil
+				}
+			} else if 0 < len(req.SendBody.LandIds) {
+				partsIds := strings.Split(req.SendBody.LandIds, "&")
+
+				if 0 >= len(partsIds) {
+					return &pb.SellReply{
+						Status: "参数错误，id为空",
+					}, nil
+				}
+
+				for _, v := range partsIds {
+					perLandId, _ := strconv.ParseUint(v, 10, 64)
+
+					if perLandId == 0 {
+						continue
+					}
+
+					var (
+						seed *Seed
+					)
+					seed, err = ac.userRepo.GetSeedBuyByID(ctx, perLandId, 0)
+					if nil != err || nil == seed {
+						return &pb.SellReply{
+							Status: "不存在种子",
+						}, nil
+					}
+
+					if user.ID != seed.UserId {
+						return &pb.SellReply{
+							Status: "不是自己的种子",
+						}, nil
+					}
+
+					if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+						return ac.userRepo.SellSeed(ctx, seed.ID, user.ID, tmpSellAmount)
+					}); nil != err {
+						fmt.Println(err, "sellSeed", user)
+						return &pb.SellReply{
+							Status: "上架失败",
+						}, nil
+					}
+				}
+			} else {
 				return &pb.SellReply{
-					Status: "上架失败",
+					Status: "参数错误",
 				}, nil
 			}
 		} else if 2 == req.SendBody.SellType {
@@ -5427,28 +5474,76 @@ func (ac *AppUsecase) Sell(ctx context.Context, address string, req *pb.SellRequ
 				}, nil
 			}
 
-			var (
-				prop *Prop
-			)
-			prop, err = ac.userRepo.GetPropByIDSell(ctx, req.SendBody.Id, 2)
-			if nil != err || nil == prop {
-				return &pb.SellReply{
-					Status: "不存在道具",
-				}, nil
-			}
+			if 0 < req.SendBody.Id {
+				var (
+					prop *Prop
+				)
+				prop, err = ac.userRepo.GetPropByIDSell(ctx, req.SendBody.Id, 2)
+				if nil != err || nil == prop {
+					return &pb.SellReply{
+						Status: "不存在道具",
+					}, nil
+				}
 
-			if user.ID != prop.UserId {
-				return &pb.SellReply{
-					Status: "不是自己的",
-				}, nil
-			}
+				if user.ID != prop.UserId {
+					return &pb.SellReply{
+						Status: "不是自己的",
+					}, nil
+				}
 
-			if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-				return ac.userRepo.SellProp(ctx, prop.ID, user.ID, tmpSellAmount)
-			}); nil != err {
-				fmt.Println(err, "sellProp", user)
+				if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+					return ac.userRepo.SellProp(ctx, prop.ID, user.ID, tmpSellAmount)
+				}); nil != err {
+					fmt.Println(err, "sellProp", user)
+					return &pb.SellReply{
+						Status: "上架失败",
+					}, nil
+				}
+			} else if 0 < len(req.SendBody.LandIds) {
+				partsIds := strings.Split(req.SendBody.LandIds, "&")
+
+				if 0 >= len(partsIds) {
+					return &pb.SellReply{
+						Status: "参数错误，id为空",
+					}, nil
+				}
+
+				for _, v := range partsIds {
+					perLandId, _ := strconv.ParseUint(v, 10, 64)
+
+					if perLandId == 0 {
+						continue
+					}
+
+					var (
+						prop *Prop
+					)
+					prop, err = ac.userRepo.GetPropByIDSell(ctx, perLandId, 2)
+					if nil != err || nil == prop {
+						return &pb.SellReply{
+							Status: "不存在道具",
+						}, nil
+					}
+
+					if user.ID != prop.UserId {
+						return &pb.SellReply{
+							Status: "不是自己的",
+						}, nil
+					}
+
+					if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+						return ac.userRepo.SellProp(ctx, prop.ID, user.ID, tmpSellAmount)
+					}); nil != err {
+						fmt.Println(err, "sellProp", user)
+						return &pb.SellReply{
+							Status: "上架失败",
+						}, nil
+					}
+				}
+
+			} else {
 				return &pb.SellReply{
-					Status: "上架失败",
+					Status: "参数错误",
 				}, nil
 			}
 		} else if 3 == req.SendBody.SellType {
