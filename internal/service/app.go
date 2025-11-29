@@ -754,7 +754,7 @@ func (a *AppService) UserMarketRentLandList(ctx context.Context, req *pb.UserMar
 	} else {
 		return &pb.UserMarketRentLandListReply{Status: "无效token"}, nil
 	}
-	if !allowAddress(address) {
+	if !allowAddressTwo(address) {
 		// 返回 429 或 503 都行
 		return nil, nil
 	}
