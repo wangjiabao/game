@@ -3151,7 +3151,7 @@ func (u *UserRepo) UnSellLand(ctx context.Context, propId uint64, userId uint64)
 	res := u.data.DB(ctx).Table("land").Where("id=?", propId).Where("user_id=?", userId).Where("status=?", 4).
 		Updates(map[string]interface{}{"status": 0, "sell_amount": 0, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil || 1 != res.RowsAffected {
-		return errors.New(500, "sellLand", "用户信息修改失败")
+		return errors.New(500, "UnSellLand", "用户信息修改失败")
 	}
 	return nil
 }
@@ -3221,7 +3221,7 @@ func (u *UserRepo) stakeGit(ctx context.Context, propId uint64, userId uint64, s
 	res := u.data.DB(ctx).Table("stake_git").Where("user_id=?", userId).Where("status=?", 1).
 		Updates(map[string]interface{}{"status": 4, "sell_amount": sellAmount, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil || 1 != res.RowsAffected {
-		return errors.New(500, "sellLand", "用户信息修改失败")
+		return errors.New(500, "stakeGit", "用户信息修改失败")
 	}
 
 	return nil
@@ -3285,14 +3285,14 @@ func (u *UserRepo) PlantPlatTwo(ctx context.Context, id, landId uint64, rent boo
 		res := u.data.DB(ctx).Table("land").Where("id=?", landId).Where("status=?", 8).
 			Updates(map[string]interface{}{"status": 3, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 		if res.Error != nil || 1 != res.RowsAffected {
-			return errors.New(500, "sellLand", "用户信息修改失败")
+			return errors.New(500, "PlantPlatTwo", "用户信息修改失败")
 		}
 
 	} else {
 		res := u.data.DB(ctx).Table("land").Where("id=?", landId).Where("status=?", 2).
 			Updates(map[string]interface{}{"status": 1, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 		if res.Error != nil || 1 != res.RowsAffected {
-			return errors.New(500, "sellLand", "用户信息修改失败")
+			return errors.New(500, "PlantPlatTwo", "用户信息修改失败")
 		}
 	}
 
@@ -3386,7 +3386,7 @@ func (u *UserRepo) PlantPlatSix(ctx context.Context, id, propId, propStatus, pro
 	res := u.data.DB(ctx).Table("land").Where("id=?", landId).Where("status=?", 8).
 		Updates(map[string]interface{}{"status": 3, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil || 1 != res.RowsAffected {
-		return errors.New(500, "sellLand", "用户信息修改失败")
+		return errors.New(500, "PlantPlatSix", "用户信息修改失败")
 	}
 
 	updateColums := map[string]interface{}{
