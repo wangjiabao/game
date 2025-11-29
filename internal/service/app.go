@@ -132,6 +132,36 @@ func allowAddress(addr string) bool {
 	return true
 }
 
+var (
+	muTwo        sync.Mutex
+	addrLimitTwo = make(map[string]*addrCounter)
+	windowTwo    = 2 * time.Second // 10 秒窗口
+	maxInWinTwo  = 4               // 10 秒最多 20 次
+)
+
+func allowAddressTwo(addr string) bool {
+	now := time.Now()
+	muTwo.Lock()
+	defer muTwo.Unlock()
+
+	c, ok := addrLimitTwo[addr]
+	if !ok || now.After(c.ResetAt) {
+		// 没有记录，或者窗口过期，重新计数
+		addrLimitTwo[addr] = &addrCounter{
+			Count:   1,
+			ResetAt: now.Add(windowTwo),
+		}
+		return true
+	}
+
+	if c.Count >= maxInWinTwo {
+		return false
+	}
+
+	c.Count++
+	return true
+}
+
 func verifySig(sigHex string, msg []byte) (bool, string) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -276,7 +306,7 @@ func (a *AppService) UserInfo(ctx context.Context, req *pb.UserInfoRequest) (*pb
 		return &pb.UserInfoReply{Status: "无效token"}, nil
 	}
 
-	if !allowAddress(address) {
+	if !allowAddressTwo(address) {
 		// 返回 429 或 503 都行
 		return nil, nil
 	}
@@ -576,7 +606,7 @@ func (a *AppService) UserBackList(ctx context.Context, req *pb.UserBackListReque
 	} else {
 		return &pb.UserBackListReply{Status: "无效token"}, nil
 	}
-	if !allowAddress(address) {
+	if !allowAddressTwo(address) {
 		// 返回 429 或 503 都行
 		return nil, nil
 	}
@@ -910,7 +940,7 @@ func (a *AppService) UserIndexList(ctx context.Context, req *pb.UserIndexListReq
 	} else {
 		return &pb.UserIndexListReply{Status: "无效token"}, nil
 	}
-	if !allowAddress(address) {
+	if !allowAddressTwo(address) {
 		// 返回 429 或 503 都行
 		return nil, nil
 	}
