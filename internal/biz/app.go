@@ -4339,10 +4339,12 @@ func (ac *AppUsecase) LandPlayThree(ctx context.Context, address string, req *pb
 		}, nil
 	}
 
-	if landUserUse.UserId != user.ID {
-		return &pb.LandPlayThreeReply{
-			Status: "非种植用户",
-		}, nil
+	if 1 != user.CanPlayAdd {
+		if landUserUse.UserId != user.ID {
+			return &pb.LandPlayThreeReply{
+				Status: "非种植用户",
+			}, nil
+		}
 	}
 
 	if 1 != landUserUse.Status {
