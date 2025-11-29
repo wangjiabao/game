@@ -201,10 +201,10 @@ func (a *AppService) EthAuthorize(ctx context.Context, req *pb.EthAuthorizeReque
 		}, nil
 	}
 
-	if !allowAddress(userAddress) {
-		// 返回 429 或 503 都行
-		return nil, nil
-	}
+	//if !allowAddress(userAddress) {
+	//	// 返回 429 或 503 都行
+	//	return nil, nil
+	//}
 
 	// 根据地址查询用户，不存在时则创建
 	var (
