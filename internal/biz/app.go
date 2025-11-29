@@ -1499,6 +1499,13 @@ func (ac *AppUsecase) UserLand(ctx context.Context, address string, req *pb.User
 	}
 
 	status := []uint64{0, 1, 2, 3, 4, 5, 8}
+	if 0 < req.Status {
+		if 100 == req.Status {
+			req.Status = 0
+		}
+
+		status = []uint64{req.Status}
+	}
 
 	pageInit := 1
 	if 1 < req.Page {
@@ -1540,8 +1547,10 @@ func (ac *AppUsecase) UserLand(ctx context.Context, address string, req *pb.User
 
 	for _, v := range lands {
 		statusTmp := v.Status
+		rentPlant := uint64(0)
 		if 8 == v.Status {
 			statusTmp = 3
+			rentPlant = 1
 		}
 
 		tmpAddress := ""
@@ -1563,6 +1572,7 @@ func (ac *AppUsecase) UserLand(ctx context.Context, address string, req *pb.User
 			Content:    "在Magic Manor大陆最肥沃的土地，由神秘的地契合成，层叠强大的成长性，任何劣质的种子都可以得到茁壮的成长。",
 			EContent:   "The most fertile land in the Magic Manorcontinent is composed of mysterious landdeeds. lt has strong growth potential, andany low-quality seeds can grow vigorously.",
 			AddressTwo: tmpAddress,
+			RentPlant:  rentPlant,
 		})
 	}
 

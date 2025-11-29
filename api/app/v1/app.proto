@@ -582,6 +582,7 @@ message UserRecommendLReply {
 
 message UserLandRequest {
 	uint64 page = 1; // 页数
+	uint64 status = 2;
 }
 
 message UserLandReply {
@@ -603,6 +604,7 @@ message UserLandReply {
 		string content = 11;
 		string eContent = 12;
 		string addressTwo = 13;
+		uint64 rentPlant = 14;
 	}
 }
 

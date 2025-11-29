@@ -889,6 +889,10 @@ paths:
                   in: query
                   schema:
                     type: string
+                - name: status
+                  in: query
+                  schema:
+                    type: string
             responses:
                 "200":
                     description: OK
@@ -2065,6 +2069,8 @@ components:
                 eContent:
                     type: string
                 addressTwo:
+                    type: string
+                rentPlant:
                     type: string
         UserMarketLandListReply:
             type: object
