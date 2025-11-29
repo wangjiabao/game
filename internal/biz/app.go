@@ -3493,10 +3493,6 @@ func (ac *AppUsecase) LandPlayOne(ctx context.Context, address string, req *pb.L
 
 // LandPlayTwo 收果实
 func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.LandPlayTwoRequest) (*pb.LandPlayTwoReply, error) {
-	return &pb.LandPlayTwoReply{
-		Status: "处理中请稍后",
-	}, nil
-
 	var (
 		configs   []*Config
 		user      *User
@@ -7050,7 +7046,7 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 		}
 
 		return &pb.StakeGetPlayReply{Status: "ok", PlayStatus: 1, Amount: tmpGit}, nil
-	} else {                                                         // 输：下注金额加入池子
+	} else { // 输：下注金额加入池子
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 			err = ac.userRepo.SetStakeGetPlaySub(ctx, user.ID, float64(req.SendBody.Amount))
 			if nil != err {

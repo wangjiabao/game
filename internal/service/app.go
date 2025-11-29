@@ -16,6 +16,7 @@ import (
 	"github.com/go-kratos/kratos/v2/middleware/auth/jwt"
 	jwt2 "github.com/golang-jwt/jwt/v5"
 	"regexp"
+	"sync"
 	"time"
 )
 
@@ -96,6 +97,41 @@ func (a *AppService) TestSign(ctx context.Context, req *pb.TestSignRequest) (*pb
 	return &pb.TestSignReply{Sign: string(signature)}, nil
 }
 
+type addrCounter struct {
+	Count   int
+	ResetAt time.Time
+}
+
+var (
+	mu        sync.Mutex
+	addrLimit = make(map[string]*addrCounter)
+	window    = 5 * time.Second // 10 秒窗口
+	maxInWin  = 20              // 10 秒最多 20 次
+)
+
+func allowAddress(addr string) bool {
+	now := time.Now()
+	mu.Lock()
+	defer mu.Unlock()
+
+	c, ok := addrLimit[addr]
+	if !ok || now.After(c.ResetAt) {
+		// 没有记录，或者窗口过期，重新计数
+		addrLimit[addr] = &addrCounter{
+			Count:   1,
+			ResetAt: now.Add(window),
+		}
+		return true
+	}
+
+	if c.Count >= maxInWin {
+		return false
+	}
+
+	c.Count++
+	return true
+}
+
 func verifySig(sigHex string, msg []byte) (bool, string) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -163,6 +199,11 @@ func (a *AppService) EthAuthorize(ctx context.Context, req *pb.EthAuthorizeReque
 			Token:  "",
 			Status: "地址签名错误",
 		}, nil
+	}
+
+	if !allowAddress(userAddress) {
+		// 返回 429 或 503 都行
+		return nil, nil
 	}
 
 	// 根据地址查询用户，不存在时则创建
@@ -235,6 +276,10 @@ func (a *AppService) UserInfo(ctx context.Context, req *pb.UserInfoRequest) (*pb
 		return &pb.UserInfoReply{Status: "无效token"}, nil
 	}
 
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.UserInfo(ctx, address)
 }
 
@@ -269,6 +314,10 @@ func (a *AppService) UserBuy(ctx context.Context, req *pb.UserBuyRequest) (*pb.U
 		return &pb.UserBuyReply{Status: "无效token"}, nil
 	}
 
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.UserBuy(ctx, address)
 }
 
@@ -303,6 +352,10 @@ func (a *AppService) UserRecommend(ctx context.Context, req *pb.UserRecommendReq
 		return &pb.UserRecommendReply{Status: "无效token"}, nil
 	}
 
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.UserRecommend(ctx, address, req)
 }
 
@@ -335,6 +388,11 @@ func (a *AppService) UserRecommendL(ctx context.Context, req *pb.UserRecommendLR
 		//}
 	} else {
 		return &pb.UserRecommendLReply{Status: "无效token"}, nil
+	}
+
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
 	}
 
 	return a.ac.UserRecommendL(ctx, address, req)
@@ -370,7 +428,10 @@ func (a *AppService) UserBuyL(ctx context.Context, req *pb.UserBuyLRequest) (*pb
 	} else {
 		return &pb.UserBuyLReply{Status: "无效token"}, nil
 	}
-
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.UserBuyL(ctx, address, req)
 }
 
@@ -404,7 +465,10 @@ func (a *AppService) UserLand(ctx context.Context, req *pb.UserLandRequest) (*pb
 	} else {
 		return &pb.UserLandReply{Status: "无效token"}, nil
 	}
-
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.UserLand(ctx, address, req)
 }
 
@@ -438,7 +502,10 @@ func (a *AppService) UserStakeRewardList(ctx context.Context, req *pb.UserStakeR
 	} else {
 		return &pb.UserStakeRewardListReply{Status: "无效token"}, nil
 	}
-
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.UserStakeRewardList(ctx, address, req)
 }
 
@@ -472,7 +539,10 @@ func (a *AppService) UserBoxList(ctx context.Context, req *pb.UserBoxListRequest
 	} else {
 		return &pb.UserBoxListReply{Status: "无效token"}, nil
 	}
-
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.UserBoxList(ctx, address, req)
 }
 
@@ -506,7 +576,10 @@ func (a *AppService) UserBackList(ctx context.Context, req *pb.UserBackListReque
 	} else {
 		return &pb.UserBackListReply{Status: "无效token"}, nil
 	}
-
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.UserBackList(ctx, address, req)
 }
 
@@ -540,7 +613,10 @@ func (a *AppService) UserMarketSeedList(ctx context.Context, req *pb.UserMarketS
 	} else {
 		return &pb.UserMarketSeedListReply{Status: "无效token"}, nil
 	}
-
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.UserMarketSeedList(ctx, address, req)
 }
 
@@ -574,7 +650,10 @@ func (a *AppService) UserMarketLandList(ctx context.Context, req *pb.UserMarketL
 	} else {
 		return &pb.UserMarketLandListReply{Status: "无效token"}, nil
 	}
-
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.UserMarketLandList(ctx, address, req)
 }
 
@@ -608,7 +687,10 @@ func (a *AppService) UserMarketPropList(ctx context.Context, req *pb.UserMarketP
 	} else {
 		return &pb.UserMarketPropListReply{Status: "无效token"}, nil
 	}
-
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.UserMarketPropList(ctx, address, req)
 }
 
@@ -642,7 +724,10 @@ func (a *AppService) UserMarketRentLandList(ctx context.Context, req *pb.UserMar
 	} else {
 		return &pb.UserMarketRentLandListReply{Status: "无效token"}, nil
 	}
-
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.UserMarketRentLandList(ctx, address, req)
 }
 
@@ -676,7 +761,10 @@ func (a *AppService) UserMyMarketList(ctx context.Context, req *pb.UserMyMarketL
 	} else {
 		return &pb.UserMyMarketListReply{Status: "无效token"}, nil
 	}
-
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.UserMyMarketList(ctx, address, req)
 }
 
@@ -710,7 +798,10 @@ func (a *AppService) UserNoticeList(ctx context.Context, req *pb.UserNoticeListR
 	} else {
 		return &pb.UserNoticeListReply{Status: "无效token"}, nil
 	}
-
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.UserNoticeList(ctx, address, req)
 }
 
@@ -744,7 +835,10 @@ func (a *AppService) UserStakeGitRewardList(ctx context.Context, req *pb.UserSta
 	} else {
 		return &pb.UserStakeGitRewardListReply{Status: "无效token"}, nil
 	}
-
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.UserStakeGitRewardList(ctx, address, req)
 }
 
@@ -778,7 +872,10 @@ func (a *AppService) UserStakeGitStakeList(ctx context.Context, req *pb.UserStak
 	} else {
 		return &pb.UserStakeGitStakeListReply{Status: "无效token"}, nil
 	}
-
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.UserStakeGitStakeList(ctx, address, req)
 }
 
@@ -813,7 +910,10 @@ func (a *AppService) UserIndexList(ctx context.Context, req *pb.UserIndexListReq
 	} else {
 		return &pb.UserIndexListReply{Status: "无效token"}, nil
 	}
-
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.UserIndexList(ctx, address, req)
 }
 
@@ -847,7 +947,10 @@ func (a *AppService) UserOrderList(ctx context.Context, req *pb.UserOrderListReq
 	} else {
 		return &pb.UserOrderListReply{Status: "无效token"}, nil
 	}
-
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.UserOrderList(ctx, address, req)
 }
 
@@ -891,7 +994,10 @@ func (a *AppService) AddMessage(ctx context.Context, req *pb.AddMessageRequest) 
 			Status: "地址签名错误",
 		}, nil
 	}
-
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.AddMessage(ctx, address, req)
 }
 
@@ -935,7 +1041,10 @@ func (a *AppService) BuyBox(ctx context.Context, req *pb.BuyBoxRequest) (*pb.Buy
 			Status: "地址签名错误",
 		}, nil
 	}
-
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.BuyBox(ctx, address, req)
 }
 
@@ -979,7 +1088,10 @@ func (a *AppService) OpenBox(ctx context.Context, req *pb.OpenBoxRequest) (*pb.O
 			Status: "地址签名错误",
 		}, nil
 	}
-
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.OpenBox(ctx, address, req)
 }
 
@@ -1024,7 +1136,10 @@ func (a *AppService) LandPlay(ctx context.Context, req *pb.LandPlayRequest) (*pb
 			Status: "地址签名错误",
 		}, nil
 	}
-
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.LandPlay(ctx, address, req)
 }
 
@@ -1069,7 +1184,10 @@ func (a *AppService) LandPlayOne(ctx context.Context, req *pb.LandPlayOneRequest
 			Status: "地址签名错误",
 		}, nil
 	}
-
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.LandPlayOne(ctx, address, req)
 }
 
@@ -1114,7 +1232,10 @@ func (a *AppService) LandPlayTwo(ctx context.Context, req *pb.LandPlayTwoRequest
 			Status: "地址签名错误",
 		}, nil
 	}
-
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.LandPlayTwo(ctx, address, req)
 }
 
@@ -1158,7 +1279,10 @@ func (a *AppService) LandPlayThree(ctx context.Context, req *pb.LandPlayThreeReq
 			Status: "地址签名错误",
 		}, nil
 	}
-
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.LandPlayThree(ctx, address, req)
 }
 
@@ -1202,7 +1326,10 @@ func (a *AppService) LandPlayFour(ctx context.Context, req *pb.LandPlayFourReque
 			Status: "地址签名错误",
 		}, nil
 	}
-
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.LandPlayFour(ctx, address, req)
 }
 
@@ -1246,7 +1373,10 @@ func (a *AppService) LandPlayFive(ctx context.Context, req *pb.LandPlayFiveReque
 			Status: "地址签名错误",
 		}, nil
 	}
-
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.LandPlayFive(ctx, address, req)
 }
 
@@ -1291,7 +1421,10 @@ func (a *AppService) LandPlaySix(ctx context.Context, req *pb.LandPlaySixRequest
 			Status: "地址签名错误",
 		}, nil
 	}
-
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.LandPlaySix(ctx, address, req)
 }
 
@@ -1336,7 +1469,10 @@ func (a *AppService) LandPlaySeven(ctx context.Context, req *pb.LandPlaySevenReq
 			Status: "地址签名错误",
 		}, nil
 	}
-
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.LandPlaySeven(ctx, address, req)
 }
 
@@ -1380,7 +1516,10 @@ func (a *AppService) Buy(ctx context.Context, req *pb.BuyRequest) (*pb.BuyReply,
 			Status: "地址签名错误",
 		}, nil
 	}
-
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.Buy(ctx, address, req)
 }
 
@@ -1424,7 +1563,10 @@ func (a *AppService) Sell(ctx context.Context, req *pb.SellRequest) (*pb.SellRep
 			Status: "地址签名错误",
 		}, nil
 	}
-
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.Sell(ctx, address, req)
 }
 
@@ -1468,7 +1610,10 @@ func (a *AppService) StakeGit(ctx context.Context, req *pb.StakeGitRequest) (*pb
 			Status: "地址签名错误",
 		}, nil
 	}
-
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.StakeGit(ctx, address, req)
 }
 
@@ -1513,7 +1658,10 @@ func (a *AppService) RentLand(ctx context.Context, req *pb.RentLandRequest) (*pb
 			Status: "地址签名错误",
 		}, nil
 	}
-
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.RentLand(ctx, address, req)
 }
 
@@ -1558,7 +1706,10 @@ func (a *AppService) LandAddOutRate(ctx context.Context, req *pb.LandAddOutRateR
 			Status: "地址签名错误",
 		}, nil
 	}
-
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.LandAddOutRate(ctx, address, req)
 }
 
@@ -1605,7 +1756,10 @@ func (a *AppService) GetLand(ctx context.Context, req *pb.GetLandRequest) (*pb.G
 			Status: "地址签名错误",
 		}, nil
 	}
-
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.GetLand(ctx, address, req)
 }
 
@@ -1650,7 +1804,10 @@ func (a *AppService) StakeGet(ctx context.Context, req *pb.StakeGetRequest) (*pb
 			Status: "地址签名错误",
 		}, nil
 	}
-
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.StakeGet(ctx, address, req)
 }
 
@@ -1695,7 +1852,10 @@ func (a *AppService) StakeGetPlay(ctx context.Context, req *pb.StakeGetPlayReque
 			Status: "地址签名错误",
 		}, nil
 	}
-
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.StakeGetPlay(ctx, address, req)
 }
 
@@ -1740,7 +1900,10 @@ func (a *AppService) Exchange(ctx context.Context, req *pb.ExchangeRequest) (*pb
 			Status: "地址签名错误",
 		}, nil
 	}
-
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.Exchange(ctx, address, req)
 }
 
@@ -1787,7 +1950,10 @@ func (a *AppService) BuyTwo(ctx context.Context, req *pb.BuyTwoRequest) (*pb.Buy
 			Status: "地址签名错误",
 		}, nil
 	}
-
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.BuyTwo(ctx, address, req)
 }
 
@@ -1831,7 +1997,10 @@ func (a *AppService) Withdraw(ctx context.Context, req *pb.WithdrawRequest) (*pb
 			Status: "地址签名错误",
 		}, nil
 	}
-
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.Withdraw(ctx, address, req)
 }
 
@@ -1882,7 +2051,10 @@ func (a *AppService) GetBuyLand(ctx context.Context, req *pb.GetBuyLandRequest) 
 	} else {
 		return &pb.GetBuyLandReply{Status: "无效token"}, nil
 	}
-
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.GetBuyLand(ctx, address, req)
 }
 
@@ -1916,7 +2088,10 @@ func (a *AppService) BuyLandRecord(ctx context.Context, req *pb.BuyLandRecordReq
 	} else {
 		return &pb.BuyLandRecordReply{Status: "无效token"}, nil
 	}
-
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
 	return a.ac.BuyLandRecord(ctx, address, req)
 }
 
