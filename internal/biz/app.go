@@ -415,6 +415,7 @@ type UserRepo interface {
 	GetBoxRecord(ctx context.Context, num uint64) ([]*BoxRecord, error)
 	GetBoxRecordCount(ctx context.Context, num uint64) (int64, error)
 	GetUserBoxRecord(ctx context.Context, userId, num uint64, b *Pagination) ([]*BoxRecord, error)
+	GetUserBoxRecordOpenCount(ctx context.Context, userId uint64) (int64, error)
 	GetUserBoxRecordOpen(ctx context.Context, userId, num uint64, open bool, b *Pagination) ([]*BoxRecord, error)
 	GetStakeGetTotal(ctx context.Context) (*StakeGetTotal, error)
 	GetUserStakeGet(ctx context.Context, userId uint64) (*StakeGet, error)
@@ -1852,6 +1853,38 @@ func (ac *AppUsecase) UserBackList(ctx context.Context, address string, req *pb.
 				Amount:   vSeed.SellAmount,
 				Content:  "一种来自区块链世界算法加密的种子，打开盲盒或合成获得，每一颗种子都不同，找到适合他的土地后，会有惊人的产出！",
 				EContent: "A seed from the blockchain world algorithm encryption, open the blind box or synthetic access, each seed is different, find suitable for his land, there will be amazing output!",
+			})
+		}
+	} else if 3 == req.Num {
+		var (
+			box []*BoxRecord
+		)
+
+		count, err = ac.userRepo.GetUserBoxRecordOpenCount(ctx, user.ID)
+		if nil != err {
+			return &pb.UserBackListReply{
+				Status: "查询盒子错误",
+			}, nil
+		}
+
+		box, err = ac.userRepo.GetUserBoxRecordOpen(ctx, user.ID, 0, false, &Pagination{
+			PageNum:  1,
+			PageSize: 100,
+		})
+		if nil != err {
+			return &pb.UserBackListReply{
+				Status: "查询盒子错误",
+			}, nil
+		}
+
+		for _, v := range box {
+			res = append(res, &pb.UserBackListReply_List{
+				Id:     v.ID,
+				Type:   2,
+				Num:    16,
+				UseNum: 0,
+				Status: 0,
+				OutMax: 0,
 			})
 		}
 	} else {
@@ -7489,7 +7522,7 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 		}
 
 		return &pb.StakeGetPlayReply{Status: "ok", PlayStatus: 1, Amount: tmpGit}, nil
-	} else { // 输：下注金额加入池子
+	} else {                                                         // 输：下注金额加入池子
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 			err = ac.userRepo.SetStakeGetPlaySub(ctx, user.ID, float64(req.SendBody.Amount))
 			if nil != err {

@@ -1007,6 +1007,20 @@ func (u *UserRepo) GetUserBoxRecord(ctx context.Context, userId, num uint64, b *
 	return res, nil
 }
 
+func (u *UserRepo) GetUserBoxRecordOpenCount(ctx context.Context, userId uint64) (int64, error) {
+	var count int64
+
+	instance := u.data.DB(ctx).Where("user_id=?", userId).Table("box_record")
+	instance = instance.Where("good_id=?", 0)
+
+	err := instance.Count(&count).Error
+	if err != nil {
+		return 0, errors.New(500, "BOX RECORD COUNT ERROR", err.Error())
+	}
+
+	return count, nil
+}
+
 // GetUserBoxRecordOpen .
 func (u *UserRepo) GetUserBoxRecordOpen(ctx context.Context, userId, num uint64, open bool, b *biz.Pagination) ([]*biz.BoxRecord, error) {
 	var boxRecord []*BoxRecord
