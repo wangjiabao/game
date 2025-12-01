@@ -135,8 +135,8 @@ func allowAddress(addr string) bool {
 var (
 	muTwo        sync.Mutex
 	addrLimitTwo = make(map[string]*addrCounter)
-	windowTwo    = 2 * time.Second // 10 秒窗口
-	maxInWinTwo  = 4               // 10 秒最多 20 次
+	windowTwo    = 2 * time.Second // 2 秒窗口
+	maxInWinTwo  = 4               // 2 秒最多 4 次
 )
 
 func allowAddressTwo(addr string) bool {
@@ -160,6 +160,28 @@ func allowAddressTwo(addr string) bool {
 
 	c.Count++
 	return true
+}
+
+var (
+	muThree        sync.Mutex
+	addrLimitThree = make(map[string]*addrCounter)
+)
+
+func allowAddressThree(addr string) bool {
+	now := time.Now()
+	muThree.Lock()
+	defer muThree.Unlock()
+
+	c, ok := addrLimitThree[addr]
+	if !ok || now.After(c.ResetAt) {
+		// 没有记录，或者窗口过期，重新计数
+		addrLimitThree[addr] = &addrCounter{
+			ResetAt: now.Add(1 * time.Second),
+		}
+		return true
+	}
+
+	return false
 }
 
 func verifySig(sigHex string, msg []byte) (bool, string) {
@@ -1262,7 +1284,7 @@ func (a *AppService) LandPlayTwo(ctx context.Context, req *pb.LandPlayTwoRequest
 			Status: "地址签名错误",
 		}, nil
 	}
-	if !allowAddress(address) {
+	if !allowAddressThree(address) {
 		// 返回 429 或 503 都行
 		return nil, nil
 	}
