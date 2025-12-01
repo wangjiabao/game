@@ -1286,7 +1286,9 @@ func (a *AppService) LandPlayTwo(ctx context.Context, req *pb.LandPlayTwoRequest
 	}
 	if !allowAddressThree(address) {
 		// 返回 429 或 503 都行
-		return nil, nil
+		return &pb.LandPlayTwoReply{
+			Status: "收获果实中，请勿频繁访问~",
+		}, nil
 	}
 	return a.ac.LandPlayTwo(ctx, address, req)
 }
