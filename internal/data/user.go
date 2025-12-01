@@ -1977,13 +1977,17 @@ func (u *UserRepo) GetNoticesCountByUserID(ctx context.Context, userID uint64) (
 	return count, nil
 }
 
-func (u *UserRepo) GetPropsByUserIDCount(ctx context.Context, status []uint64, userID uint64) (int64, error) {
+func (u *UserRepo) GetPropsByUserIDCount(ctx context.Context, status []uint64, userID uint64, propType uint64) (int64, error) {
 	var count int64
 
 	instance := u.data.DB(ctx).Table("prop")
 
 	if 0 < userID {
 		instance = instance.Where("user_id = ?", userID)
+	}
+
+	if 0 < propType {
+		instance = instance.Where("prop_type = ?", propType)
 	}
 
 	instance = instance.Where("status in (?)", status)
@@ -1996,7 +2000,7 @@ func (u *UserRepo) GetPropsByUserIDCount(ctx context.Context, status []uint64, u
 	return count, nil
 }
 
-func (u *UserRepo) GetPropsByUserID(ctx context.Context, userID uint64, status []uint64, b *biz.Pagination) ([]*biz.Prop, error) {
+func (u *UserRepo) GetPropsByUserID(ctx context.Context, userID uint64, status []uint64, propType uint64, b *biz.Pagination) ([]*biz.Prop, error) {
 	var (
 		props []*Prop
 	)
@@ -2006,6 +2010,10 @@ func (u *UserRepo) GetPropsByUserID(ctx context.Context, userID uint64, status [
 
 	if 0 < userID {
 		instance = instance.Where("user_id = ?", userID)
+	}
+
+	if 0 < propType {
+		instance = instance.Where("prop_type = ?", propType)
 	}
 
 	instance = instance.Where("status in (?)", status).Order("id asc")

@@ -658,6 +658,7 @@ message UserBoxListReply {
 message UserBackListRequest {
 	uint64 page = 1; // 页数
 	uint64 num = 2; // 1道具 2种子 3盲盒
+	uint64 propType = 3;
 }
 
 message UserBackListReply {
