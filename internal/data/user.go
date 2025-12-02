@@ -1326,7 +1326,7 @@ func (u *UserRepo) GetSeedByUserID(ctx context.Context, userID uint64, status []
 func (u *UserRepo) GetSeedByExUserIDCount(ctx context.Context, status []uint64, userID uint64) (int64, error) {
 	var count int64
 
-	instance := u.data.DB(ctx).Table("seed").Where("user_id != ?", userID).Where("status in (?)", status).Order("sell_amount asc")
+	instance := u.data.DB(ctx).Table("seed").Where("status in (?)", status)
 
 	err := instance.Count(&count).Error
 	if err != nil {
@@ -1343,7 +1343,7 @@ func (u *UserRepo) GetSeedByExUserID(ctx context.Context, userID uint64, status 
 	)
 
 	res := make([]*biz.Seed, 0)
-	instance := u.data.DB(ctx).Table("seed").Where("user_id != ?", userID).Where("status in (?)", status).Order("sell_amount asc")
+	instance := u.data.DB(ctx).Table("seed").Where("status in (?)", status)
 
 	if nil != b {
 		instance = instance.Scopes(Paginate(b.PageNum, b.PageSize))
@@ -1654,9 +1654,8 @@ func (u *UserRepo) GetLandByExUserIDOrdeSellAmount(ctx context.Context, userID u
 	)
 
 	res := make([]*biz.Land, 0)
-	instance := u.data.DB(ctx).Table("land").Where("user_id != ?", userID).Where("limit_date>=?", time.Now().Unix()).
-		Where("status in (?)", status).
-		Order("sell_amount asc")
+	instance := u.data.DB(ctx).Table("land").Where("limit_date>=?", time.Now().Unix()).
+		Where("status in (?)", status)
 
 	if nil != b {
 		instance = instance.Scopes(Paginate(b.PageNum, b.PageSize))
@@ -1697,7 +1696,7 @@ func (u *UserRepo) GetLandByExUserIDOrdeSellAmount(ctx context.Context, userID u
 
 func (u *UserRepo) GetLandByExUserIDCount(ctx context.Context, userID uint64, status []uint64) (int64, error) {
 	var count int64
-	instance := u.data.DB(ctx).Table("land").Where("user_id != ?", userID).Where("limit_date>=?", time.Now().Unix()).
+	instance := u.data.DB(ctx).Table("land").Where("limit_date>=?", time.Now().Unix()).
 		Where("status in (?)", status)
 
 	err := instance.Count(&count).Error
@@ -1716,7 +1715,7 @@ func (u *UserRepo) GetLandByExUserID(ctx context.Context, userID uint64, status 
 	)
 
 	res := make([]*biz.Land, 0)
-	instance := u.data.DB(ctx).Table("land").Where("user_id != ?", userID).Where("limit_date>=?", time.Now().Unix()).
+	instance := u.data.DB(ctx).Table("land").Where("limit_date>=?", time.Now().Unix()).
 		Where("status in (?)", status).
 		Order("id asc")
 
@@ -2099,7 +2098,7 @@ func (u *UserRepo) GetPropsByUserIDPropType(ctx context.Context, userID uint64, 
 func (u *UserRepo) GetPropsByExUserIDCount(ctx context.Context, status []uint64, userID uint64) (int64, error) {
 	var count int64
 
-	instance := u.data.DB(ctx).Table("prop").Where("user_id != ?", userID).Where("status in (?)", status).Order("sell_amount asc")
+	instance := u.data.DB(ctx).Table("prop").Where("status in (?)", status)
 
 	err := instance.Count(&count).Error
 	if err != nil {
@@ -2115,7 +2114,7 @@ func (u *UserRepo) GetPropsByExUserID(ctx context.Context, userID uint64, status
 	)
 
 	res := make([]*biz.Prop, 0)
-	instance := u.data.DB(ctx).Table("prop").Where("user_id != ?", userID).Where("status in (?)", status).Order("sell_amount asc")
+	instance := u.data.DB(ctx).Table("prop").Where("status in (?)", status)
 
 	if nil != b {
 		instance = instance.Scopes(Paginate(b.PageNum, b.PageSize))

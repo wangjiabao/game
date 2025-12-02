@@ -1915,17 +1915,19 @@ func (ac *AppUsecase) UserMarketSeedList(ctx context.Context, address string, re
 		count int64
 	)
 
-	return &pb.UserMarketSeedListReply{
-		Status: "ok",
-		Count:  uint64(count),
-		List:   res,
-	}, nil
-
 	seedStatus := []uint64{4}
 	count, err = ac.userRepo.GetSeedByExUserIDCount(ctx, seedStatus, user.ID)
 	if nil != err {
 		return &pb.UserMarketSeedListReply{
 			Status: "查询错误",
+		}, nil
+	}
+
+	if 0 >= count {
+		return &pb.UserMarketSeedListReply{
+			Status: "ok",
+			Count:  uint64(count),
+			List:   res,
 		}, nil
 	}
 
@@ -2014,6 +2016,14 @@ func (ac *AppUsecase) UserMarketLandList(ctx context.Context, address string, re
 	if nil != err {
 		return &pb.UserMarketLandListReply{
 			Status: "错误查询",
+		}, nil
+	}
+
+	if 0 >= count {
+		return &pb.UserMarketLandListReply{
+			Status: "ok",
+			Count:  uint64(count),
+			List:   res,
 		}, nil
 	}
 
@@ -3491,13 +3501,13 @@ func (ac *AppUsecase) LandPlayOne(ctx context.Context, address string, req *pb.L
 	if land.UserId != user.ID {
 		if 3 != land.Status {
 			return &pb.LandPlayOneReply{
-				Status: "未出租土地",
+				Status: "未出租土地，不能种植",
 			}, nil
 		}
 	} else if land.UserId == user.ID {
 		if 1 != land.Status {
 			return &pb.LandPlayOneReply{
-				Status: "已出租土地",
+				Status: "已出租土地，自己不能种植",
 			}, nil
 		}
 	} else {
