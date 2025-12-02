@@ -1898,6 +1898,7 @@ func (ac *AppUsecase) UserBackList(ctx context.Context, address string, req *pb.
 
 // UserMarketSeedList userMarketSeedList.
 func (ac *AppUsecase) UserMarketSeedList(ctx context.Context, address string, req *pb.UserMarketSeedListRequest) (*pb.UserMarketSeedListReply, error) {
+
 	var (
 		user *User
 		err  error
@@ -1913,6 +1914,12 @@ func (ac *AppUsecase) UserMarketSeedList(ctx context.Context, address string, re
 		seed  []*Seed
 		count int64
 	)
+
+	return &pb.UserMarketSeedListReply{
+		Status: "ok",
+		Count:  uint64(count),
+		List:   res,
+	}, nil
 
 	seedStatus := []uint64{4}
 	count, err = ac.userRepo.GetSeedByExUserIDCount(ctx, seedStatus, user.ID)
