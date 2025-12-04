@@ -1717,7 +1717,8 @@ func (u *UserRepo) GetLandByExUserID(ctx context.Context, userID uint64, status 
 	res := make([]*biz.Land, 0)
 	instance := u.data.DB(ctx).Table("land").Where("limit_date>=?", time.Now().Unix()).
 		Where("status in (?)", status).
-		Order("id asc").Order("max_health desc")
+		Where("max_health > ?", 0).
+		Order("id asc")
 
 	if nil != b {
 		instance = instance.Scopes(Paginate(b.PageNum, b.PageSize))
