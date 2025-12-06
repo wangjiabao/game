@@ -8,7 +8,6 @@ import (
 	"game/internal/conf"
 	"game/internal/pkg/middleware/auth"
 	"github.com/ethereum/go-ethereum/accounts"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -51,30 +50,30 @@ func addressCheck(addressParam string) (bool, error) {
 		return false, nil
 	}
 
-	var (
-		err      error
-		bytecode []byte
-	)
-
-	if nil == ethClient {
-		ethClient, err = ethclient.Dial("https://bsc-dataseed4.binance.org/")
-		if err != nil {
-			fmt.Println("eth client err")
-			return false, err
-		}
-	}
-
-	// a random user account address
-	address := common.HexToAddress(addressParam)
-	bytecode, err = ethClient.CodeAt(context.Background(), address, nil) // nil is latest block
-	if err != nil {
-		fmt.Println("eth address err")
-		return false, err
-	}
-
-	if len(bytecode) > 0 {
-		return false, nil
-	}
+	//var (
+	//	err      error
+	//	bytecode []byte
+	//)
+	//
+	//if nil == ethClient {
+	//	ethClient, err = ethclient.Dial("https://bsc-dataseed4.binance.org/")
+	//	if err != nil {
+	//		fmt.Println("eth client err")
+	//		return false, err
+	//	}
+	//}
+	//
+	//// a random user account address
+	//address := common.HexToAddress(addressParam)
+	//bytecode, err = ethClient.CodeAt(context.Background(), address, nil) // nil is latest block
+	//if err != nil {
+	//	fmt.Println("eth address err")
+	//	return false, err
+	//}
+	//
+	//if len(bytecode) > 0 {
+	//	return false, nil
+	//}
 
 	return true, nil
 }
