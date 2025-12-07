@@ -293,6 +293,15 @@ type Message struct {
 	UpdatedAt time.Time `gorm:"type:datetime;not null"`
 }
 
+type AdminMessage struct {
+	ID         uint64    `gorm:"primarykey;type:int"`
+	Content    string    `gorm:"type:varchar(200);not null;comment:消息内容"`
+	ContentTwo string    `gorm:"type:varchar(200);not null;comment:消息内容"`
+	Status     uint64    `gorm:"type:int;not null;default:0"`
+	CreatedAt  time.Time `gorm:"type:datetime;not null"`
+	UpdatedAt  time.Time `gorm:"type:datetime;not null"`
+}
+
 type StakeGit struct {
 	ID        uint64    `gorm:"primarykey;type:int"`
 	UserId    uint64    `gorm:"type:int;not null;comment:用户id"`
@@ -724,6 +733,35 @@ func (u *UserRepo) GetMessages(ctx context.Context) ([]*biz.Message, error) {
 			UserId:    v.UserId,
 			Status:    v.Status,
 			CreatedAt: v.CreatedAt,
+		})
+	}
+
+	return res, nil
+}
+
+// GetAdminMessages .
+func (u *UserRepo) GetAdminMessages(ctx context.Context) ([]*biz.AdminMessage, error) {
+	var (
+		m []*AdminMessage
+	)
+
+	res := make([]*biz.AdminMessage, 0)
+	instance := u.data.DB(ctx).Table("admin_message").Where("status=?", 0).Order("id desc").Limit(100)
+	if err := instance.Find(&m).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return res, nil
+		}
+
+		return nil, errors.New(500, "message ERROR", err.Error())
+	}
+
+	for _, v := range m {
+		res = append(res, &biz.AdminMessage{
+			ID:         v.ID,
+			Content:    v.Content,
+			ContentTwo: v.ContentTwo,
+			Status:     v.Status,
+			CreatedAt:  v.CreatedAt,
 		})
 	}
 
@@ -2096,10 +2134,14 @@ func (u *UserRepo) GetPropsByUserIDPropType(ctx context.Context, userID uint64, 
 	return res, nil
 }
 
-func (u *UserRepo) GetPropsByExUserIDCount(ctx context.Context, status []uint64, userID uint64) (int64, error) {
+func (u *UserRepo) GetPropsByExUserIDCount(ctx context.Context, status []uint64, userID uint64, propType uint64) (int64, error) {
 	var count int64
 
 	instance := u.data.DB(ctx).Table("prop").Where("status in (?)", status)
+
+	if 0 < propType {
+		instance = instance.Where("prop_type = ?", propType)
+	}
 
 	err := instance.Count(&count).Error
 	if err != nil {
@@ -2109,13 +2151,17 @@ func (u *UserRepo) GetPropsByExUserIDCount(ctx context.Context, status []uint64,
 	return count, nil
 }
 
-func (u *UserRepo) GetPropsByExUserID(ctx context.Context, userID uint64, status []uint64, b *biz.Pagination) ([]*biz.Prop, error) {
+func (u *UserRepo) GetPropsByExUserID(ctx context.Context, userID uint64, status []uint64, b *biz.Pagination, propType uint64) ([]*biz.Prop, error) {
 	var (
 		props []*Prop
 	)
 
 	res := make([]*biz.Prop, 0)
 	instance := u.data.DB(ctx).Table("prop").Where("status in (?)", status)
+
+	if 0 < propType {
+		instance = instance.Where("prop_type = ?", propType)
+	}
 
 	if nil != b {
 		instance = instance.Scopes(Paginate(b.PageNum, b.PageSize))

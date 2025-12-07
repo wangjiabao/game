@@ -484,6 +484,12 @@ message UserInfoReply {
 		string address = 1; // 地址
 		string content = 2; // 内容
 	}
+	repeated AdminListM adminListM = 57;
+	message AdminListM {
+		string content = 1; // 内容
+		string contentTwo = 2; // 英文内容
+	}
+
 
 	uint64 canLand = 44;
 	uint64 red = 45;
@@ -727,6 +733,7 @@ message UserMarketLandListReply {
 
 message UserMarketPropListRequest {
 	uint64 page = 1; // 页数
+	uint64 propType = 3;
 }
 
 message UserMarketPropListReply {

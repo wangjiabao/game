@@ -255,6 +255,15 @@ type Message struct {
 	UpdatedAt time.Time
 }
 
+type AdminMessage struct {
+	ID         uint64
+	Content    string
+	ContentTwo string
+	Status     uint64
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+}
+
 type ExchangeRecord struct {
 	ID        uint64
 	UserId    int64
@@ -401,6 +410,7 @@ type UserRepo interface {
 	GetUserRecommendByUserId(ctx context.Context, userId uint64) (*UserRecommend, error)
 	GetUserRecommendByCode(ctx context.Context, code string) ([]*UserRecommend, error)
 	GetMessages(ctx context.Context) ([]*Message, error)
+	GetAdminMessages(ctx context.Context) ([]*AdminMessage, error)
 	GetMessagesCount(ctx context.Context, userId uint64) (int64, error)
 	CreateMessages(ctx context.Context, userId uint64, content string) error
 	GetUserRecommendLikeCode(ctx context.Context, code string) ([]*UserRecommend, error)
@@ -447,8 +457,8 @@ type UserRepo interface {
 	GetPropsByUserIDCount(ctx context.Context, status []uint64, userID uint64, propType uint64) (int64, error)
 	GetPropsByUserID(ctx context.Context, userID uint64, status []uint64, propType uint64, b *Pagination) ([]*Prop, error)
 	GetPropsByUserIDPropType(ctx context.Context, userID uint64, propType []uint64) ([]*Prop, error)
-	GetPropsByExUserIDCount(ctx context.Context, status []uint64, userID uint64) (int64, error)
-	GetPropsByExUserID(ctx context.Context, userID uint64, status []uint64, b *Pagination) ([]*Prop, error)
+	GetPropsByExUserIDCount(ctx context.Context, status []uint64, userID uint64, propType uint64) (int64, error)
+	GetPropsByExUserID(ctx context.Context, userID uint64, status []uint64, b *Pagination, propType uint64) ([]*Prop, error)
 	GetStakeGetsByUserID(ctx context.Context, userID uint64, b *Pagination) ([]*StakeGet, error)
 	GetStakeGetPlayRecordsByUserID(ctx context.Context, userID uint64, status uint64, b *Pagination) ([]*StakeGetPlayRecord, error)
 	GetStakeGetPlayRecordCount(ctx context.Context, userID uint64, status uint64) (int64, error)
@@ -1160,6 +1170,24 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 	}
 
 	var (
+		adminMessages []*AdminMessage
+	)
+
+	adminMessages, err = ac.userRepo.GetAdminMessages(ctx)
+	if nil != err {
+		return &pb.UserInfoReply{
+			Status: "消息查询失败",
+		}, nil
+	}
+	resMessageAdmin := make([]*pb.UserInfoReply_AdminListM, 0)
+	for _, m := range adminMessages {
+		resMessageAdmin = append(resMessageAdmin, &pb.UserInfoReply_AdminListM{
+			Content:    m.Content,
+			ContentTwo: m.ContentTwo,
+		})
+	}
+
+	var (
 		landUserUse map[uint64]*LandUserUse
 		userRed     uint64
 	)
@@ -1243,6 +1271,7 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		MinStake:                  minStake,
 		MinStakeTwo:               minStakeTwo,
 		CanPlayAdd:                user.CanPlayAdd,
+		AdminListM:                resMessageAdmin,
 	}, nil
 }
 
@@ -2116,7 +2145,7 @@ func (ac *AppUsecase) UserMarketPropList(ctx context.Context, address string, re
 	propStatus := []uint64{4}
 
 	// 11化肥，12水，13手套，14除虫剂，15铲子，16盲盒，17地契
-	count, err = ac.userRepo.GetPropsByExUserIDCount(ctx, propStatus, user.ID)
+	count, err = ac.userRepo.GetPropsByExUserIDCount(ctx, propStatus, user.ID, req.PropType)
 	if nil != err {
 		return &pb.UserMarketPropListReply{
 			Status: "错误查询",
@@ -2132,7 +2161,7 @@ func (ac *AppUsecase) UserMarketPropList(ctx context.Context, address string, re
 	prop, err = ac.userRepo.GetPropsByExUserID(ctx, user.ID, propStatus, &Pagination{
 		PageNum:  pageInit,
 		PageSize: 100,
-	})
+	}, req.PropType)
 	if nil != err {
 		return &pb.UserMarketPropListReply{
 			Status: "错误查询",
@@ -7316,7 +7345,7 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 		}
 
 		return &pb.StakeGetPlayReply{Status: "ok", PlayStatus: 1, Amount: tmpGit}, nil
-	} else {                                                         // 输：下注金额加入池子
+	} else { // 输：下注金额加入池子
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 			err = ac.userRepo.SetStakeGetPlaySub(ctx, user.ID, float64(req.SendBody.Amount))
 			if nil != err {

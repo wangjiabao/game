@@ -977,6 +977,10 @@ paths:
                   in: query
                   schema:
                     type: string
+                - name: propType
+                  in: query
+                  schema:
+                    type: string
             responses:
                 "200":
                     description: OK
@@ -2008,6 +2012,10 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/UserInfoReply_ListM'
+                adminListM:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/UserInfoReply_AdminListM'
                 canLand:
                     type: string
                 red:
@@ -2032,6 +2040,13 @@ components:
                     type: number
                     format: double
                 canPlayAdd:
+                    type: string
+        UserInfoReply_AdminListM:
+            type: object
+            properties:
+                content:
+                    type: string
+                contentTwo:
                     type: string
         UserInfoReply_ListM:
             type: object
