@@ -746,7 +746,7 @@ func (u *UserRepo) GetAdminMessages(ctx context.Context) ([]*biz.AdminMessage, e
 	)
 
 	res := make([]*biz.AdminMessage, 0)
-	instance := u.data.DB(ctx).Table("admin_message").Where("status=?", 0).Order("id desc").Limit(10)
+	instance := u.data.DB(ctx).Table("admin_message").Where("status=?", 0).Order("id desc").Limit(50)
 	if err := instance.Find(&m).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return res, nil
