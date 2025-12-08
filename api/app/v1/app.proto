@@ -969,6 +969,7 @@ message BuyBoxRequest {
 
 message BuyBoxReply {
 	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
+	string statusTwo = 3; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
 	uint64 id = 2;
 }
 
@@ -1049,6 +1050,7 @@ message RentLandRequest {
 
 message RentLandReply {
 	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
+	string statusTwo = 3; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
 }
 
 message LandAddOutRateRequest {
@@ -1109,6 +1111,7 @@ message LandPlayRequest {
 
 message LandPlayReply {
 	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
+	string statusTwo = 3; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
 }
 
 
@@ -1124,6 +1127,7 @@ message LandPlayOneRequest {
 
 message LandPlayOneReply {
 	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
+	string statusTwo = 2; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
 }
 
 message LandPlayTwoRequest {
@@ -1137,6 +1141,7 @@ message LandPlayTwoRequest {
 
 message LandPlayTwoReply {
 	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
+	string statusTwo = 2;
 }
 
 message LandPlayThreeRequest {
@@ -1208,6 +1213,7 @@ message LandPlaySevenRequest {
 
 message LandPlaySevenReply {
 	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
+	string statusTwo = 3; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
 	double amount = 2;
 }
 

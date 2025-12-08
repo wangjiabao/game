@@ -3139,7 +3139,8 @@ func (ac *AppUsecase) BuyBox(ctx context.Context, address string, req *pb.BuyBox
 	//boxAmount = boxAmount / uPrice
 	if boxAmount > user.AmountUsdt {
 		return &pb.BuyBoxReply{
-			Status: "余额不足",
+			Status:    "余额不足",
+			StatusTwo: "Not enough balance.",
 		}, nil
 	}
 
@@ -3529,7 +3530,8 @@ func (ac *AppUsecase) LandPlayOne(ctx context.Context, address string, req *pb.L
 
 	if land.PerHealth > land.MaxHealth {
 		return &pb.LandPlayOneReply{
-			Status: "肥沃度不足",
+			Status:    "肥沃度不足",
+			StatusTwo: "Insufficient fertility.",
 		}, nil
 	}
 
@@ -5105,20 +5107,23 @@ func (ac *AppUsecase) LandPlaySeven(ctx context.Context, address string, req *pb
 
 	if 0 < landUserUse.One {
 		return &pb.LandPlaySevenReply{
-			Status: "缺水暂停中",
+			Status:    "缺水暂停中",
+			StatusTwo: "Paused due to lack of water.",
 		}, nil
 	}
 
 	if 0 < landUserUse.Two {
 		return &pb.LandPlaySevenReply{
-			Status: "虫蛀减产中",
+			Status:    "虫蛀减产中",
+			StatusTwo: "Production reduced due to pests.",
 		}, nil
 	}
 
 	lastTime := landUserUse.SubTime
 	if 0 < lastTime {
 		return &pb.LandPlaySevenReply{
-			Status: "偷盗过于频繁",
+			Status:    "偷盗过于频繁",
+			StatusTwo: "Stealing is too frequent.",
 		}, nil
 		//if uint64(current)-600 <= lastTime {
 		//	return &pb.LandPlaySevenReply{
@@ -6193,7 +6198,8 @@ func (ac *AppUsecase) RentLand(ctx context.Context, address string, req *pb.Rent
 
 			if land.PerHealth > land.MaxHealth {
 				return &pb.RentLandReply{
-					Status: "肥沃度不足",
+					Status:    "肥沃度不足",
+					StatusTwo: "Insufficient fertility.",
 				}, nil
 			}
 
@@ -6252,7 +6258,8 @@ func (ac *AppUsecase) RentLand(ctx context.Context, address string, req *pb.Rent
 
 				if land.PerHealth > land.MaxHealth {
 					return &pb.RentLandReply{
-						Status: "肥沃度不足",
+						Status:    "肥沃度不足",
+						StatusTwo: "Insufficient fertility.",
 					}, nil
 				}
 
@@ -6573,7 +6580,8 @@ func (ac *AppUsecase) LandPlay(ctx context.Context, address string, req *pb.Land
 
 		if land.PerHealth > land.MaxHealth {
 			return &pb.LandPlayReply{
-				Status: "肥沃度不足",
+				Status:    "肥沃度不足",
+				StatusTwo: "Insufficient fertility.",
 			}, nil
 		}
 

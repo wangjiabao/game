@@ -1268,6 +1268,8 @@ components:
             properties:
                 status:
                     type: string
+                statusTwo:
+                    type: string
                 id:
                     type: string
         BuyBoxRequest_SendBody:
@@ -1454,6 +1456,8 @@ components:
             properties:
                 status:
                     type: string
+                statusTwo:
+                    type: string
         LandPlayOneRequest_SendBody:
             type: object
             properties:
@@ -1467,6 +1471,8 @@ components:
             type: object
             properties:
                 status:
+                    type: string
+                statusTwo:
                     type: string
         LandPlayRequest_SendBody:
             type: object
@@ -1487,6 +1493,8 @@ components:
             type: object
             properties:
                 status:
+                    type: string
+                statusTwo:
                     type: string
                 amount:
                     type: number
@@ -1533,6 +1541,8 @@ components:
             properties:
                 status:
                     type: string
+                statusTwo:
+                    type: string
         LandPlayTwoRequest_SendBody:
             type: object
             properties:
@@ -1569,6 +1579,8 @@ components:
             type: object
             properties:
                 status:
+                    type: string
+                statusTwo:
                     type: string
         RentLandRequest_SendBody:
             type: object
