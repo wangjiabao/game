@@ -2526,7 +2526,8 @@ func (u *UserRepo) GetUserOrder(ctx context.Context, b *biz.Pagination, address 
 	res := make([]*biz.User, 0)
 	instance := u.data.DB(ctx).Table("user").
 		//Where("git>?", 0).
-		Order("git desc")
+		//Order("git desc").
+		Order("id asc")
 
 	if 0 < len(address) {
 		instance = instance.Where("address = ?", address)
