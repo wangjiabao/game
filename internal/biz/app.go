@@ -7958,6 +7958,7 @@ func (ac *AppUsecase) Withdraw(ctx context.Context, address string, req *pb.With
 		withdrawMaxTwo  uint64
 		withdrawRate    float64
 		withdrawRateTwo float64
+		canWithdraw     uint64
 	)
 
 	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
@@ -7981,6 +7982,7 @@ func (ac *AppUsecase) Withdraw(ctx context.Context, address string, req *pb.With
 		"withdraw_amount_max_two",
 		"withdraw_rate",
 		"withdraw_rate_two",
+		"can_withdraw",
 	)
 	if nil != err || nil == configs {
 		return &pb.WithdrawReply{
@@ -8009,6 +8011,16 @@ func (ac *AppUsecase) Withdraw(ctx context.Context, address string, req *pb.With
 		if "withdraw_rate_two" == vConfig.KeyName {
 			withdrawRateTwo, _ = strconv.ParseFloat(vConfig.Value, 10)
 		}
+
+		if "can_withdraw" == vConfig.KeyName {
+			canWithdraw, _ = strconv.ParseUint(vConfig.Value, 10, 64)
+		}
+	}
+
+	if 1 != canWithdraw {
+		return &pb.WithdrawReply{
+			Status: "升级维护中~",
+		}, nil
 	}
 
 	if 2 == req.SendBody.WithdrawType {
