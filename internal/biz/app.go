@@ -1262,7 +1262,7 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 	if nil == err && 1 < tmp0 && 1 < tmp1 {
 		tmpThree = tmp0 / tmp1
 	}
-	fmt.Println(tmp0, tmp1, tmpThree)
+
 	return &pb.UserInfoReply{
 		Red:                       userRed,
 		ListM:                     resMessage,
@@ -7408,7 +7408,7 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 		}
 
 		return &pb.StakeGetPlayReply{Status: "ok", PlayStatus: 1, Amount: tmpGit}, nil
-	} else { // 输：下注金额加入池子
+	} else {                                                         // 输：下注金额加入池子
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 			err = ac.userRepo.SetStakeGetPlaySub(ctx, user.ID, float64(req.SendBody.Amount))
 			if nil != err {
