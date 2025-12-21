@@ -56,6 +56,7 @@ type User struct {
 	WithdrawMax      uint64    `gorm:"type:int;"`
 	CanSellProp      uint64    `gorm:"type:int;"`
 	CanPlayAdd       uint64    `gorm:"type:int;"`
+	GitNew           float64   `gorm:"type:decimal(65,20);default:0.00000000000000000000;"`
 }
 
 type UserRecommend struct {
@@ -332,6 +333,16 @@ type Withdraw struct {
 	Coin           string    `gorm:"type:varchar(45);`
 	CreatedAt      time.Time `gorm:"type:datetime;not null"`
 	UpdatedAt      time.Time `gorm:"type:datetime;not null"`
+}
+
+type Exchange struct {
+	ID              uint64    `gorm:"primarykey;type:int;comment:主键"`
+	UserId          uint64    `gorm:"type:int;not null;comment:用户id"`
+	AmountFloat     float64   `gorm:"type:decimal(65,18);"`
+	RelAmountFloat  float64   `gorm:"type:decimal(65,18);"`
+	AmountFloatUsdt float64   `gorm:"type:decimal(65,18);"`
+	CreatedAt       time.Time `gorm:"type:datetime;not null"`
+	UpdatedAt       time.Time `gorm:"type:datetime;not null"`
 }
 
 type SeedInfo struct {
@@ -658,6 +669,7 @@ func (u *UserRepo) GetUserByAddress(ctx context.Context, address string) (*biz.U
 		WithdrawMax:      user.WithdrawMax,
 		CanSellProp:      user.CanSellProp,
 		CanPlayAdd:       user.CanPlayAdd,
+		GitNew:           user.GitNew,
 	}, nil
 }
 
@@ -2435,7 +2447,38 @@ func (u *UserRepo) GetStakeGitRecordsByID(ctx context.Context, id, userId uint64
 	}, nil
 }
 
-func (u *UserRepo) GetWithdrawTodayRecordsByUserID(ctx context.Context, userID uint64) ([]*biz.Withdraw, error) {
+func (u *UserRepo) GetExchangeTodayRecordsByUserID(ctx context.Context, userID uint64) ([]*biz.Exchange, error) {
+	var (
+		records []*Exchange
+	)
+
+	res := make([]*biz.Exchange, 0)
+	instance := u.data.DB(ctx).Table("exchange").
+		Where("user_id = ?", userID).
+		Where("created_at >= ?", time.Now().Add(-24*time.Hour).Format("2006-01-02 15:04:05"))
+
+	if err := instance.Find(&records).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return res, nil
+		}
+		return nil, errors.New(500, "EXCHANGE RECORD ERROR", err.Error())
+	}
+
+	for _, record := range records {
+		res = append(res, &biz.Exchange{
+			ID:              record.ID,
+			CreatedAt:       record.CreatedAt,
+			UpdatedAt:       record.UpdatedAt,
+			RelAmountFloat:  record.RelAmountFloat,
+			AmountFloatUsdt: record.AmountFloatUsdt,
+			AmountFloat:     record.AmountFloat,
+		})
+	}
+
+	return res, nil
+}
+
+func (u *UserRepo) GetWithdrawTodayRecordsByUserID(ctx context.Context, userID uint64, coinType string) ([]*biz.Withdraw, error) {
 	var (
 		records []*Withdraw
 	)
@@ -2443,7 +2486,8 @@ func (u *UserRepo) GetWithdrawTodayRecordsByUserID(ctx context.Context, userID u
 	res := make([]*biz.Withdraw, 0)
 	instance := u.data.DB(ctx).Table("withdraw").
 		Where("user_id = ?", userID).
-		Where("created_at >= ?", time.Now().Add(-24*time.Hour).Format("2006-01-02 15:04:05"))
+		Where("created_at >= ?", time.Now().Add(-24*time.Hour).Format("2006-01-02 15:04:05")).
+		Where("coin = ?", coinType)
 
 	if err := instance.Find(&records).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -4080,6 +4124,28 @@ func (u *UserRepo) ExchangeTwo(ctx context.Context, userId uint64, git, giw floa
 	return nil
 }
 
+// ExchangeTwo .
+func (u *UserRepo) ExchangeNew(ctx context.Context, userId uint64, git, gitRel, amountUsdt float64) error {
+	res := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("amount_usdt>=?", amountUsdt).
+		Updates(map[string]interface{}{"git_new": gorm.Expr("git_new + ?", gitRel), "amount_usdt": gorm.Expr("amount_usdt - ?", amountUsdt), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil || 1 != res.RowsAffected {
+		return errors.New(500, "SetStakeGet", "用户信息修改失败")
+	}
+
+	var withdraw Exchange
+
+	withdraw.UserId = userId
+	withdraw.AmountFloat = git
+	withdraw.RelAmountFloat = gitRel
+	withdraw.AmountFloatUsdt = amountUsdt
+	res = u.data.DB(ctx).Table("exchange").Create(&withdraw)
+	if res.Error != nil {
+		return errors.New(500, "CREATE_STAKE_GET_ERROR", "创建提现记录失败")
+	}
+
+	return nil
+}
+
 // ExchangeThree .
 func (u *UserRepo) ExchangeThree(ctx context.Context, userId uint64, git, giw float64) error {
 	res := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("giw>=?", git).
@@ -4133,6 +4199,31 @@ func (u *UserRepo) WithdrawTwo(ctx context.Context, userId uint64, usdt, relUsdt
 	withdraw.RelAmountFloat = relUsdt
 	withdraw.Status = "rewarded"
 	withdraw.Coin = "usdt"
+	res = u.data.DB(ctx).Table("withdraw").Create(&withdraw)
+	if res.Error != nil {
+		return errors.New(500, "CREATE_STAKE_GET_ERROR", "创建提现记录失败")
+	}
+
+	return nil
+}
+
+// WithdrawThree .
+func (u *UserRepo) WithdrawThree(ctx context.Context, userId uint64, usdt, relUsdt float64) error {
+	res := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("git_new>=?", usdt).
+		Updates(map[string]interface{}{"git_new": gorm.Expr("git_new - ?", usdt), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil || 1 != res.RowsAffected {
+		return errors.New(500, "SetStakeGet", "用户信息修改失败")
+	}
+
+	var withdraw Withdraw
+
+	withdraw.UserId = userId
+	withdraw.Amount = uint64(usdt)
+	withdraw.RelAmount = uint64(relUsdt)
+	withdraw.AmountFloat = usdt
+	withdraw.RelAmountFloat = relUsdt
+	withdraw.Status = "rewarded"
+	withdraw.Coin = "ispay_new"
 	res = u.data.DB(ctx).Table("withdraw").Create(&withdraw)
 	if res.Error != nil {
 		return errors.New(500, "CREATE_STAKE_GET_ERROR", "创建提现记录失败")

@@ -464,6 +464,8 @@ message UserInfoReply {
 	uint64 withdrawMax = 30; // 提现最大
 	uint64 withdrawMinTwo = 129; // 提现最小
 	uint64 withdrawMaxTwo = 130; // 提现最大
+	uint64 withdrawMinThree = 131; // 提现最小
+	uint64 withdrawMaxThree = 132; // 提现最大
 
 	string createdAt = 31;
 
@@ -501,6 +503,8 @@ message UserInfoReply {
 	double minStake = 54;
 	double minStakeTwo = 55;
 	uint64 canPlayAdd =  56;
+
+	double gitNew = 58;
 }
 
 message UserBuyRequest {

@@ -51,6 +51,7 @@ type User struct {
 	Amount           float64
 	AmountGet        float64
 	AmountUsdt       float64
+	GitNew           float64
 	MyTotalAmount    float64
 	UsdtTwo          float64
 	OutNum           uint64
@@ -382,6 +383,16 @@ type BuyLand struct {
 	Level     uint64
 }
 
+type Exchange struct {
+	ID              uint64
+	UserId          uint64
+	AmountFloat     float64
+	AmountFloatUsdt float64
+	RelAmountFloat  float64
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+}
+
 type RandomSeed struct {
 	ID        uint64
 	Scene     uint64
@@ -466,7 +477,9 @@ type UserRepo interface {
 	GetStakeGitByUserID(ctx context.Context, userID int64) (*StakeGit, error)
 	GetStakeGitRecordsByUserID(ctx context.Context, userID uint64, b *Pagination) ([]*StakeGitRecord, error)
 	GetStakeGitRecordsByID(ctx context.Context, id, userId uint64) (*StakeGitRecord, error)
-	GetWithdrawTodayRecordsByUserID(ctx context.Context, userID uint64) ([]*Withdraw, error)
+	GetWithdrawTodayRecordsByUserID(ctx context.Context, userID uint64, coinType string) ([]*Withdraw, error)
+	GetExchangeTodayRecordsByUserID(ctx context.Context, userID uint64) ([]*Exchange, error)
+	WithdrawThree(ctx context.Context, userId uint64, usdt, relUsdt float64) error
 	GetWithdrawRecordsByUserID(ctx context.Context, userID int64, b *Pagination) ([]*Withdraw, error)
 	GetUserOrderCount(ctx context.Context) (int64, error)
 	GetUserOrder(ctx context.Context, b *Pagination, address string) ([]*User, error)
@@ -533,6 +546,7 @@ type UserRepo interface {
 	SetUnStakeGit(ctx context.Context, id, userId uint64, amount float64) error
 	Exchange(ctx context.Context, userId uint64, git, giw float64) error
 	ExchangeTwo(ctx context.Context, userId uint64, git, giw float64) error
+	ExchangeNew(ctx context.Context, userId uint64, git, gitRel, amountUsdt float64) error
 	ExchangeThree(ctx context.Context, userId uint64, git, giw float64) error
 	Withdraw(ctx context.Context, userId uint64, giw, relGiw float64) error
 	WithdrawTwo(ctx context.Context, userId uint64, usdt, relUsdt float64) error
@@ -846,6 +860,8 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		withdrawMax        uint64
 		withdrawMinTwo     uint64
 		withdrawMaxTwo     uint64
+		withdrawMinThree   uint64
+		withdrawMaxThree   uint64
 		err                error
 		rentRateOne        float64
 		rentRateTwo        float64
@@ -894,6 +910,8 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		"max_play",
 		"min_play",
 		"min_stake_two",
+		"withdraw_amount_min_three",
+		"withdraw_amount_max_three",
 	)
 	if nil != err || nil == configs {
 		return &pb.UserInfoReply{
@@ -920,6 +938,12 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		}
 		if "withdraw_amount_max_two" == vConfig.KeyName {
 			withdrawMaxTwo, _ = strconv.ParseUint(vConfig.Value, 10, 64)
+		}
+		if "withdraw_amount_min_three" == vConfig.KeyName {
+			withdrawMinThree, _ = strconv.ParseUint(vConfig.Value, 10, 64)
+		}
+		if "withdraw_amount_max_three" == vConfig.KeyName {
+			withdrawMaxThree, _ = strconv.ParseUint(vConfig.Value, 10, 64)
 		}
 		if "b_price" == vConfig.KeyName {
 			bPrice, _ = strconv.ParseFloat(vConfig.Value, 10)
@@ -1272,6 +1296,9 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		MinStakeTwo:               minStakeTwo,
 		CanPlayAdd:                user.CanPlayAdd,
 		AdminListM:                resMessageAdmin,
+		WithdrawMaxThree:          withdrawMaxThree,
+		WithdrawMinThree:          withdrawMinThree,
+		GitNew:                    user.GitNew,
 	}, nil
 }
 
@@ -7413,23 +7440,7 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 		}, nil
 	}
 
-	if 2 == req.SendBody.ExchangeType {
-		return &pb.ExchangeReply{
-			Status: "未开放",
-		}, nil
-
-		if req.SendBody.Amount > uint64(user.Git) {
-			return &pb.ExchangeReply{
-				Status: "ispay余额不足",
-			}, nil
-		}
-
-		if 1 > req.SendBody.Amount {
-			return &pb.ExchangeReply{
-				Status: "最少1",
-			}, nil
-		}
-	} else if 3 == req.SendBody.ExchangeType {
+	if 3 == req.SendBody.ExchangeType {
 		if req.SendBody.Amount > uint64(user.Git) {
 			return &pb.ExchangeReply{
 				Status: "ispay余额不足",
@@ -7442,19 +7453,15 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 			}, nil
 		}
 	} else {
-		return &pb.ExchangeReply{
-			Status: "未开放",
-		}, nil
-
-		if req.SendBody.Amount > uint64(user.Git) {
+		if req.SendBody.Amount > uint64(user.AmountUsdt) {
 			return &pb.ExchangeReply{
-				Status: "git余额不足",
+				Status: "usdt余额不足",
 			}, nil
 		}
 
-		if 100 > req.SendBody.Amount {
+		if 1 > req.SendBody.Amount {
 			return &pb.ExchangeReply{
-				Status: "最少100",
+				Status: "最少1",
 			}, nil
 		}
 	}
@@ -7466,6 +7473,10 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 		//rate      float64
 		rateTwo float64
 		//rateThree float64
+		exchangeThree     uint64
+		exchangeMaxThree  float64
+		exchangeMinThree  float64
+		exchangeThreeRate float64
 	)
 
 	// 配置
@@ -7475,6 +7486,10 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 		"exchange_fee_rate_three",
 		"b_price",
 		"u_price",
+		"exchange_three",
+		"exchange_max_three",
+		"exchange_min_three",
+		"exchange_three_rate",
 	)
 	if nil != err || nil == configs {
 		return &pb.ExchangeReply{
@@ -7498,42 +7513,25 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 			bPrice, _ = strconv.ParseFloat(vConfig.Value, 10)
 		}
 
+		if "exchange_three" == vConfig.KeyName {
+			exchangeThree, _ = strconv.ParseUint(vConfig.Value, 10, 64)
+		}
+		if "exchange_max_three" == vConfig.KeyName {
+			exchangeMaxThree, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+		if "exchange_min_three" == vConfig.KeyName {
+			exchangeMinThree, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+		if "exchange_three_rate" == vConfig.KeyName {
+			exchangeThreeRate, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+
 		//if "u_price" == vConfig.KeyName {
 		//	uPrice, _ = strconv.ParseFloat(vConfig.Value, 10)
 		//}
 	}
 
-	if 2 == req.SendBody.ExchangeType {
-		//tmp := float64(req.SendBody.Amount) * uPrice
-		//usdt := tmp - tmp*rateTwo
-		//if 0 >= usdt {
-		//	return &pb.ExchangeReply{
-		//		Status: "配置错误",
-		//	}, nil
-		//}
-		//
-		//if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-		//	err = ac.userRepo.ExchangeTwo(ctx, user.ID, float64(req.SendBody.Amount), usdt)
-		//	if nil != err {
-		//		return err
-		//	}
-		//
-		//	err = ac.userRepo.CreateNotice(
-		//		ctx,
-		//		user.ID,
-		//		"兑换"+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" ISPAY 获得 "+strconv.FormatFloat(usdt, 'f', -1, 64)+" USDT",
-		//		"exchange "+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" ISPAY for "+strconv.FormatFloat(usdt, 'f', -1, 64)+" USDT",
-		//	)
-		//	if nil != err {
-		//		return err
-		//	}
-		//	return nil
-		//}); nil != err {
-		//	return &pb.ExchangeReply{
-		//		Status: "兑换错误",
-		//	}, nil
-		//}
-	} else if 3 == req.SendBody.ExchangeType {
+	if 3 == req.SendBody.ExchangeType {
 		tmp := float64(req.SendBody.Amount) * bPrice
 		usdt := tmp - tmp*rateTwo
 		if 0 >= usdt {
@@ -7564,35 +7562,73 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 			}, nil
 		}
 	} else {
-		//tmp := float64(req.SendBody.Amount) * (bPrice / uPrice)
-		//giw := tmp - tmp*rate
-		//if 0 >= giw {
-		//	return &pb.ExchangeReply{
-		//		Status: "配置错误",
-		//	}, nil
-		//}
-		//
-		//if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-		//	err = ac.userRepo.Exchange(ctx, user.ID, float64(req.SendBody.Amount), giw)
-		//	if nil != err {
-		//		return err
-		//	}
-		//
-		//	err = ac.userRepo.CreateNotice(
-		//		ctx,
-		//		user.ID,
-		//		"兑换"+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" ISPAY 获得 "+strconv.FormatFloat(giw, 'f', -1, 64)+" BIW",
-		//		"exchange "+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" ISPAY for "+strconv.FormatFloat(giw, 'f', -1, 64)+" BIW",
-		//	)
-		//	if nil != err {
-		//		return err
-		//	}
-		//	return nil
-		//}); nil != err {
-		//	return &pb.ExchangeReply{
-		//		Status: "兑换错误",
-		//	}, nil
-		//}
+
+		if 1 != exchangeThree {
+			return &pb.ExchangeReply{
+				Status: "暂未开放",
+			}, nil
+		}
+
+		var (
+			withdrawList []*Exchange
+		)
+
+		withdrawList, err = ac.userRepo.GetExchangeTodayRecordsByUserID(ctx, user.ID)
+		if err != nil {
+			return &pb.ExchangeReply{
+				Status: "查询错误",
+			}, nil
+		}
+
+		if 0 != len(withdrawList) {
+			return &pb.ExchangeReply{
+				Status: "每24小时可兑换1次",
+			}, nil
+		}
+
+		if uint64(exchangeMaxThree) < req.SendBody.Amount {
+			return &pb.ExchangeReply{
+				Status: "大于最大值",
+			}, nil
+		}
+
+		if uint64(exchangeMinThree) > req.SendBody.Amount {
+			return &pb.ExchangeReply{
+				Status: "低于最小值",
+			}, nil
+		}
+
+		// todo 价格
+		tmp := float64(0)
+		// tmp
+		ispay := tmp - tmp*exchangeThreeRate
+		if 0 >= ispay {
+			return &pb.ExchangeReply{
+				Status: "配置错误",
+			}, nil
+		}
+
+		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+			err = ac.userRepo.ExchangeNew(ctx, user.ID, tmp, ispay, float64(req.SendBody.Amount))
+			if nil != err {
+				return err
+			}
+
+			err = ac.userRepo.CreateNotice(
+				ctx,
+				user.ID,
+				"兑换"+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" USDT 获得 "+strconv.FormatFloat(ispay, 'f', -1, 64)+" ISPAY",
+				"exchange "+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" USDT for "+strconv.FormatFloat(ispay, 'f', -1, 64)+" ISPAY",
+			)
+			if nil != err {
+				return err
+			}
+			return nil
+		}); nil != err {
+			return &pb.ExchangeReply{
+				Status: "兑换错误",
+			}, nil
+		}
 	}
 
 	return &pb.ExchangeReply{
@@ -7951,16 +7987,16 @@ func (ac *AppUsecase) BuyTwo(ctx context.Context, address string, req *pb.BuyTwo
 
 func (ac *AppUsecase) Withdraw(ctx context.Context, address string, req *pb.WithdrawRequest) (*pb.WithdrawReply, error) {
 	var (
-		user            *User
-		configs         []*Config
-		err             error
-		withdrawMin     uint64
-		withdrawMax     uint64
-		withdrawMinTwo  uint64
-		withdrawMaxTwo  uint64
-		withdrawRate    float64
-		withdrawRateTwo float64
-		canWithdraw     uint64
+		user              *User
+		configs           []*Config
+		err               error
+		withdrawMinTwo    uint64
+		withdrawMaxTwo    uint64
+		withdrawRateTwo   float64
+		withdrawMinThree  uint64
+		withdrawMaxThree  uint64
+		withdrawRateThree float64
+		canWithdraw       uint64
 	)
 
 	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
@@ -7985,6 +8021,9 @@ func (ac *AppUsecase) Withdraw(ctx context.Context, address string, req *pb.With
 		"withdraw_rate",
 		"withdraw_rate_two",
 		"can_withdraw",
+		"withdraw_amount_min_three",
+		"withdraw_amount_max_three",
+		"withdraw_rate_three",
 	)
 	if nil != err || nil == configs {
 		return &pb.WithdrawReply{
@@ -7992,22 +8031,11 @@ func (ac *AppUsecase) Withdraw(ctx context.Context, address string, req *pb.With
 		}, nil
 	}
 	for _, vConfig := range configs {
-		if "withdraw_amount_min" == vConfig.KeyName {
-			withdrawMin, _ = strconv.ParseUint(vConfig.Value, 10, 64)
-		}
-		if "withdraw_amount_max" == vConfig.KeyName {
-			withdrawMax, _ = strconv.ParseUint(vConfig.Value, 10, 64)
-		}
-
 		if "withdraw_amount_min_two" == vConfig.KeyName {
 			withdrawMinTwo, _ = strconv.ParseUint(vConfig.Value, 10, 64)
 		}
 		if "withdraw_amount_max_two" == vConfig.KeyName {
 			withdrawMaxTwo, _ = strconv.ParseUint(vConfig.Value, 10, 64)
-		}
-
-		if "withdraw_rate" == vConfig.KeyName {
-			withdrawRate, _ = strconv.ParseFloat(vConfig.Value, 10)
 		}
 
 		if "withdraw_rate_two" == vConfig.KeyName {
@@ -8016,6 +8044,17 @@ func (ac *AppUsecase) Withdraw(ctx context.Context, address string, req *pb.With
 
 		if "can_withdraw" == vConfig.KeyName {
 			canWithdraw, _ = strconv.ParseUint(vConfig.Value, 10, 64)
+		}
+
+		if "withdraw_amount_min_three" == vConfig.KeyName {
+			withdrawMinThree, _ = strconv.ParseUint(vConfig.Value, 10, 64)
+		}
+		if "withdraw_amount_max_three" == vConfig.KeyName {
+			withdrawMaxThree, _ = strconv.ParseUint(vConfig.Value, 10, 64)
+		}
+
+		if "withdraw_rate_three" == vConfig.KeyName {
+			withdrawRateThree, _ = strconv.ParseFloat(vConfig.Value, 10)
 		}
 	}
 
@@ -8031,7 +8070,7 @@ func (ac *AppUsecase) Withdraw(ctx context.Context, address string, req *pb.With
 			withdrawList []*Withdraw
 		)
 
-		withdrawList, err = ac.userRepo.GetWithdrawTodayRecordsByUserID(ctx, user.ID)
+		withdrawList, err = ac.userRepo.GetWithdrawTodayRecordsByUserID(ctx, user.ID, "usdt")
 		if err != nil {
 			return &pb.WithdrawReply{
 				Status: "查询错误",
@@ -8105,35 +8144,48 @@ func (ac *AppUsecase) Withdraw(ctx context.Context, address string, req *pb.With
 			}, nil
 		}
 	} else {
-		return &pb.WithdrawReply{
-			Status: "ispay暂未开放",
-		}, nil
+		var (
+			withdrawList []*Withdraw
+		)
 
-		if req.SendBody.Amount > uint64(user.Giw) {
+		withdrawList, err = ac.userRepo.GetWithdrawTodayRecordsByUserID(ctx, user.ID, "ispay_new")
+		if err != nil {
 			return &pb.WithdrawReply{
-				Status: "ispay余额不足",
+				Status: "查询错误",
 			}, nil
 		}
 
-		if withdrawMin > req.SendBody.Amount {
+		if 0 != len(withdrawList) {
 			return &pb.WithdrawReply{
-				Status: "低于最小值",
+				Status: "每24小时可提现1次",
 			}, nil
 		}
 
-		if withdrawMax < req.SendBody.Amount {
+		if withdrawMaxThree < req.SendBody.Amount {
 			return &pb.WithdrawReply{
 				Status: "大于最大值",
 			}, nil
 		}
 
-		if 0 >= withdrawRate {
+		if withdrawMinThree > req.SendBody.Amount {
+			return &pb.WithdrawReply{
+				Status: "低于最小值",
+			}, nil
+		}
+
+		if req.SendBody.Amount > uint64(user.GitNew) {
+			return &pb.WithdrawReply{
+				Status: "可提ISPAY余额不足",
+			}, nil
+		}
+
+		if 0 >= withdrawRateThree {
 			return &pb.WithdrawReply{
 				Status: "手续费错误",
 			}, nil
 		}
 
-		tmpAmount := float64(req.SendBody.Amount) - float64(req.SendBody.Amount)*withdrawRate
+		tmpAmount := float64(req.SendBody.Amount) - float64(req.SendBody.Amount)*withdrawRateThree
 		if 0 >= tmpAmount {
 			return &pb.WithdrawReply{
 				Status: "手续费错误",
@@ -8141,7 +8193,7 @@ func (ac *AppUsecase) Withdraw(ctx context.Context, address string, req *pb.With
 		}
 
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-			err = ac.userRepo.Withdraw(ctx, user.ID, float64(req.SendBody.Amount), tmpAmount)
+			err = ac.userRepo.WithdrawThree(ctx, user.ID, float64(req.SendBody.Amount), tmpAmount)
 			if nil != err {
 				return err
 			}

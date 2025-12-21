@@ -1998,6 +1998,10 @@ components:
                     type: string
                 withdrawMaxTwo:
                     type: string
+                withdrawMinThree:
+                    type: string
+                withdrawMaxThree:
+                    type: string
                 createdAt:
                     type: string
                 biwPrice:
@@ -2053,6 +2057,9 @@ components:
                     format: double
                 canPlayAdd:
                     type: string
+                gitNew:
+                    type: number
+                    format: double
         UserInfoReply_AdminListM:
             type: object
             properties:
