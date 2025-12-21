@@ -5,6 +5,9 @@ import (
 	"crypto/rand"
 	"fmt"
 	pb "game/api/app/v1"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-kratos/kratos/v2/errors"
 	"github.com/go-kratos/kratos/v2/log"
 	"math"
@@ -1250,6 +1253,16 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		userRed = 1
 	}
 
+	var (
+		tmpThree float64
+		tmp0     float64
+		tmp1     float64
+	)
+	tmp0, tmp1, err = GetReservers()
+	if nil == err && 1 < tmp0 && 1 < tmp1 {
+		tmpThree = tmp0 / tmp1
+	}
+	fmt.Println(tmp0, tmp1, tmpThree)
 	return &pb.UserInfoReply{
 		Red:                       userRed,
 		ListM:                     resMessage,
@@ -1311,6 +1324,7 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		GitNew:                    user.GitNew,
 		ExchangeRateThree:         vOneRate,
 		WithdrawRateThree:         vTwoRate,
+		ExchangeThree:             tmpThree,
 	}, nil
 }
 
@@ -7598,25 +7612,38 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 			}, nil
 		}
 
-		if uint64(exchangeMaxThree) < req.SendBody.Amount {
-			return &pb.ExchangeReply{
-				Status: "大于最大值",
-			}, nil
-		}
-
-		if uint64(exchangeMinThree) > req.SendBody.Amount {
-			return &pb.ExchangeReply{
-				Status: "低于最小值",
-			}, nil
-		}
-
 		// todo 价格
 		tmp := float64(0)
+		var (
+			tmp0 float64
+			tmp1 float64
+		)
+		tmp0, tmp1, err = GetReservers()
+		if nil != err || 1 >= tmp0 || 1 >= tmp1 {
+			return &pb.ExchangeReply{
+				Status: "获取交易池数据失败",
+			}, nil
+		}
+
+		tmp = float64(req.SendBody.Amount) * tmp0 / tmp1
+
 		// tmp
 		ispay := tmp - tmp*exchangeThreeRate
 		if 0 >= ispay {
 			return &pb.ExchangeReply{
 				Status: "配置错误",
+			}, nil
+		}
+
+		if exchangeMaxThree < tmp {
+			return &pb.ExchangeReply{
+				Status: "大于最大值",
+			}, nil
+		}
+
+		if exchangeMinThree > tmp {
+			return &pb.ExchangeReply{
+				Status: "低于最小值",
 			}, nil
 		}
 
@@ -7646,6 +7673,50 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 	return &pb.ExchangeReply{
 		Status: "ok",
 	}, nil
+}
+
+func GetReservers() (float64, float64, error) {
+	urls := []string{
+		"https://bsc-dataseed4.binance.org/",
+		"https://binance.llamarpc.com/",
+		"https://bscrpc.com/",
+		"https://bsc-pokt.nodies.app/",
+		"https://data-seed-prebsc-1-s3.binance.org:8545/",
+	}
+
+	var (
+		tmp0 float64
+		tmp1 float64
+	)
+
+	for _, urlTmp := range urls {
+		client, err := ethclient.Dial(urlTmp)
+		if err != nil {
+			fmt.Println("client error:", err)
+			continue
+		}
+
+		contractAddress := "0xfb6b79c7cB09c43fB374eA26945e0eb1EbB0aAee"
+
+		tokenAddress := common.HexToAddress(contractAddress)
+		instance, err := NewPair(tokenAddress, client)
+		if err != nil {
+			fmt.Println("GetBoxNew error:", err)
+			continue
+		}
+
+		// 获取认购盲盒记录
+		tmp, errOne := instance.GetReserves(&bind.CallOpts{})
+		if errOne != nil {
+			continue
+		}
+
+		tmp0, _ = tmp.Reserve0.Float64()
+		tmp1, _ = tmp.Reserve1.Float64()
+		break
+	}
+
+	return tmp0, tmp1, nil
 }
 
 var buyTwo sync.Mutex

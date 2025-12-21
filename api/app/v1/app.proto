@@ -507,6 +507,7 @@ message UserInfoReply {
 	double gitNew = 58;
 	double exchangeRateThree = 60;
 	double withdrawRateThree = 61;
+	double exchangeThree = 125; // 兑换 兑换价格
 }
 
 message UserBuyRequest {
