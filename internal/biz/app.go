@@ -3943,8 +3943,8 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 		err = ac.userRepo.CreateNotice(
 			ctx,
 			user.ID,
-			"您收获了"+fmt.Sprintf("%.2f", reward)+"ISPAY",
-			"You've harvest "+fmt.Sprintf("%.2f", reward)+" ISPAY",
+			"您收获了"+fmt.Sprintf("%.2f", reward)+"USDT",
+			"You've harvest "+fmt.Sprintf("%.2f", reward)+" USDT",
 		)
 		if nil != err {
 			return err
@@ -3954,8 +3954,8 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 			err = ac.userRepo.CreateNotice(
 				ctx,
 				rentUserId,
-				"您收获了"+fmt.Sprintf("%.2f", rentReward)+"ISPAY",
-				"You've harvest "+fmt.Sprintf("%.2f", rentReward)+" ISPAY",
+				"您收获了"+fmt.Sprintf("%.2f", rentReward)+"USDT",
+				"You've harvest "+fmt.Sprintf("%.2f", rentReward)+" USDT",
 			)
 			if nil != err {
 				return err
@@ -4009,8 +4009,8 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 				err = ac.userRepo.CreateNotice(
 					ctx,
 					tmpUserId,
-					"您收获了"+fmt.Sprintf("%.2f", tmpReward)+"ISPAY",
-					"You've harvest "+fmt.Sprintf("%.2f", tmpReward)+" ISPAY",
+					"您收获了"+fmt.Sprintf("%.2f", tmpReward)+"USDT",
+					"You've harvest "+fmt.Sprintf("%.2f", tmpReward)+" USDT",
 				)
 				if nil != err {
 					return err
@@ -4827,8 +4827,8 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 		err = ac.userRepo.CreateNotice(
 			ctx,
 			landUserUse.UserId,
-			"您收获了"+fmt.Sprintf("%.2f", tmpOverMax)+"ISPAY",
-			"You've harvest "+fmt.Sprintf("%.2f", tmpOverMax)+" ISPAY",
+			"您收获了"+fmt.Sprintf("%.2f", tmpOverMax)+"USDT",
+			"You've harvest "+fmt.Sprintf("%.2f", tmpOverMax)+" USDT",
 		)
 		if nil != err {
 			return err
@@ -4837,8 +4837,8 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 		err = ac.userRepo.CreateNotice(
 			ctx,
 			landUserUse.OwnerUserId,
-			"您收获了"+fmt.Sprintf("%.2f", tmpOverMaxTwo)+"ISPAY",
-			"You've harvest "+fmt.Sprintf("%.2f", tmpOverMaxTwo)+" ISPAY",
+			"您收获了"+fmt.Sprintf("%.2f", tmpOverMaxTwo)+"USDT",
+			"You've harvest "+fmt.Sprintf("%.2f", tmpOverMaxTwo)+" USDT",
 		)
 
 		// l1-l3，奖励发放
@@ -4888,8 +4888,8 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 				err = ac.userRepo.CreateNotice(
 					ctx,
 					tmpUserId,
-					"您收获了"+fmt.Sprintf("%.2f", tmpReward)+"ISPAY",
-					"You've harvest "+fmt.Sprintf("%.2f", tmpReward)+" ISPAY",
+					"您收获了"+fmt.Sprintf("%.2f", tmpReward)+"USDT",
+					"You've harvest "+fmt.Sprintf("%.2f", tmpReward)+" USDT",
 				)
 				if nil != err {
 					return err
@@ -6111,10 +6111,10 @@ func (ac *AppUsecase) RentLand(ctx context.Context, address string, req *pb.Rent
 	defer rentLock.Unlock()
 
 	var (
-		configs       []*Config
-		rentRateOne   float64
-		rentRateTwo   float64
-		rentRateThree float64
+		configs     []*Config
+		rentRateOne float64
+		//rentRateTwo   float64
+		//rentRateThree float64
 	)
 
 	// 配置
@@ -6132,40 +6132,42 @@ func (ac *AppUsecase) RentLand(ctx context.Context, address string, req *pb.Rent
 		if "rent_rate_one" == vConfig.KeyName {
 			rentRateOne, _ = strconv.ParseFloat(vConfig.Value, 10)
 		}
-		if "rent_rate_three" == vConfig.KeyName {
-			rentRateThree, _ = strconv.ParseFloat(vConfig.Value, 10)
-		}
-		if "rent_rate_two" == vConfig.KeyName {
-			rentRateTwo, _ = strconv.ParseFloat(vConfig.Value, 10)
-		}
+		//if "rent_rate_three" == vConfig.KeyName {
+		//	rentRateThree, _ = strconv.ParseFloat(vConfig.Value, 10)
+		//}
+		//if "rent_rate_two" == vConfig.KeyName {
+		//	rentRateTwo, _ = strconv.ParseFloat(vConfig.Value, 10)
+		//}
 	}
 
-	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
-	if nil != err || nil == user {
-		return &pb.RentLandReply{
-			Status: "不存在用户",
-		}, nil
-	}
+	//user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
+	//if nil != err || nil == user {
+	//	return &pb.RentLandReply{
+	//		Status: "不存在用户",
+	//	}, nil
+	//}
 
 	rentRate := float64(0)
 	if 1 == req.SendBody.Rate {
 		rentRate = rentRateOne
-	} else if 2 == req.SendBody.Rate {
-		rentRate = rentRateTwo
-	} else if 3 == req.SendBody.Rate {
-		rentRate = rentRateThree
 	} else {
 		return &pb.RentLandReply{
 			Status: "比例错误",
 		}, nil
 	}
 
+	//else if 2 == req.SendBody.Rate {
+	//	rentRate = rentRateTwo
+	//} else if 3 == req.SendBody.Rate {
+	//	rentRate = rentRateThree
+	//}
+
 	if 1 == req.SendBody.Num {
-		if 1 != user.CanRent {
-			return &pb.RentLandReply{
-				Status: "暂未开放",
-			}, nil
-		}
+		//if 1 != user.CanRent {
+		//	return &pb.RentLandReply{
+		//		Status: "暂未开放",
+		//	}, nil
+		//}
 
 		if 0 < req.SendBody.LandId {
 			var (
