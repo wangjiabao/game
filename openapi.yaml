@@ -2060,6 +2060,12 @@ components:
                 gitNew:
                     type: number
                     format: double
+                exchangeRateThree:
+                    type: number
+                    format: double
+                withdrawRateThree:
+                    type: number
+                    format: double
         UserInfoReply_AdminListM:
             type: object
             properties:

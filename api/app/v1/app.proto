@@ -505,6 +505,8 @@ message UserInfoReply {
 	uint64 canPlayAdd =  56;
 
 	double gitNew = 58;
+	double exchangeRateThree = 60;
+	double withdrawRateThree = 61;
 }
 
 message UserBuyRequest {

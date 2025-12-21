@@ -873,6 +873,8 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		minPlay            float64
 		maxPlay            float64
 		minStakeTwo        float64
+		vOneRate           float64
+		vTwoRate           float64
 	)
 	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
 	if nil != err || nil == user {
@@ -912,6 +914,8 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		"min_stake_two",
 		"withdraw_amount_min_three",
 		"withdraw_amount_max_three",
+		"exchange_three_rate",
+		"withdraw_rate_three",
 	)
 	if nil != err || nil == configs {
 		return &pb.UserInfoReply{
@@ -1007,6 +1011,12 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		}
 		if "min_stake_two" == vConfig.KeyName {
 			minStakeTwo, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+		if "exchange_three_rate" == vConfig.KeyName {
+			vOneRate, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+		if "withdraw_rate_three" == vConfig.KeyName {
+			vTwoRate, _ = strconv.ParseFloat(vConfig.Value, 10)
 		}
 	}
 
@@ -1299,6 +1309,8 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		WithdrawMaxThree:          withdrawMaxThree,
 		WithdrawMinThree:          withdrawMinThree,
 		GitNew:                    user.GitNew,
+		ExchangeRateThree:         vOneRate,
+		WithdrawRateThree:         vTwoRate,
 	}, nil
 }
 
