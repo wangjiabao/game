@@ -7467,6 +7467,10 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 	}
 
 	if 3 == req.SendBody.ExchangeType {
+		return &pb.ExchangeReply{
+			Status: "暂未开放",
+		}, nil
+
 		if req.SendBody.Amount > uint64(user.Git) {
 			return &pb.ExchangeReply{
 				Status: "ispay余额不足",
