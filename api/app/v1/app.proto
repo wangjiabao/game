@@ -909,7 +909,7 @@ message UserOrderListReply {
 
 message WithdrawRequest {
 	message SendBody{
-		uint64 amount = 1; // 必须在userinfo接口的withdrawMin和withdrawMax之间的正整数
+		double amount = 1; // 必须在userinfo接口的withdrawMin和withdrawMax之间的正整数
 		string sign = 2; // 签名
 		uint64 withdrawType = 3;
 	}

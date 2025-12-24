@@ -7408,7 +7408,7 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 		}
 
 		return &pb.StakeGetPlayReply{Status: "ok", PlayStatus: 1, Amount: tmpGit}, nil
-	} else {                                                         // 输：下注金额加入池子
+	} else { // 输：下注金额加入池子
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 			err = ac.userRepo.SetStakeGetPlaySub(ctx, user.ID, float64(req.SendBody.Amount))
 			if nil != err {
@@ -8080,8 +8080,8 @@ func (ac *AppUsecase) Withdraw(ctx context.Context, address string, req *pb.With
 		withdrawMinTwo    uint64
 		withdrawMaxTwo    uint64
 		withdrawRateTwo   float64
-		withdrawMinThree  uint64
-		withdrawMaxThree  uint64
+		withdrawMinThree  float64
+		withdrawMaxThree  float64
 		withdrawRateThree float64
 		canWithdraw       uint64
 	)
@@ -8134,10 +8134,10 @@ func (ac *AppUsecase) Withdraw(ctx context.Context, address string, req *pb.With
 		}
 
 		if "withdraw_amount_min_three" == vConfig.KeyName {
-			withdrawMinThree, _ = strconv.ParseUint(vConfig.Value, 10, 64)
+			withdrawMinThree, _ = strconv.ParseFloat(vConfig.Value, 10)
 		}
 		if "withdraw_amount_max_three" == vConfig.KeyName {
-			withdrawMaxThree, _ = strconv.ParseUint(vConfig.Value, 10, 64)
+			withdrawMaxThree, _ = strconv.ParseFloat(vConfig.Value, 10)
 		}
 
 		if "withdraw_rate_three" == vConfig.KeyName {
@@ -8263,7 +8263,7 @@ func (ac *AppUsecase) Withdraw(ctx context.Context, address string, req *pb.With
 			}, nil
 		}
 
-		if req.SendBody.Amount > uint64(user.GitNew) {
+		if req.SendBody.Amount > user.GitNew {
 			return &pb.WithdrawReply{
 				Status: "可提ISPAY余额不足",
 			}, nil
@@ -8275,7 +8275,7 @@ func (ac *AppUsecase) Withdraw(ctx context.Context, address string, req *pb.With
 			}, nil
 		}
 
-		tmpAmount := float64(req.SendBody.Amount) - float64(req.SendBody.Amount)*withdrawRateThree
+		tmpAmount := req.SendBody.Amount - req.SendBody.Amount*withdrawRateThree
 		if 0 >= tmpAmount {
 			return &pb.WithdrawReply{
 				Status: "手续费错误",
@@ -8283,7 +8283,7 @@ func (ac *AppUsecase) Withdraw(ctx context.Context, address string, req *pb.With
 		}
 
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-			err = ac.userRepo.WithdrawThree(ctx, user.ID, float64(req.SendBody.Amount), tmpAmount)
+			err = ac.userRepo.WithdrawThree(ctx, user.ID, req.SendBody.Amount, tmpAmount)
 			if nil != err {
 				return err
 			}
@@ -8291,8 +8291,8 @@ func (ac *AppUsecase) Withdraw(ctx context.Context, address string, req *pb.With
 			err = ac.userRepo.CreateNotice(
 				ctx,
 				user.ID,
-				"提现金额"+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+"ISPAY",
-				"You've withdraw "+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" ISPAY",
+				"提现金额"+fmt.Sprintf("%.2f", req.SendBody.Amount)+"ISPAY",
+				"You've withdraw "+fmt.Sprintf("%.2f", req.SendBody.Amount)+" ISPAY",
 			)
 			if nil != err {
 				return err
@@ -8300,7 +8300,7 @@ func (ac *AppUsecase) Withdraw(ctx context.Context, address string, req *pb.With
 			return nil
 		}); nil != err {
 			return &pb.WithdrawReply{
-				Status: "兑换错误",
+				Status: "提现错误",
 			}, nil
 		}
 	}
