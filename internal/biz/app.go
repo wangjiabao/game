@@ -8152,6 +8152,9 @@ func (ac *AppUsecase) Withdraw(ctx context.Context, address string, req *pb.With
 	}
 
 	if 2 == req.SendBody.WithdrawType {
+		return &pb.WithdrawReply{
+			Status: "暂未开放",
+		}, nil
 
 		var (
 			withdrawList []*Withdraw
@@ -8227,7 +8230,7 @@ func (ac *AppUsecase) Withdraw(ctx context.Context, address string, req *pb.With
 			return nil
 		}); nil != err {
 			return &pb.WithdrawReply{
-				Status: "兑换错误",
+				Status: "提现错误",
 			}, nil
 		}
 	} else {
