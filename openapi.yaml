@@ -2464,7 +2464,8 @@ components:
             type: object
             properties:
                 amount:
-                    type: string
+                    type: number
+                    format: double
                 sign:
                     type: string
                 withdrawType:

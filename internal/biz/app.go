@@ -7996,11 +7996,8 @@ func (ac *AppUsecase) Withdraw(ctx context.Context, address string, req *pb.With
 		user              *User
 		configs           []*Config
 		err               error
-		withdrawMinTwo    uint64
-		withdrawMaxTwo    uint64
-		withdrawRateTwo   float64
-		withdrawMinThree  uint64
-		withdrawMaxThree  uint64
+		withdrawMinThree  float64
+		withdrawMaxThree  float64
 		withdrawRateThree float64
 		canWithdraw       uint64
 	)
@@ -8037,26 +8034,15 @@ func (ac *AppUsecase) Withdraw(ctx context.Context, address string, req *pb.With
 		}, nil
 	}
 	for _, vConfig := range configs {
-		if "withdraw_amount_min_two" == vConfig.KeyName {
-			withdrawMinTwo, _ = strconv.ParseUint(vConfig.Value, 10, 64)
-		}
-		if "withdraw_amount_max_two" == vConfig.KeyName {
-			withdrawMaxTwo, _ = strconv.ParseUint(vConfig.Value, 10, 64)
-		}
-
-		if "withdraw_rate_two" == vConfig.KeyName {
-			withdrawRateTwo, _ = strconv.ParseFloat(vConfig.Value, 10)
-		}
-
 		if "can_withdraw" == vConfig.KeyName {
 			canWithdraw, _ = strconv.ParseUint(vConfig.Value, 10, 64)
 		}
 
 		if "withdraw_amount_min_three" == vConfig.KeyName {
-			withdrawMinThree, _ = strconv.ParseUint(vConfig.Value, 10, 64)
+			withdrawMinThree, _ = strconv.ParseFloat(vConfig.Value, 10)
 		}
 		if "withdraw_amount_max_three" == vConfig.KeyName {
-			withdrawMaxThree, _ = strconv.ParseUint(vConfig.Value, 10, 64)
+			withdrawMaxThree, _ = strconv.ParseFloat(vConfig.Value, 10)
 		}
 
 		if "withdraw_rate_three" == vConfig.KeyName {
@@ -8070,158 +8056,74 @@ func (ac *AppUsecase) Withdraw(ctx context.Context, address string, req *pb.With
 		}, nil
 	}
 
-	if 2 == req.SendBody.WithdrawType {
+	var (
+		withdrawList []*Withdraw
+	)
+
+	withdrawList, err = ac.userRepo.GetWithdrawTodayRecordsByUserID(ctx, user.ID, "ispay_new")
+	if err != nil {
 		return &pb.WithdrawReply{
-			Status: "暂未开放",
+			Status: "查询错误",
 		}, nil
+	}
 
-		var (
-			withdrawList []*Withdraw
+	if 0 != len(withdrawList) {
+		return &pb.WithdrawReply{
+			Status: "每24小时可提现1次",
+		}, nil
+	}
+
+	if withdrawMaxThree < req.SendBody.Amount {
+		return &pb.WithdrawReply{
+			Status: "大于最大值",
+		}, nil
+	}
+
+	if withdrawMinThree > req.SendBody.Amount {
+		return &pb.WithdrawReply{
+			Status: "低于最小值",
+		}, nil
+	}
+
+	if req.SendBody.Amount > user.GitNew {
+		return &pb.WithdrawReply{
+			Status: "可提ISPAY余额不足",
+		}, nil
+	}
+
+	if 0 >= withdrawRateThree {
+		return &pb.WithdrawReply{
+			Status: "手续费错误",
+		}, nil
+	}
+
+	tmpAmount := req.SendBody.Amount - req.SendBody.Amount*withdrawRateThree
+	if 0 >= tmpAmount {
+		return &pb.WithdrawReply{
+			Status: "手续费错误",
+		}, nil
+	}
+
+	if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+		err = ac.userRepo.WithdrawThree(ctx, user.ID, req.SendBody.Amount, tmpAmount)
+		if nil != err {
+			return err
+		}
+
+		err = ac.userRepo.CreateNotice(
+			ctx,
+			user.ID,
+			"提现金额"+fmt.Sprintf("%.2f", req.SendBody.Amount)+"ISPAY",
+			"You've withdraw "+fmt.Sprintf("%.2f", req.SendBody.Amount)+" ISPAY",
 		)
-
-		withdrawList, err = ac.userRepo.GetWithdrawTodayRecordsByUserID(ctx, user.ID, "usdt")
-		if err != nil {
-			return &pb.WithdrawReply{
-				Status: "查询错误",
-			}, nil
+		if nil != err {
+			return err
 		}
-
-		if 0 != len(withdrawList) {
-			return &pb.WithdrawReply{
-				Status: "每24小时可提现1次",
-			}, nil
-		}
-
-		if 0 < user.WithdrawMax {
-			if user.WithdrawMax < req.SendBody.Amount {
-				return &pb.WithdrawReply{
-					Status: "大于最大值",
-				}, nil
-			}
-		} else {
-			if withdrawMaxTwo < req.SendBody.Amount {
-				return &pb.WithdrawReply{
-					Status: "大于最大值",
-				}, nil
-			}
-		}
-
-		if withdrawMinTwo > req.SendBody.Amount {
-			return &pb.WithdrawReply{
-				Status: "低于最小值",
-			}, nil
-		}
-
-		if req.SendBody.Amount > uint64(user.AmountUsdt) {
-			return &pb.WithdrawReply{
-				Status: "可提usdt余额不足",
-			}, nil
-		}
-
-		if 0 >= withdrawRateTwo {
-			return &pb.WithdrawReply{
-				Status: "手续费错误",
-			}, nil
-		}
-
-		tmpAmount := float64(req.SendBody.Amount) - float64(req.SendBody.Amount)*withdrawRateTwo
-		if 0 >= tmpAmount {
-			return &pb.WithdrawReply{
-				Status: "手续费错误",
-			}, nil
-		}
-
-		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-			err = ac.userRepo.WithdrawTwo(ctx, user.ID, float64(req.SendBody.Amount), tmpAmount)
-			if nil != err {
-				return err
-			}
-
-			err = ac.userRepo.CreateNotice(
-				ctx,
-				user.ID,
-				"提现金额"+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+"USDT",
-				"You've withdraw "+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" USDT",
-			)
-			if nil != err {
-				return err
-			}
-			return nil
-		}); nil != err {
-			return &pb.WithdrawReply{
-				Status: "提现错误",
-			}, nil
-		}
-	} else {
-		var (
-			withdrawList []*Withdraw
-		)
-
-		withdrawList, err = ac.userRepo.GetWithdrawTodayRecordsByUserID(ctx, user.ID, "ispay_new")
-		if err != nil {
-			return &pb.WithdrawReply{
-				Status: "查询错误",
-			}, nil
-		}
-
-		if 0 != len(withdrawList) {
-			return &pb.WithdrawReply{
-				Status: "每24小时可提现1次",
-			}, nil
-		}
-
-		if withdrawMaxThree < req.SendBody.Amount {
-			return &pb.WithdrawReply{
-				Status: "大于最大值",
-			}, nil
-		}
-
-		if withdrawMinThree > req.SendBody.Amount {
-			return &pb.WithdrawReply{
-				Status: "低于最小值",
-			}, nil
-		}
-
-		if req.SendBody.Amount > uint64(user.GitNew) {
-			return &pb.WithdrawReply{
-				Status: "可提ISPAY余额不足",
-			}, nil
-		}
-
-		if 0 >= withdrawRateThree {
-			return &pb.WithdrawReply{
-				Status: "手续费错误",
-			}, nil
-		}
-
-		tmpAmount := float64(req.SendBody.Amount) - float64(req.SendBody.Amount)*withdrawRateThree
-		if 0 >= tmpAmount {
-			return &pb.WithdrawReply{
-				Status: "手续费错误",
-			}, nil
-		}
-
-		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-			err = ac.userRepo.WithdrawThree(ctx, user.ID, float64(req.SendBody.Amount), tmpAmount)
-			if nil != err {
-				return err
-			}
-
-			err = ac.userRepo.CreateNotice(
-				ctx,
-				user.ID,
-				"提现金额"+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+"ISPAY",
-				"You've withdraw "+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" ISPAY",
-			)
-			if nil != err {
-				return err
-			}
-			return nil
-		}); nil != err {
-			return &pb.WithdrawReply{
-				Status: "兑换错误",
-			}, nil
-		}
+		return nil
+	}); nil != err {
+		return &pb.WithdrawReply{
+			Status: "提现错误",
+		}, nil
 	}
 
 	return &pb.WithdrawReply{
