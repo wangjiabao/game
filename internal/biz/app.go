@@ -7408,7 +7408,7 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 		}
 
 		return &pb.StakeGetPlayReply{Status: "ok", PlayStatus: 1, Amount: tmpGit}, nil
-	} else {                                                         // 输：下注金额加入池子
+	} else { // 输：下注金额加入池子
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 			err = ac.userRepo.SetStakeGetPlaySub(ctx, user.ID, float64(req.SendBody.Amount))
 			if nil != err {
@@ -7466,43 +7466,14 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 		}, nil
 	}
 
-	if 3 == req.SendBody.ExchangeType {
+	if req.SendBody.Amount > uint64(user.AmountUsdt) {
 		return &pb.ExchangeReply{
-			Status: "暂未开放",
+			Status: "usdt余额不足",
 		}, nil
-
-		if req.SendBody.Amount > uint64(user.Git) {
-			return &pb.ExchangeReply{
-				Status: "ispay余额不足",
-			}, nil
-		}
-
-		if 1 > req.SendBody.Amount {
-			return &pb.ExchangeReply{
-				Status: "最少1",
-			}, nil
-		}
-	} else {
-		if req.SendBody.Amount > uint64(user.AmountUsdt) {
-			return &pb.ExchangeReply{
-				Status: "usdt余额不足",
-			}, nil
-		}
-
-		if 1 > req.SendBody.Amount {
-			return &pb.ExchangeReply{
-				Status: "最少1",
-			}, nil
-		}
 	}
 
 	var (
-		configs []*Config
-		bPrice  float64
-		//uPrice    float64
-		//rate      float64
-		rateTwo float64
-		//rateThree float64
+		configs           []*Config
 		exchangeThree     uint64
 		exchangeMaxThree  float64
 		exchangeMinThree  float64
@@ -7527,22 +7498,6 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 		}, nil
 	}
 	for _, vConfig := range configs {
-		//if "exchange_fee_rate" == vConfig.KeyName {
-		//	rate, _ = strconv.ParseFloat(vConfig.Value, 10)
-		//}
-		//
-		if "exchange_fee_rate_two" == vConfig.KeyName {
-			rateTwo, _ = strconv.ParseFloat(vConfig.Value, 10)
-		}
-
-		//if "exchange_fee_rate_three" == vConfig.KeyName {
-		//	rateThree, _ = strconv.ParseFloat(vConfig.Value, 10)
-		//}
-
-		if "b_price" == vConfig.KeyName {
-			bPrice, _ = strconv.ParseFloat(vConfig.Value, 10)
-		}
-
 		if "exchange_three" == vConfig.KeyName {
 			exchangeThree, _ = strconv.ParseUint(vConfig.Value, 10, 64)
 		}
@@ -7561,117 +7516,81 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 		//}
 	}
 
-	if 3 == req.SendBody.ExchangeType {
-		tmp := float64(req.SendBody.Amount) * bPrice
-		usdt := tmp - tmp*rateTwo
-		if 0 >= usdt {
-			return &pb.ExchangeReply{
-				Status: "配置错误",
-			}, nil
+	if 1 != exchangeThree {
+		return &pb.ExchangeReply{
+			Status: "暂未开放",
+		}, nil
+	}
+
+	if exchangeMaxThree < float64(req.SendBody.Amount) {
+		return &pb.ExchangeReply{
+			Status: "大于最大值",
+		}, nil
+	}
+
+	if exchangeMinThree > float64(req.SendBody.Amount) {
+		return &pb.ExchangeReply{
+			Status: "低于最小值",
+		}, nil
+	}
+
+	var (
+		withdrawList []*Exchange
+	)
+
+	withdrawList, err = ac.userRepo.GetExchangeTodayRecordsByUserID(ctx, user.ID)
+	if err != nil {
+		return &pb.ExchangeReply{
+			Status: "查询错误",
+		}, nil
+	}
+
+	if 0 != len(withdrawList) {
+		return &pb.ExchangeReply{
+			Status: "每24小时可兑换1次",
+		}, nil
+	}
+
+	// todo 价格
+	var (
+		tmp0 float64
+		tmp1 float64
+	)
+	tmp0, tmp1, err = GetReservers()
+	if nil != err || 1 >= tmp0 || 1 >= tmp1 {
+		return &pb.ExchangeReply{
+			Status: "获取交易池数据失败",
+		}, nil
+	}
+
+	usdtAmount := float64(req.SendBody.Amount) - float64(req.SendBody.Amount)*exchangeThreeRate
+	ispay := usdtAmount * tmp0 / tmp1
+	if 0 >= ispay {
+		return &pb.ExchangeReply{
+			Status: "配置错误",
+		}, nil
+	}
+
+	if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+		err = ac.userRepo.ExchangeNew(ctx, user.ID, usdtAmount, ispay, float64(req.SendBody.Amount))
+		if nil != err {
+			return err
 		}
 
-		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-			err = ac.userRepo.ExchangeTwo(ctx, user.ID, float64(req.SendBody.Amount), usdt)
-			if nil != err {
-				return err
-			}
-
-			err = ac.userRepo.CreateNotice(
-				ctx,
-				user.ID,
-				"兑换"+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" ISPAY 获得 "+strconv.FormatFloat(usdt, 'f', -1, 64)+" USDT",
-				"exchange "+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" ISPAY for "+strconv.FormatFloat(usdt, 'f', -1, 64)+" USDT",
-			)
-			if nil != err {
-				return err
-			}
-			return nil
-		}); nil != err {
-			return &pb.ExchangeReply{
-				Status: "兑换错误",
-			}, nil
-		}
-	} else {
-
-		if 1 != exchangeThree {
-			return &pb.ExchangeReply{
-				Status: "暂未开放",
-			}, nil
-		}
-
-		var (
-			withdrawList []*Exchange
+		err = ac.userRepo.CreateNotice(
+			ctx,
+			user.ID,
+			"兑换"+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" USDT 获得 "+strconv.FormatFloat(ispay, 'f', -1, 64)+" ISPAY",
+			"exchange "+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" USDT for "+strconv.FormatFloat(ispay, 'f', -1, 64)+" ISPAY",
 		)
-
-		withdrawList, err = ac.userRepo.GetExchangeTodayRecordsByUserID(ctx, user.ID)
-		if err != nil {
-			return &pb.ExchangeReply{
-				Status: "查询错误",
-			}, nil
+		if nil != err {
+			return err
 		}
-
-		if 0 != len(withdrawList) {
-			return &pb.ExchangeReply{
-				Status: "每24小时可兑换1次",
-			}, nil
-		}
-
-		// todo 价格
-		tmp := float64(0)
-		var (
-			tmp0 float64
-			tmp1 float64
-		)
-		tmp0, tmp1, err = GetReservers()
-		if nil != err || 1 >= tmp0 || 1 >= tmp1 {
-			return &pb.ExchangeReply{
-				Status: "获取交易池数据失败",
-			}, nil
-		}
-
-		tmp = float64(req.SendBody.Amount) * tmp0 / tmp1
-
-		// tmp
-		ispay := tmp - tmp*exchangeThreeRate
-		if 0 >= ispay {
-			return &pb.ExchangeReply{
-				Status: "配置错误",
-			}, nil
-		}
-
-		if exchangeMaxThree < tmp {
-			return &pb.ExchangeReply{
-				Status: "大于最大值",
-			}, nil
-		}
-
-		if exchangeMinThree > tmp {
-			return &pb.ExchangeReply{
-				Status: "低于最小值",
-			}, nil
-		}
-
-		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-			err = ac.userRepo.ExchangeNew(ctx, user.ID, tmp, ispay, float64(req.SendBody.Amount))
-			if nil != err {
-				return err
-			}
-
-			err = ac.userRepo.CreateNotice(
-				ctx,
-				user.ID,
-				"兑换"+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" USDT 获得 "+strconv.FormatFloat(ispay, 'f', -1, 64)+" ISPAY",
-				"exchange "+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" USDT for "+strconv.FormatFloat(ispay, 'f', -1, 64)+" ISPAY",
-			)
-			if nil != err {
-				return err
-			}
-			return nil
-		}); nil != err {
-			return &pb.ExchangeReply{
-				Status: "兑换错误",
-			}, nil
-		}
+		return nil
+	}); nil != err {
+		return &pb.ExchangeReply{
+			Status: "兑换错误",
+		}, nil
 	}
 
 	return &pb.ExchangeReply{
