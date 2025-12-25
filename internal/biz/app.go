@@ -7631,7 +7631,7 @@ func GetReservers() (float64, float64, error) {
 			continue
 		}
 
-		contractAddress := "0xDac444181Aa59086b2bD5FE8d99647FDf3E33333"
+		contractAddress := "0xCa4122dE1Ad3f3063DF012732a802026905515D0"
 
 		tokenAddress := common.HexToAddress(contractAddress)
 		instance, err := NewPair(tokenAddress, client)
