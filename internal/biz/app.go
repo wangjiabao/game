@@ -7564,7 +7564,7 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 	}
 
 	usdtAmount := float64(req.SendBody.Amount) - float64(req.SendBody.Amount)*exchangeThreeRate
-	ispay := usdtAmount * tmp0 / tmp1
+	ispay := usdtAmount * tmp1 / tmp0
 	if 0 >= ispay {
 		return &pb.ExchangeReply{
 			Status: "配置错误",
