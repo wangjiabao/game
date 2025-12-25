@@ -863,8 +863,10 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		withdrawMax        uint64
 		withdrawMinTwo     uint64
 		withdrawMaxTwo     uint64
-		withdrawMinThree   uint64
-		withdrawMaxThree   uint64
+		withdrawMinThree   float64
+		withdrawMaxThree   float64
+		exchangeMinThree   float64
+		exchangeMaxThree   float64
 		err                error
 		rentRateOne        float64
 		rentRateTwo        float64
@@ -919,6 +921,8 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		"withdraw_amount_max_three",
 		"exchange_three_rate",
 		"withdraw_rate_three",
+		"exchange_max_three",
+		"exchange_min_three",
 	)
 	if nil != err || nil == configs {
 		return &pb.UserInfoReply{
@@ -945,12 +949,6 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		}
 		if "withdraw_amount_max_two" == vConfig.KeyName {
 			withdrawMaxTwo, _ = strconv.ParseUint(vConfig.Value, 10, 64)
-		}
-		if "withdraw_amount_min_three" == vConfig.KeyName {
-			withdrawMinThree, _ = strconv.ParseUint(vConfig.Value, 10, 64)
-		}
-		if "withdraw_amount_max_three" == vConfig.KeyName {
-			withdrawMaxThree, _ = strconv.ParseUint(vConfig.Value, 10, 64)
 		}
 		if "b_price" == vConfig.KeyName {
 			bPrice, _ = strconv.ParseFloat(vConfig.Value, 10)
@@ -1020,6 +1018,18 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		}
 		if "withdraw_rate_three" == vConfig.KeyName {
 			vTwoRate, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+		if "withdraw_amount_min_three" == vConfig.KeyName {
+			withdrawMinThree, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+		if "withdraw_amount_max_three" == vConfig.KeyName {
+			withdrawMaxThree, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+		if "exchange_max_three" == vConfig.KeyName {
+			exchangeMaxThree, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+		if "exchange_min_three" == vConfig.KeyName {
+			exchangeMinThree, _ = strconv.ParseFloat(vConfig.Value, 10)
 		}
 	}
 
@@ -1325,6 +1335,8 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		ExchangeRateThree:         vOneRate,
 		WithdrawRateThree:         vTwoRate,
 		ExchangeThree:             tmpThree,
+		ExchangeMaxThree:          exchangeMaxThree,
+		ExchangeMinThree:          exchangeMinThree,
 	}, nil
 }
 

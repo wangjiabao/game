@@ -464,8 +464,10 @@ message UserInfoReply {
 	uint64 withdrawMax = 30; // 提现最大
 	uint64 withdrawMinTwo = 129; // 提现最小
 	uint64 withdrawMaxTwo = 130; // 提现最大
-	uint64 withdrawMinThree = 131; // 提现最小
-	uint64 withdrawMaxThree = 132; // 提现最大
+	double withdrawMinThree = 131; // 提现最小输入
+	double withdrawMaxThree = 132; // 提现最大输入
+	double exchangeMinThree = 137; // 兑换最小输入
+	double exchangeMaxThree = 138; // 兑换最大输入
 
 	string createdAt = 31;
 
