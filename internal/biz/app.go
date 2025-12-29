@@ -7490,6 +7490,8 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 		exchangeMaxThree  float64
 		exchangeMinThree  float64
 		exchangeThreeRate float64
+		exchangePrice     float64
+		exchangePriceOpen uint64
 	)
 
 	// 配置
@@ -7503,6 +7505,8 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 		"exchange_max_three",
 		"exchange_min_three",
 		"exchange_three_rate",
+		"exchange_price",
+		"exchange_price_open",
 	)
 	if nil != err || nil == configs {
 		return &pb.ExchangeReply{
@@ -7523,9 +7527,25 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 			exchangeThreeRate, _ = strconv.ParseFloat(vConfig.Value, 10)
 		}
 
+		if "exchange_price" == vConfig.KeyName {
+			exchangePrice, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+
+		if "exchange_price_open" == vConfig.KeyName {
+			exchangePriceOpen, _ = strconv.ParseUint(vConfig.Value, 10, 64)
+		}
+
 		//if "u_price" == vConfig.KeyName {
 		//	uPrice, _ = strconv.ParseFloat(vConfig.Value, 10)
 		//}
+	}
+
+	if 0 == exchangePriceOpen {
+		if 0.000000001 > exchangePrice {
+			return &pb.ExchangeReply{
+				Status: "价格查询错误，请稍后~",
+			}, nil
+		}
 	}
 
 	if 1 != exchangeThree {
@@ -7563,20 +7583,25 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 		}, nil
 	}
 
-	// todo 价格
-	var (
-		tmp0 float64
-		tmp1 float64
-	)
-	tmp0, tmp1, err = GetReservers()
-	if nil != err || 1 >= tmp0 || 1 >= tmp1 {
-		return &pb.ExchangeReply{
-			Status: "获取交易池数据失败",
-		}, nil
+	var ispay float64
+	usdtAmount := float64(req.SendBody.Amount) - float64(req.SendBody.Amount)*exchangeThreeRate
+	if 0 == exchangePriceOpen {
+		ispay = usdtAmount * exchangePrice
+	} else {
+		var (
+			tmp0 float64
+			tmp1 float64
+		)
+		tmp0, tmp1, err = GetReservers()
+		if nil != err || 1 >= tmp0 || 1 >= tmp1 {
+			return &pb.ExchangeReply{
+				Status: "获取交易池数据失败",
+			}, nil
+		}
+
+		ispay = usdtAmount * tmp1 / tmp0
 	}
 
-	usdtAmount := float64(req.SendBody.Amount) - float64(req.SendBody.Amount)*exchangeThreeRate
-	ispay := usdtAmount * tmp1 / tmp0
 	if 0 >= ispay {
 		return &pb.ExchangeReply{
 			Status: "配置错误",

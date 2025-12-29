@@ -3621,7 +3621,7 @@ func (u *UserRepo) PlantPlatSeven(ctx context.Context, outMax, amount float64, s
 	}
 
 	res = u.data.DB(ctx).Table("user").Where("id=?", userId).
-		Updates(map[string]interface{}{"git": gorm.Expr("git + ?", amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+		Updates(map[string]interface{}{"git_new": gorm.Expr("git_new + ?", amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "PlantPlatSeven3", "用户信息修改失败3")
 	}
