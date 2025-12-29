@@ -5224,8 +5224,8 @@ func (ac *AppUsecase) LandPlaySeven(ctx context.Context, address string, req *pb
 		err = ac.userRepo.CreateNotice(
 			ctx,
 			user.ID,
-			"您使用手套偷取了"+fmt.Sprintf("%.2f", tmpAmount)+"ISPAY",
-			"You've steal "+fmt.Sprintf("%.2f", tmpAmount)+" ISPAY use gloves",
+			"您使用手套偷取了"+fmt.Sprintf("%.2f", tmpAmount)+"USDT",
+			"You've steal "+fmt.Sprintf("%.2f", tmpAmount)+" USDT use gloves",
 		)
 		if nil != err {
 			return err
