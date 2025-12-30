@@ -70,6 +70,9 @@ type User struct {
 	WithdrawMax      uint64
 	CanSellProp      uint64
 	CanPlayAdd       uint64
+	One              float64
+	Two              float64
+	Three            float64
 }
 
 type BoxRecord struct {
@@ -1347,6 +1350,9 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		ExchangeThree:             tmpThree,
 		ExchangeMaxThree:          exchangeMaxThree,
 		ExchangeMinThree:          exchangeMinThree,
+		One:                       user.One,
+		Two:                       user.Two,
+		Three:                     user.Three,
 	}, nil
 }
 

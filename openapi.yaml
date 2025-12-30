@@ -2077,6 +2077,15 @@ components:
                 exchangeThree:
                     type: number
                     format: double
+                One:
+                    type: number
+                    format: double
+                Two:
+                    type: number
+                    format: double
+                Three:
+                    type: number
+                    format: double
         UserInfoReply_AdminListM:
             type: object
             properties:
