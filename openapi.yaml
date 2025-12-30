@@ -2077,13 +2077,13 @@ components:
                 exchangeThree:
                     type: number
                     format: double
-                One:
+                one:
                     type: number
                     format: double
-                Two:
+                two:
                     type: number
                     format: double
-                Three:
+                three:
                     type: number
                     format: double
         UserInfoReply_AdminListM:

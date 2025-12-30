@@ -511,9 +511,9 @@ message UserInfoReply {
 	double withdrawRateThree = 61;
 	double exchangeThree = 125; // 兑换 兑换价格
 
-	double One = 126;
-	double Two = 127;
-	double Three = 128;
+	double one = 126;
+	double two = 127;
+	double three = 128;
 }
 
 message UserBuyRequest {
