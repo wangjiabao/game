@@ -888,6 +888,12 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		}, nil
 	}
 
+	if 1 == user.LockUse {
+		return &pb.UserInfoReply{
+			Status: "锁定用户",
+		}, nil
+	}
+
 	// 配置
 	configs, err = ac.userRepo.GetConfigByKeys(ctx,
 		"box_num",
