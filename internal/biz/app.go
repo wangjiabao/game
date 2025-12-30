@@ -664,6 +664,10 @@ func (ac *AppUsecase) GetExistUserByAddressOrCreate(ctx context.Context, address
 		}
 	}
 
+	if 1 == user.LockUse {
+		return user, errors.New(500, "USER_ERROR", "锁定用户"), "锁定用户"
+	}
+
 	return user, nil, ""
 }
 

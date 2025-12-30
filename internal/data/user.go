@@ -905,6 +905,7 @@ func (u *UserRepo) CreateUser(ctx context.Context, uc *biz.User) (*biz.User, err
 		OutNum:           user.OutNum,
 		Vip:              user.Vip,
 		VipAdmin:         user.VipAdmin,
+		LockUse:          user.LockUse,
 	}, nil
 }
 
