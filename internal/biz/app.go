@@ -6073,6 +6073,8 @@ func (ac *AppUsecase) Sell(ctx context.Context, address string, req *pb.SellRequ
 	}, nil
 }
 
+var stakeGitLock sync.Mutex
+
 func (ac *AppUsecase) StakeGit(ctx context.Context, address string, req *pb.StakeGitRequest) (*pb.StakeGitReply, error) {
 	var (
 		user *User
@@ -6092,16 +6094,19 @@ func (ac *AppUsecase) StakeGit(ctx context.Context, address string, req *pb.Stak
 		}, nil
 	}
 
+	stakeGitLock.Lock()
+	defer stakeGitLock.Unlock()
+
 	if 1 == req.SendBody.Num {
 		if 100 > req.SendBody.Amount {
 			return &pb.StakeGitReply{
-				Status: "ispay金额要多于100",
+				Status: "usdt金额要多于100",
 			}, nil
 		}
 
-		if req.SendBody.Amount > uint64(user.Git) {
+		if req.SendBody.Amount > uint64(user.AmountUsdt) {
 			return &pb.StakeGitReply{
-				Status: "ispay余额不足",
+				Status: "usdt余额不足",
 			}, nil
 		}
 
@@ -6114,8 +6119,8 @@ func (ac *AppUsecase) StakeGit(ctx context.Context, address string, req *pb.Stak
 			err = ac.userRepo.CreateNotice(
 				ctx,
 				user.ID,
-				"您向粮仓质押"+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+"ISPAY",
-				"You've deposit "+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" ISPAY to granary",
+				"您向粮仓质押"+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+"USDT",
+				"You've deposit "+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" USDT to granary",
 			)
 			if nil != err {
 				return err
@@ -6123,7 +6128,7 @@ func (ac *AppUsecase) StakeGit(ctx context.Context, address string, req *pb.Stak
 			return nil
 		}); nil != err {
 			return &pb.StakeGitReply{
-				Status: "stakeISPAY失败",
+				Status: "stakeUSDT失败",
 			}, nil
 		}
 	} else if 2 == req.SendBody.Num {
@@ -6146,8 +6151,8 @@ func (ac *AppUsecase) StakeGit(ctx context.Context, address string, req *pb.Stak
 			err = ac.userRepo.CreateNotice(
 				ctx,
 				user.ID,
-				"您从粮仓解押"+fmt.Sprintf("%.2f", record.Amount)+"ISPAY",
-				"You've withdraw "+fmt.Sprintf("%.2f", record.Amount)+" ISPAY from granary",
+				"您从粮仓解押"+fmt.Sprintf("%.2f", record.Amount)+"USDT",
+				"You've withdraw "+fmt.Sprintf("%.2f", record.Amount)+" USDT from granary",
 			)
 			if nil != err {
 				return err
@@ -6155,7 +6160,7 @@ func (ac *AppUsecase) StakeGit(ctx context.Context, address string, req *pb.Stak
 			return nil
 		}); nil != err {
 			return &pb.StakeGitReply{
-				Status: "stakeISPAY失败",
+				Status: "stakeUSDT失败",
 			}, nil
 		}
 	} else {
