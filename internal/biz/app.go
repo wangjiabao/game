@@ -887,6 +887,9 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		minStakeTwo        float64
 		vOneRate           float64
 		vTwoRate           float64
+		one                float64
+		two                float64
+		three              float64
 	)
 	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
 	if nil != err || nil == user {
@@ -936,6 +939,9 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		"withdraw_rate_three",
 		"exchange_max_three",
 		"exchange_min_three",
+		"one",
+		"two",
+		"three",
 	)
 	if nil != err || nil == configs {
 		return &pb.UserInfoReply{
@@ -1043,6 +1049,15 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		}
 		if "exchange_min_three" == vConfig.KeyName {
 			exchangeMinThree, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+		if "one" == vConfig.KeyName {
+			one, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+		if "two" == vConfig.KeyName {
+			two, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+		if "three" == vConfig.KeyName {
+			three, _ = strconv.ParseFloat(vConfig.Value, 10)
 		}
 	}
 
@@ -1350,9 +1365,9 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		ExchangeThree:             tmpThree,
 		ExchangeMaxThree:          exchangeMaxThree,
 		ExchangeMinThree:          exchangeMinThree,
-		One:                       user.One,
-		Two:                       user.Two,
-		Three:                     user.Three,
+		One:                       one,
+		Two:                       two,
+		Three:                     three,
 	}, nil
 }
 
