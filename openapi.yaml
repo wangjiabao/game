@@ -1675,8 +1675,11 @@ components:
                 num:
                     type: string
                 amount:
-                    type: string
+                    type: number
+                    format: double
                 id:
+                    type: string
+                day:
                     type: string
                 sign:
                     type: string
@@ -2446,6 +2449,8 @@ components:
                     type: number
                     format: double
                 createdAt:
+                    type: string
+                day:
                     type: string
         UserStakeRewardListReply:
             type: object

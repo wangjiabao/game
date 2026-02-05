@@ -73,6 +73,8 @@ type User struct {
 	One              float64
 	Two              float64
 	Three            float64
+	IspayAmount      float64
+	StakeIspayAmount float64
 }
 
 type BoxRecord struct {
@@ -362,6 +364,7 @@ type StakeGitRecord struct {
 	UserId    uint64
 	Amount    float64
 	StakeType int
+	Day       uint64
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -548,7 +551,7 @@ type UserRepo interface {
 	SetStakeGetSub(ctx context.Context, userId uint64, git, amount float64) error
 	SetStakeGetPlaySub(ctx context.Context, userId uint64, amount float64) error
 	SetStakeGetPlay(ctx context.Context, userId uint64, git, amount float64) error
-	SetStakeGit(ctx context.Context, userId uint64, amount float64) error
+	SetStakeGit(ctx context.Context, userId uint64, amount float64, day uint64) error
 	SetUnStakeGit(ctx context.Context, id, userId uint64, amount float64) error
 	Exchange(ctx context.Context, userId uint64, git, giw float64) error
 	ExchangeTwo(ctx context.Context, userId uint64, git, giw float64) error
@@ -859,7 +862,6 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		uPrice             float64
 		exchangeFeeRate    float64
 		exchangeFeeRateTwo float64
-		rewardStakeRate    float64
 		boxMax             uint64
 		boxAmount          float64
 		boxStart           string
@@ -890,6 +892,11 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		one                float64
 		two                float64
 		three              float64
+		stakeIspayOne      float64
+		stakeIspayTwo      float64
+		stakeIspayThree    float64
+		stakeIspayFour     float64
+		stakeIspayFive     float64
 	)
 	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
 	if nil != err || nil == user {
@@ -942,6 +949,11 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		"one",
 		"two",
 		"three",
+		"stake_ispay_one",
+		"stake_ispay_two",
+		"stake_ispay_three",
+		"stake_ispay_four",
+		"stake_ispay_five",
 	)
 	if nil != err || nil == configs {
 		return &pb.UserInfoReply{
@@ -977,9 +989,6 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		}
 		if "exchange_fee_rate_two" == vConfig.KeyName {
 			exchangeFeeRateTwo, _ = strconv.ParseFloat(vConfig.Value, 10)
-		}
-		if "reward_stake_rate" == vConfig.KeyName {
-			rewardStakeRate, _ = strconv.ParseFloat(vConfig.Value, 10)
 		}
 		if "box_start" == vConfig.KeyName {
 			boxStart = vConfig.Value
@@ -1058,6 +1067,22 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		}
 		if "three" == vConfig.KeyName {
 			three, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+
+		if "stake_ispay_one" == vConfig.KeyName {
+			stakeIspayOne, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+		if "stake_ispay_two" == vConfig.KeyName {
+			stakeIspayTwo, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+		if "stake_ispay_three" == vConfig.KeyName {
+			stakeIspayThree, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+		if "stake_ispay_four" == vConfig.KeyName {
+			stakeIspayFour, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+		if "stake_ispay_five" == vConfig.KeyName {
+			stakeIspayFive, _ = strconv.ParseFloat(vConfig.Value, 10)
 		}
 	}
 
@@ -1152,7 +1177,20 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 	nowUTC := time.Now()
 	// 转换当前时间为中国时区
 	nowInShanghai := nowUTC.In(locShanghai)
+	todayStakeGitAmount := float64(0)
 	for _, v := range stakeGitRecord {
+		if 30 == v.Day {
+			todayStakeGitAmount += v.Amount * stakeIspayOne
+		} else if 60 == v.Day {
+			todayStakeGitAmount += v.Amount * stakeIspayTwo
+		} else if 90 == v.Day {
+			todayStakeGitAmount += v.Amount * stakeIspayThree
+		} else if 120 == v.Day {
+			todayStakeGitAmount += v.Amount * stakeIspayFour
+		} else if 360 == v.Day {
+			todayStakeGitAmount += v.Amount * stakeIspayFive
+		}
+
 		stakeGitAmount += v.Amount
 		// 转换用户注册时间到中国时区
 		userRegisterInShanghai := v.CreatedAt.In(locShanghai)
@@ -1164,7 +1202,6 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		}
 	}
 
-	todayStakeGitAmount := stakeGitAmountToday * rewardStakeRate
 	if boxNum > 0 {
 		//var (
 		//	countBox int64
@@ -1321,7 +1358,6 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		RecommendTotalRewardThree: RecommendTotalRewardThree,
 		MyStakeGit:                stakeGitAmount,
 		TodayRewardSkateGit:       todayStakeGitAmount,
-		RewardStakeRate:           rewardStakeRate,
 		Box:                       boxMax,
 		BoxSell:                   boxSellNum,
 		Start:                     boxStart,
@@ -1742,6 +1778,7 @@ func (ac *AppUsecase) UserStakeGitStakeList(ctx context.Context, address string,
 			Id:        v.ID,
 			Stake:     v.Amount,
 			CreatedAt: v.CreatedAt.Add(8 * time.Hour).Format("2006-01-02 15:04:05"),
+			Day:       v.Day,
 		})
 	}
 
@@ -6113,20 +6150,49 @@ func (ac *AppUsecase) StakeGit(ctx context.Context, address string, req *pb.Stak
 	defer stakeGitLock.Unlock()
 
 	if 1 == req.SendBody.Num {
-		if 100 > req.SendBody.Amount {
+		if 1000 < req.SendBody.Amount {
 			return &pb.StakeGitReply{
-				Status: "usdt金额要多于100",
+				Status: "ispay<=1000",
 			}, nil
 		}
 
-		if req.SendBody.Amount > uint64(user.AmountUsdt) {
+		if 0.01 > req.SendBody.Amount {
 			return &pb.StakeGitReply{
-				Status: "usdt余额不足",
+				Status: "ispay>=0.01",
+			}, nil
+		}
+
+		if req.SendBody.Amount > user.GitNew {
+			return &pb.StakeGitReply{
+				Status: "ispay not enough|ispay余额不足",
+			}, nil
+		}
+
+		if 0.001 >= user.StakeIspayAmount {
+			return &pb.StakeGitReply{
+				Status: "max stake|达到质押上限",
+			}, nil
+		}
+
+		dayLimit := uint64(30)
+		if 30 == req.SendBody.Day {
+
+		} else if 60 == req.SendBody.Day {
+			dayLimit = 60
+		} else if 90 == req.SendBody.Day {
+			dayLimit = 90
+		} else if 120 == req.SendBody.Day {
+			dayLimit = 120
+		} else if 360 == req.SendBody.Day {
+			dayLimit = 360
+		} else {
+			return &pb.StakeGitReply{
+				Status: "time limit err|参数错误",
 			}, nil
 		}
 
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-			err = ac.userRepo.SetStakeGit(ctx, user.ID, float64(req.SendBody.Amount))
+			err = ac.userRepo.SetStakeGit(ctx, user.ID, req.SendBody.Amount, dayLimit)
 			if nil != err {
 				return err
 			}
@@ -6134,8 +6200,8 @@ func (ac *AppUsecase) StakeGit(ctx context.Context, address string, req *pb.Stak
 			err = ac.userRepo.CreateNotice(
 				ctx,
 				user.ID,
-				"您向粮仓质押"+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+"USDT",
-				"You've deposit "+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" USDT to granary",
+				"您向粮仓质押"+fmt.Sprintf("%.1f", req.SendBody.Amount)+"ISPAY",
+				"You've deposit "+fmt.Sprintf("%.1f", req.SendBody.Amount)+" ISPAY to granary",
 			)
 			if nil != err {
 				return err
@@ -6143,7 +6209,7 @@ func (ac *AppUsecase) StakeGit(ctx context.Context, address string, req *pb.Stak
 			return nil
 		}); nil != err {
 			return &pb.StakeGitReply{
-				Status: "stakeUSDT失败",
+				Status: "stakeISPAY失败",
 			}, nil
 		}
 	} else if 2 == req.SendBody.Num {
@@ -6157,6 +6223,18 @@ func (ac *AppUsecase) StakeGit(ctx context.Context, address string, req *pb.Stak
 			}, nil
 		}
 
+		if 30 > record.Day {
+			return &pb.StakeGitReply{
+				Status: "30 days limit|30天最少",
+			}, nil
+		}
+
+		if time.Now().Before(record.CreatedAt.Add(time.Duration(record.Day) * 24 * 3600 * time.Second)) {
+			return &pb.StakeGitReply{
+				Status: "time limit|未到解锁时间",
+			}, nil
+		}
+
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 			err = ac.userRepo.SetUnStakeGit(ctx, record.ID, user.ID, record.Amount)
 			if nil != err {
@@ -6166,8 +6244,8 @@ func (ac *AppUsecase) StakeGit(ctx context.Context, address string, req *pb.Stak
 			err = ac.userRepo.CreateNotice(
 				ctx,
 				user.ID,
-				"您从粮仓解押"+fmt.Sprintf("%.2f", record.Amount)+"USDT",
-				"You've withdraw "+fmt.Sprintf("%.2f", record.Amount)+" USDT from granary",
+				"您从粮仓解押"+fmt.Sprintf("%.2f", record.Amount)+"ISPAY",
+				"You've withdraw "+fmt.Sprintf("%.2f", record.Amount)+" ISPAY from granary",
 			)
 			if nil != err {
 				return err
@@ -6175,7 +6253,7 @@ func (ac *AppUsecase) StakeGit(ctx context.Context, address string, req *pb.Stak
 			return nil
 		}); nil != err {
 			return &pb.StakeGitReply{
-				Status: "stakeUSDT失败",
+				Status: "stakeISPAY失败",
 			}, nil
 		}
 	} else {

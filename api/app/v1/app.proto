@@ -656,6 +656,7 @@ message UserStakeGitStakeListReply {
 		double stake = 2; // 质押金额
 		double reward = 3; // 累加收益
 		string createdAt = 4; // 日期
+		uint64 day = 5;
 	}
 }
 
@@ -959,8 +960,9 @@ message GetLandReply {
 message StakeGitRequest {
 	message SendBody{
 		uint64 num = 1; // 质押1，解压2
-		uint64 amount = 4;
+		double amount = 4;
 		uint64 id = 3; // 解压时需要，质押记录的id
+		uint64 day = 5;
 		string sign = 2; // 签名
 	}
 
