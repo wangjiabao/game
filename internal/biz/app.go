@@ -75,6 +75,7 @@ type User struct {
 	Three            float64
 	IspayAmount      float64
 	StakeIspayAmount float64
+	OpenBoxAmount    float64
 }
 
 type BoxRecord struct {
@@ -498,8 +499,8 @@ type UserRepo interface {
 	BuyBox(ctx context.Context, giw float64, originValue, value string, uc *BoxRecord) (uint64, error)
 	BuyLandReward(ctx context.Context, userId, landId uint64, giw float64) error
 	GetUserBoxRecordById(ctx context.Context, id uint64) (*BoxRecord, error)
-	OpenBoxSeed(ctx context.Context, id uint64, content string, seedInfo *Seed) (uint64, error)
-	OpenBoxProp(ctx context.Context, id uint64, content string, propInfo *Prop) (uint64, error)
+	OpenBoxSeed(ctx context.Context, id, userId uint64, content string, amount float64, seedInfo *Seed) (uint64, error)
+	OpenBoxProp(ctx context.Context, id, userId uint64, content string, amount float64, propInfo *Prop) (uint64, error)
 	GetAllSeedInfo(ctx context.Context) ([]*SeedInfo, error)
 	GetAllPropInfo(ctx context.Context) ([]*PropInfo, error)
 	GetAllRandomSeeds(ctx context.Context) ([]*RandomSeed, error)
@@ -3370,6 +3371,69 @@ func (ac *AppUsecase) OpenBox(ctx context.Context, address string, req *pb.OpenB
 		}, nil
 	}
 
+	var (
+		configs      []*Config
+		priceOpen    float64
+		priceOpenUse uint64
+		usdtAmount   float64
+	)
+
+	// 配置
+	configs, err = ac.userRepo.GetConfigByKeys(ctx,
+		"open_box_price",
+		"open_box_price_use",
+		"box_amount",
+	)
+	if nil != err || nil == configs {
+		return &pb.OpenBoxReply{
+			Status: "配置错误",
+		}, nil
+	}
+
+	for _, vConfig := range configs {
+		if "open_box_price" == vConfig.KeyName {
+			priceOpen, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+
+		if "open_box_price_use" == vConfig.KeyName {
+			priceOpenUse, _ = strconv.ParseUint(vConfig.Value, 10, 64)
+		}
+
+		if "box_amount" == vConfig.KeyName {
+			usdtAmount, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+	}
+
+	var ispay float64
+	if 0 == priceOpenUse {
+		ispay = usdtAmount / priceOpen
+	} else {
+		var (
+			tmp0 float64
+			tmp1 float64
+		)
+		tmp0, tmp1, err = GetReservers()
+		if nil != err || 1 >= tmp0 || 1 >= tmp1 {
+			return &pb.OpenBoxReply{
+				Status: "获取交易池数据失败",
+			}, nil
+		}
+
+		ispay = usdtAmount * tmp1 / tmp0
+	}
+
+	if 0 >= ispay {
+		return &pb.OpenBoxReply{
+			Status: "配置错误",
+		}, nil
+	}
+
+	if user.OpenBoxAmount < ispay {
+		return &pb.OpenBoxReply{
+			Status: "stake ispay not enough|质押ispay额度太少",
+		}, nil
+	}
+
 	// 盲盒道具池
 	blindBoxItems := make([]struct {
 		Name   uint64
@@ -3503,7 +3567,7 @@ func (ac *AppUsecase) OpenBox(ctx context.Context, address string, req *pb.OpenB
 		// 种子
 		boxId := uint64(0)
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-			boxId, err = ac.userRepo.OpenBoxSeed(ctx, box.ID, "获得种子", &Seed{
+			boxId, err = ac.userRepo.OpenBoxSeed(ctx, box.ID, user.ID, "获得种子", ispay, &Seed{
 				UserId:       user.ID,
 				SeedId:       result,
 				Name:         seedInfosMap[result].Name,
@@ -3550,7 +3614,7 @@ func (ac *AppUsecase) OpenBox(ctx context.Context, address string, req *pb.OpenB
 		// 种子
 		boxId := uint64(0)
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-			boxId, err = ac.userRepo.OpenBoxProp(ctx, box.ID, "获得道具", &Prop{
+			boxId, err = ac.userRepo.OpenBoxProp(ctx, box.ID, user.ID, "获得道具", ispay, &Prop{
 				UserId:   user.ID,
 				PropType: int(result),
 				OneOne:   int(propInfosMap[result].OneOne),

@@ -62,6 +62,7 @@ type User struct {
 	Three            float64   `gorm:"type:decimal(65,20);not null"`
 	IspayAmount      float64   `gorm:"type:decimal(65,20);not null"`
 	StakeIspayAmount float64   `gorm:"type:decimal(65,20);not null"`
+	OpenBoxAmount    float64   `gorm:"type:decimal(65,20);not null"`
 }
 
 type UserRecommend struct {
@@ -681,6 +682,7 @@ func (u *UserRepo) GetUserByAddress(ctx context.Context, address string) (*biz.U
 		Three:            user.Three,
 		IspayAmount:      user.IspayAmount,
 		StakeIspayAmount: user.StakeIspayAmount,
+		OpenBoxAmount:    user.OpenBoxAmount,
 	}, nil
 }
 
@@ -2875,11 +2877,19 @@ func (u *UserRepo) GetUserBoxRecordById(ctx context.Context, id uint64) (*biz.Bo
 }
 
 // OpenBoxSeed .
-func (u *UserRepo) OpenBoxSeed(ctx context.Context, id uint64, content string, seedInfo *biz.Seed) (uint64, error) {
+func (u *UserRepo) OpenBoxSeed(ctx context.Context, id, userId uint64, content string, amount float64, seedInfo *biz.Seed) (uint64, error) {
 	res := u.data.DB(ctx).Table("box_record").Where("id=?", id).Where("good_id=?", 0).
 		Updates(map[string]interface{}{"good_id": seedInfo.SeedId, "good_type": 1, "content": content, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil || 1 != res.RowsAffected {
 		return 0, errors.New(500, "BuyBox", "config")
+	}
+
+	resTwo := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("open_box_amount>=?", amount).
+		Updates(map[string]interface{}{
+			"open_box_amount": gorm.Expr("open_box_amount - ?", amount),
+			"updated_at":      time.Now().Format("2006-01-02 15:04:05")})
+	if resTwo.Error != nil || 1 != resTwo.RowsAffected {
+		return 0, errors.New(500, "Open Box", "用户信息修改失败")
 	}
 
 	var seed Seed
@@ -2896,11 +2906,19 @@ func (u *UserRepo) OpenBoxSeed(ctx context.Context, id uint64, content string, s
 }
 
 // OpenBoxProp .
-func (u *UserRepo) OpenBoxProp(ctx context.Context, id uint64, content string, propInfo *biz.Prop) (uint64, error) {
+func (u *UserRepo) OpenBoxProp(ctx context.Context, id, userId uint64, content string, amount float64, propInfo *biz.Prop) (uint64, error) {
 	res := u.data.DB(ctx).Table("box_record").Where("id=?", id).Where("good_id=?", 0).
 		Updates(map[string]interface{}{"good_id": propInfo.PropType, "good_type": 2, "content": content, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil || 1 != res.RowsAffected {
 		return 0, errors.New(500, "BuyBox", "config")
+	}
+
+	resTwo := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("open_box_amount>=?", amount).
+		Updates(map[string]interface{}{
+			"open_box_amount": gorm.Expr("open_box_amount - ?", amount),
+			"updated_at":      time.Now().Format("2006-01-02 15:04:05")})
+	if resTwo.Error != nil || 1 != resTwo.RowsAffected {
+		return 0, errors.New(500, "Open Box", "用户信息修改失败")
 	}
 
 	var prop Prop
@@ -3950,10 +3968,11 @@ func (u *UserRepo) SetStakeGetTotalSub(ctx context.Context, amount, balance floa
 
 // SetStakeGit .
 func (u *UserRepo) SetStakeGit(ctx context.Context, userId uint64, amount float64, day uint64) error {
-	res := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("git_new>=?", amount).Where("stake_ispay_amount>?", amount).
+	res := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("git_new>=?", amount).Where("stake_ispay_amount>=?", amount).
 		Updates(map[string]interface{}{
 			"git_new":            gorm.Expr("git_new - ?", amount),
 			"stake_ispay_amount": gorm.Expr("stake_ispay_amount - ?", amount),
+			"open_box_amount":    gorm.Expr("open_box_amount + ?", amount),
 			"updated_at":         time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "SetStakeGet", "用户信息修改失败")
