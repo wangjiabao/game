@@ -3352,6 +3352,12 @@ func (ac *AppUsecase) OpenBox(ctx context.Context, address string, req *pb.OpenB
 		}, nil
 	}
 
+	if 0 >= user.OpenBoxAmount {
+		return &pb.OpenBoxReply{
+			Status: "stake ispay not enough|质押ispay额度太少",
+		}, nil
+	}
+
 	box, err = ac.userRepo.GetUserBoxRecordById(ctx, req.SendBody.Id)
 	if nil != err || nil == box {
 		return &pb.OpenBoxReply{
