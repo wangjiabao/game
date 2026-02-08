@@ -1037,6 +1037,34 @@ func (u *UserRepo) GetBoxRecord(ctx context.Context, num uint64) ([]*biz.BoxReco
 	return res, nil
 }
 
+// GetBoxRecordByUserId .
+func (u *UserRepo) GetBoxRecordByUserId(ctx context.Context, userId uint64) ([]*biz.BoxRecord, error) {
+	var boxRecord []*BoxRecord
+	res := make([]*biz.BoxRecord, 0)
+	if err := u.data.DB(ctx).Where("user_id=?", userId).Where("updated_at>=?", time.Now().Add(-12*time.Hour)).Where("good_id>?", 0).Table("box_record").Find(&boxRecord).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return res, nil
+		}
+
+		return nil, errors.New(500, "box_record ERROR", err.Error())
+	}
+
+	for _, v := range boxRecord {
+		res = append(res, &biz.BoxRecord{
+			ID:        v.ID,
+			UserId:    v.UserId,
+			Num:       v.Num,
+			GoodId:    v.GoodId,
+			GoodType:  v.GoodType,
+			CreatedAt: v.CreatedAt,
+			UpdatedAt: v.UpdatedAt,
+			Content:   v.Content,
+		})
+	}
+
+	return res, nil
+}
+
 // GetUserBoxRecord .
 func (u *UserRepo) GetUserBoxRecord(ctx context.Context, userId, num uint64, b *biz.Pagination) ([]*biz.BoxRecord, error) {
 	var boxRecord []*BoxRecord
@@ -2884,14 +2912,6 @@ func (u *UserRepo) OpenBoxSeed(ctx context.Context, id, userId uint64, content s
 		return 0, errors.New(500, "BuyBox", "config")
 	}
 
-	resTwo := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("open_box_amount>=?", amount).
-		Updates(map[string]interface{}{
-			"open_box_amount": gorm.Expr("open_box_amount - ?", amount),
-			"updated_at":      time.Now().Format("2006-01-02 15:04:05")})
-	if resTwo.Error != nil || 1 != resTwo.RowsAffected {
-		return 0, errors.New(500, "Open Box", "用户信息修改失败")
-	}
-
 	var seed Seed
 	seed.SeedId = seedInfo.SeedId
 	seed.UserId = seedInfo.UserId
@@ -2911,14 +2931,6 @@ func (u *UserRepo) OpenBoxProp(ctx context.Context, id, userId uint64, content s
 		Updates(map[string]interface{}{"good_id": propInfo.PropType, "good_type": 2, "content": content, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil || 1 != res.RowsAffected {
 		return 0, errors.New(500, "BuyBox", "config")
-	}
-
-	resTwo := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("open_box_amount>=?", amount).
-		Updates(map[string]interface{}{
-			"open_box_amount": gorm.Expr("open_box_amount - ?", amount),
-			"updated_at":      time.Now().Format("2006-01-02 15:04:05")})
-	if resTwo.Error != nil || 1 != resTwo.RowsAffected {
-		return 0, errors.New(500, "Open Box", "用户信息修改失败")
 	}
 
 	var prop Prop
@@ -3995,9 +4007,10 @@ func (u *UserRepo) SetStakeGit(ctx context.Context, userId uint64, amount float6
 
 // SetUnStakeGit .
 func (u *UserRepo) SetUnStakeGit(ctx context.Context, id, userId uint64, amount float64) error {
-	res := u.data.DB(ctx).Table("user").Where("id=?", userId).
+	res := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("open_box_amount>=?", amount).
 		Updates(map[string]interface{}{
 			"git_new":            gorm.Expr("git_new + ?", amount),
+			"open_box_amount":    gorm.Expr("open_box_amount - ?", amount),
 			"stake_ispay_amount": gorm.Expr("stake_ispay_amount + ?", amount),
 			"updated_at":         time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil || 1 != res.RowsAffected {

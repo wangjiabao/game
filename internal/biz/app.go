@@ -444,6 +444,7 @@ type UserRepo interface {
 	GetConfigByKeys(ctx context.Context, keys ...string) ([]*Config, error)
 	GetStakeGitByUserId(ctx context.Context, userId uint64) (*StakeGit, error)
 	GetBoxRecord(ctx context.Context, num uint64) ([]*BoxRecord, error)
+	GetBoxRecordByUserId(ctx context.Context, userId uint64) ([]*BoxRecord, error)
 	GetBoxRecordCount(ctx context.Context, num uint64) (int64, error)
 	GetUserBoxRecord(ctx context.Context, userId, num uint64, b *Pagination) ([]*BoxRecord, error)
 	GetUserBoxRecordOpenCount(ctx context.Context, userId uint64) (int64, error)
@@ -3324,9 +3325,10 @@ var rngMutexBox sync.Mutex
 
 func (ac *AppUsecase) OpenBox(ctx context.Context, address string, req *pb.OpenBoxRequest) (*pb.OpenBoxReply, error) {
 	var (
-		user *User
-		box  *BoxRecord
-		err  error
+		user    *User
+		box     *BoxRecord
+		userBox []*BoxRecord
+		err     error
 	)
 
 	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
@@ -3349,6 +3351,12 @@ func (ac *AppUsecase) OpenBox(ctx context.Context, address string, req *pb.OpenB
 	if nil != err || nil == user {
 		return &pb.OpenBoxReply{
 			Status: "不存在用户",
+		}, nil
+	}
+
+	if 0 >= user.OpenBoxAmount {
+		return &pb.OpenBoxReply{
+			Status: "stake ispay not enough|质押ispay额度太少",
 		}, nil
 	}
 
@@ -3428,10 +3436,19 @@ func (ac *AppUsecase) OpenBox(ctx context.Context, address string, req *pb.OpenB
 		}, nil
 	}
 
-	if user.OpenBoxAmount < ispay {
+	userBox, err = ac.userRepo.GetBoxRecordByUserId(ctx, user.ID)
+	if nil != err {
 		return &pb.OpenBoxReply{
-			Status: "stake ispay not enough|质押ispay额度太少",
+			Status: "不存在盲盒",
 		}, nil
+	}
+
+	if 0 < len(userBox) {
+		if user.OpenBoxAmount < ispay*float64(len(userBox)) {
+			return &pb.OpenBoxReply{
+				Status: "stake ispay not enough|质押ispay额度太少",
+			}, nil
+		}
 	}
 
 	// 盲盒道具池
