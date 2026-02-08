@@ -6264,8 +6264,8 @@ func (ac *AppUsecase) StakeGit(ctx context.Context, address string, req *pb.Stak
 			err = ac.userRepo.CreateNotice(
 				ctx,
 				user.ID,
-				"您向粮仓质押"+fmt.Sprintf("%.1f", req.SendBody.Amount)+"ISPAY",
-				"You've deposit "+fmt.Sprintf("%.1f", req.SendBody.Amount)+" ISPAY to granary",
+				"您向粮仓质押"+fmt.Sprintf("%.5f", req.SendBody.Amount)+"ISPAY",
+				"You've deposit "+fmt.Sprintf("%.5f", req.SendBody.Amount)+" ISPAY to granary",
 			)
 			if nil != err {
 				return err
@@ -6308,8 +6308,8 @@ func (ac *AppUsecase) StakeGit(ctx context.Context, address string, req *pb.Stak
 			err = ac.userRepo.CreateNotice(
 				ctx,
 				user.ID,
-				"您从粮仓解押"+fmt.Sprintf("%.2f", record.Amount)+"ISPAY",
-				"You've withdraw "+fmt.Sprintf("%.2f", record.Amount)+" ISPAY from granary",
+				"您从粮仓解押"+fmt.Sprintf("%.5f", record.Amount)+"ISPAY",
+				"You've withdraw "+fmt.Sprintf("%.5f", record.Amount)+" ISPAY from granary",
 			)
 			if nil != err {
 				return err
