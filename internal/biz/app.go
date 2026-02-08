@@ -3436,7 +3436,7 @@ func (ac *AppUsecase) OpenBox(ctx context.Context, address string, req *pb.OpenB
 		}, nil
 	}
 
-	userBox, err = ac.userRepo.GetBoxRecordByUserId(ctx, req.SendBody.Id)
+	userBox, err = ac.userRepo.GetBoxRecordByUserId(ctx, user.ID)
 	if nil != err {
 		return &pb.OpenBoxReply{
 			Status: "不存在盲盒",
