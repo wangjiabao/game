@@ -1037,6 +1037,34 @@ func (u *UserRepo) GetBoxRecord(ctx context.Context, num uint64) ([]*biz.BoxReco
 	return res, nil
 }
 
+// GetBoxRecordByUserId .
+func (u *UserRepo) GetBoxRecordByUserId(ctx context.Context, userId uint64) ([]*biz.BoxRecord, error) {
+	var boxRecord []*BoxRecord
+	res := make([]*biz.BoxRecord, 0)
+	if err := u.data.DB(ctx).Where("user_id=?", userId).Where("updated_at>=?", time.Now().Add(-12*time.Hour)).Where("good_id>?", 0).Table("box_record").Find(&boxRecord).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return res, nil
+		}
+
+		return nil, errors.New(500, "box_record ERROR", err.Error())
+	}
+
+	for _, v := range boxRecord {
+		res = append(res, &biz.BoxRecord{
+			ID:        v.ID,
+			UserId:    v.UserId,
+			Num:       v.Num,
+			GoodId:    v.GoodId,
+			GoodType:  v.GoodType,
+			CreatedAt: v.CreatedAt,
+			UpdatedAt: v.UpdatedAt,
+			Content:   v.Content,
+		})
+	}
+
+	return res, nil
+}
+
 // GetUserBoxRecord .
 func (u *UserRepo) GetUserBoxRecord(ctx context.Context, userId, num uint64, b *biz.Pagination) ([]*biz.BoxRecord, error) {
 	var boxRecord []*BoxRecord
