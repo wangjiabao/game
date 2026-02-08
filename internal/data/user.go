@@ -2884,14 +2884,6 @@ func (u *UserRepo) OpenBoxSeed(ctx context.Context, id, userId uint64, content s
 		return 0, errors.New(500, "BuyBox", "config")
 	}
 
-	resTwo := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("open_box_amount>=?", amount).
-		Updates(map[string]interface{}{
-			"open_box_amount": gorm.Expr("open_box_amount - ?", amount),
-			"updated_at":      time.Now().Format("2006-01-02 15:04:05")})
-	if resTwo.Error != nil || 1 != resTwo.RowsAffected {
-		return 0, errors.New(500, "Open Box", "用户信息修改失败")
-	}
-
 	var seed Seed
 	seed.SeedId = seedInfo.SeedId
 	seed.UserId = seedInfo.UserId
@@ -2911,14 +2903,6 @@ func (u *UserRepo) OpenBoxProp(ctx context.Context, id, userId uint64, content s
 		Updates(map[string]interface{}{"good_id": propInfo.PropType, "good_type": 2, "content": content, "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil || 1 != res.RowsAffected {
 		return 0, errors.New(500, "BuyBox", "config")
-	}
-
-	resTwo := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("open_box_amount>=?", amount).
-		Updates(map[string]interface{}{
-			"open_box_amount": gorm.Expr("open_box_amount - ?", amount),
-			"updated_at":      time.Now().Format("2006-01-02 15:04:05")})
-	if resTwo.Error != nil || 1 != resTwo.RowsAffected {
-		return 0, errors.New(500, "Open Box", "用户信息修改失败")
 	}
 
 	var prop Prop
@@ -3995,9 +3979,10 @@ func (u *UserRepo) SetStakeGit(ctx context.Context, userId uint64, amount float6
 
 // SetUnStakeGit .
 func (u *UserRepo) SetUnStakeGit(ctx context.Context, id, userId uint64, amount float64) error {
-	res := u.data.DB(ctx).Table("user").Where("id=?", userId).
+	res := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("open_box_amount>=?", amount).
 		Updates(map[string]interface{}{
 			"git_new":            gorm.Expr("git_new + ?", amount),
+			"open_box_amount":    gorm.Expr("open_box_amount - ?", amount),
 			"stake_ispay_amount": gorm.Expr("stake_ispay_amount + ?", amount),
 			"updated_at":         time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil || 1 != res.RowsAffected {
