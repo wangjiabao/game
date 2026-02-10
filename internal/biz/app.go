@@ -7615,7 +7615,7 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 		}
 
 		return &pb.StakeGetPlayReply{Status: "ok", PlayStatus: 1, Amount: tmpGit}, nil
-	} else { // 输：下注金额加入池子
+	} else {                                                         // 输：下注金额加入池子
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 			err = ac.userRepo.SetStakeGetPlaySub(ctx, user.ID, float64(req.SendBody.Amount))
 			if nil != err {
@@ -7680,13 +7680,14 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 	}
 
 	var (
-		configs           []*Config
-		exchangeThree     uint64
-		exchangeMaxThree  float64
-		exchangeMinThree  float64
-		exchangeThreeRate float64
-		exchangePrice     float64
-		exchangePriceOpen uint64
+		configs            []*Config
+		exchangeThree      uint64
+		exchangeMaxThree   float64
+		exchangeMinThree   float64
+		exchangeThreeRate  float64
+		exchangePrice      float64
+		exchangePriceOpen  uint64
+		exchangePriceStake float64
 	)
 
 	// 配置
@@ -7702,6 +7703,7 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 		"exchange_three_rate",
 		"exchange_price",
 		"exchange_price_open",
+		"exchange_stake_rate",
 	)
 	if nil != err || nil == configs {
 		return &pb.ExchangeReply{
@@ -7728,6 +7730,10 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 
 		if "exchange_price_open" == vConfig.KeyName {
 			exchangePriceOpen, _ = strconv.ParseUint(vConfig.Value, 10, 64)
+		}
+
+		if "exchange_stake_rate" == vConfig.KeyName {
+			exchangePriceStake, _ = strconv.ParseFloat(vConfig.Value, 10)
 		}
 
 		//if "u_price" == vConfig.KeyName {
@@ -7775,6 +7781,12 @@ func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.Exch
 	if 0 != len(withdrawList) {
 		return &pb.ExchangeReply{
 			Status: "每24小时可兑换1次",
+		}, nil
+	}
+
+	if user.OpenBoxAmount*exchangePriceStake < float64(req.SendBody.Amount) {
+		return &pb.ExchangeReply{
+			Status: "stake ispay not enough|质押ispay额度太少",
 		}, nil
 	}
 
