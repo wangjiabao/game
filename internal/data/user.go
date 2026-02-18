@@ -57,6 +57,7 @@ type User struct {
 	CanSellProp      uint64    `gorm:"type:int;"`
 	CanPlayAdd       uint64    `gorm:"type:int;"`
 	GitNew           float64   `gorm:"type:decimal(65,20);default:0.00000000000000000000;"`
+	GitNewNew        float64   `gorm:"type:decimal(65,20);default:0.00000000000000000000;"`
 	One              float64   `gorm:"type:decimal(65,20);not null"`
 	Two              float64   `gorm:"type:decimal(65,20);not null"`
 	Three            float64   `gorm:"type:decimal(65,20);not null"`
@@ -677,6 +678,7 @@ func (u *UserRepo) GetUserByAddress(ctx context.Context, address string) (*biz.U
 		CanSellProp:      user.CanSellProp,
 		CanPlayAdd:       user.CanPlayAdd,
 		GitNew:           user.GitNew,
+		GitNewNew:        user.GitNewNew,
 		One:              user.One,
 		Two:              user.Two,
 		Three:            user.Three,
@@ -4262,8 +4264,8 @@ func (u *UserRepo) WithdrawTwo(ctx context.Context, userId uint64, usdt, relUsdt
 
 // WithdrawThree .
 func (u *UserRepo) WithdrawThree(ctx context.Context, userId uint64, usdt, relUsdt float64) error {
-	res := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("git_new>=?", usdt).
-		Updates(map[string]interface{}{"git_new": gorm.Expr("git_new - ?", usdt), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	res := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("git_new_new>=?", usdt).
+		Updates(map[string]interface{}{"git_new_new": gorm.Expr("git_new_new - ?", usdt), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "SetStakeGet", "用户信息修改失败")
 	}

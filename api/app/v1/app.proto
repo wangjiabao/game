@@ -507,6 +507,7 @@ message UserInfoReply {
 	uint64 canPlayAdd =  56;
 
 	double gitNew = 58;
+	double gitNewNew = 59;
 	double exchangeRateThree = 60;
 	double withdrawRateThree = 61;
 	double exchangeThree = 125; // 兑换 兑换价格

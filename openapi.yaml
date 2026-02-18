@@ -2071,6 +2071,9 @@ components:
                 gitNew:
                     type: number
                     format: double
+                gitNewNew:
+                    type: number
+                    format: double
                 exchangeRateThree:
                     type: number
                     format: double
