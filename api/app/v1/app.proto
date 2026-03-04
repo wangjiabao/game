@@ -515,6 +515,8 @@ message UserInfoReply {
 	double one = 126;
 	double two = 127;
 	double three = 128;
+
+	double canUsdtWithdraw = 1292;
 }
 
 message UserBuyRequest {

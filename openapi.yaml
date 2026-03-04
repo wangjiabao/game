@@ -2092,6 +2092,9 @@ components:
                 three:
                     type: number
                     format: double
+                canUsdtWithdraw:
+                    type: number
+                    format: double
         UserInfoReply_AdminListM:
             type: object
             properties:
