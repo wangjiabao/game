@@ -6251,11 +6251,11 @@ func (ac *AppUsecase) StakeGit(ctx context.Context, address string, req *pb.Stak
 			}, nil
 		}
 
-		if 0.001 >= user.StakeIspayAmount {
-			return &pb.StakeGitReply{
-				Status: "max stake|达到质押上限",
-			}, nil
-		}
+		//if 0.001 >= user.StakeIspayAmount {
+		//	return &pb.StakeGitReply{
+		//		Status: "max stake|达到质押上限",
+		//	}, nil
+		//}
 
 		dayLimit := uint64(30)
 		if 30 == req.SendBody.Day {
