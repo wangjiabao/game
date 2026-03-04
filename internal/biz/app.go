@@ -6273,7 +6273,7 @@ func (ac *AppUsecase) StakeGit(ctx context.Context, address string, req *pb.Stak
 		}
 
 		usdtAmount := req.SendBody.Amount * tmp0 / tmp1
-		usdtAmount = usdtAmount / 1.5 * 30
+		usdtAmount = usdtAmount * 1.5 / 30
 		if 0.00000001 >= usdtAmount {
 			return &pb.StakeGitReply{
 				Status: "获取交易池数据失败，价格错误",
