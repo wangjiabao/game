@@ -3469,10 +3469,9 @@ func (u *UserRepo) stakeGit(ctx context.Context, propId uint64, userId uint64, s
 
 // Plant .
 func (u *UserRepo) Plant(ctx context.Context, status, originStatus, perHealth uint64, landUserUse *biz.LandUserUse) error {
-	res := u.data.DB(ctx).Table("land").Where("id=?", landUserUse.LandId).Where("status=?", originStatus).Where("limit_date>=?", time.Now().Unix()).Where("max_health>=?", perHealth).
+	res := u.data.DB(ctx).Table("land").Where("id=?", landUserUse.LandId).Where("status=?", originStatus).Where("limit_date>=?", time.Now().Unix()).
 		Updates(map[string]interface{}{
 			"status":     status,
-			"max_health": gorm.Expr("max_health - ?", perHealth),
 			"updated_at": time.Now().Format("2006-01-02 15:04:05"),
 		})
 	if res.Error != nil || 1 != res.RowsAffected {

@@ -3748,12 +3748,12 @@ func (ac *AppUsecase) LandPlayOne(ctx context.Context, address string, req *pb.L
 		}, nil
 	}
 
-	if land.PerHealth > land.MaxHealth {
-		return &pb.LandPlayOneReply{
-			Status:    "肥沃度不足",
-			StatusTwo: "Insufficient fertility.",
-		}, nil
-	}
+	//if land.PerHealth > land.MaxHealth {
+	//	return &pb.LandPlayOneReply{
+	//		Status:    "肥沃度不足",
+	//		StatusTwo: "Insufficient fertility.",
+	//	}, nil
+	//}
 
 	if land.UserId != user.ID {
 		if 3 != land.Status {
@@ -6486,12 +6486,12 @@ func (ac *AppUsecase) RentLand(ctx context.Context, address string, req *pb.Rent
 				}, nil
 			}
 
-			if land.PerHealth > land.MaxHealth {
-				return &pb.RentLandReply{
-					Status:    "肥沃度不足",
-					StatusTwo: "Insufficient fertility.",
-				}, nil
-			}
+			//if land.PerHealth > land.MaxHealth {
+			//	return &pb.RentLandReply{
+			//		Status:    "肥沃度不足",
+			//		StatusTwo: "Insufficient fertility.",
+			//	}, nil
+			//}
 
 			if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 				return ac.userRepo.RentLand(ctx, land.ID, user.ID, rentRate)
@@ -6546,12 +6546,12 @@ func (ac *AppUsecase) RentLand(ctx context.Context, address string, req *pb.Rent
 					}, nil
 				}
 
-				if land.PerHealth > land.MaxHealth {
-					return &pb.RentLandReply{
-						Status:    "肥沃度不足",
-						StatusTwo: "Insufficient fertility.",
-					}, nil
-				}
+				//if land.PerHealth > land.MaxHealth {
+				//	return &pb.RentLandReply{
+				//		Status:    "肥沃度不足",
+				//		StatusTwo: "Insufficient fertility.",
+				//	}, nil
+				//}
 
 				if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 					return ac.userRepo.RentLand(ctx, land.ID, user.ID, rentRate)
@@ -6868,12 +6868,12 @@ func (ac *AppUsecase) LandPlay(ctx context.Context, address string, req *pb.Land
 			}, nil
 		}
 
-		if land.PerHealth > land.MaxHealth {
-			return &pb.LandPlayReply{
-				Status:    "肥沃度不足",
-				StatusTwo: "Insufficient fertility.",
-			}, nil
-		}
+		//if land.PerHealth > land.MaxHealth {
+		//	return &pb.LandPlayReply{
+		//		Status:    "肥沃度不足",
+		//		StatusTwo: "Insufficient fertility.",
+		//	}, nil
+		//}
 
 		if int64(land.LimitDate) <= time.Now().Unix() {
 			return &pb.LandPlayReply{
@@ -6899,6 +6899,7 @@ func (ac *AppUsecase) LandPlay(ctx context.Context, address string, req *pb.Land
 }
 
 func (ac *AppUsecase) LandAddOutRate(ctx context.Context, address string, req *pb.LandAddOutRateRequest) (*pb.LandAddOutRateReply, error) {
+	return &pb.LandAddOutRateReply{Status: "ok"}, nil
 	var (
 		user *User
 		//box  *BoxRecord
