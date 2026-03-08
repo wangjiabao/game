@@ -558,6 +558,7 @@ type UserRepo interface {
 	SetStakeGit(ctx context.Context, userId uint64, amount, amountTwo float64, day uint64) error
 	SetUnStakeGit(ctx context.Context, id, userId uint64, amount float64) error
 	Exchange(ctx context.Context, userId uint64, git, giw float64) error
+	Transfer(ctx context.Context, userId, toUserId uint64, amountUsdt float64) error
 	ExchangeTwo(ctx context.Context, userId uint64, git, giw float64) error
 	ExchangeNew(ctx context.Context, userId uint64, git, gitRel, amountUsdt float64) error
 	ExchangeThree(ctx context.Context, userId uint64, git, giw float64) error
@@ -4900,13 +4901,13 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 		}, nil
 	}
 
-	current := time.Now().Unix()
+	//current := time.Now().Unix()
 	// todo
-	if uint64(current) < landUserUse.OverTime+3600 {
-		return &pb.LandPlaySixReply{
-			Status: "成熟1小时后可以铲除",
-		}, nil
-	}
+	//if uint64(current) < landUserUse.OverTime+3600 {
+	//	return &pb.LandPlaySixReply{
+	//		Status: "成熟1小时后可以铲除",
+	//	}, nil
+	//}
 
 	one := uint64(0)
 	if 1 <= prop.TwoOne {
@@ -7644,7 +7645,7 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 		}
 
 		return &pb.StakeGetPlayReply{Status: "ok", PlayStatus: 1, Amount: tmpGit}, nil
-	} else { // 输：下注金额加入池子
+	} else {                                                         // 输：下注金额加入池子
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 			err = ac.userRepo.SetStakeGetPlaySub(ctx, user.ID, float64(req.SendBody.Amount))
 			if nil != err {
@@ -7677,6 +7678,77 @@ func (ac *AppUsecase) SetGiw(ctx context.Context, req *pb.SetGiwRequest) (*pb.Se
 
 func (ac *AppUsecase) SetGit(ctx context.Context, req *pb.SetGitRequest) (*pb.SetGitReply, error) {
 	return &pb.SetGitReply{Status: "ok"}, ac.userRepo.SetGit(ctx, req.Address, req.Git)
+}
+
+var toAmount sync.Mutex
+
+func (ac *AppUsecase) ToAmount(ctx context.Context, address string, req *pb.ToAmountRequest) (*pb.ToAmountReply, error) {
+	var (
+		user    *User
+		userTwo *User
+		err     error
+	)
+
+	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
+	if nil != err || nil == user {
+		return &pb.ToAmountReply{
+			Status: "不存在用户",
+		}, nil
+	}
+
+	if 1 == user.LockUse {
+		return &pb.ToAmountReply{
+			Status: "锁定用户",
+		}, nil
+	}
+
+	userTwo, err = ac.userRepo.GetUserByAddress(ctx, req.SendBody.Address) // 查询用户
+	if nil != err || nil == userTwo {
+		return &pb.ToAmountReply{
+			Status: "不存在用户",
+		}, nil
+	}
+
+	if 1 == userTwo.LockUse {
+		return &pb.ToAmountReply{
+			Status: "锁定用户",
+		}, nil
+	}
+
+	if req.SendBody.Amount > uint64(user.AmountUsdt) {
+		return &pb.ToAmountReply{
+			Status: "usdt余额不足",
+		}, nil
+	}
+
+	toAmount.Lock()
+	defer toAmount.Unlock()
+
+	if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
+		err = ac.userRepo.Transfer(ctx, user.ID, userTwo.ID, float64(req.SendBody.Amount))
+		if nil != err {
+			return err
+		}
+
+		err = ac.userRepo.CreateNotice(
+			ctx,
+			user.ID,
+			"转账"+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" USDT 到 "+req.SendBody.Address,
+			"transfer "+fmt.Sprintf("%.2f", float64(req.SendBody.Amount))+" USDT to "+req.SendBody.Address,
+		)
+		if nil != err {
+			return err
+		}
+		return nil
+	}); nil != err {
+		return &pb.ToAmountReply{
+			Status: "转账错误",
+		}, nil
+	}
+
+	return &pb.ToAmountReply{
+		Status: "ok",
+	}, nil
 }
 
 func (ac *AppUsecase) Exchange(ctx context.Context, address string, req *pb.ExchangeRequest) (*pb.ExchangeReply, error) {

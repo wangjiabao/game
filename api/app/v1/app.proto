@@ -186,6 +186,14 @@ service App {
 		};
 	};
 
+	// 转账
+	rpc ToAmount (ToAmountRequest) returns (ToAmountReply) {
+		option (google.api.http) = {
+			post: "/api/app_server/to_amount"
+			body: "send_body"
+		};
+	};
+
 	// 合成土地
 	rpc GetLand (GetLandRequest) returns (GetLandReply) {
 		option (google.api.http) = {
@@ -942,6 +950,20 @@ message ExchangeRequest {
 }
 
 message ExchangeReply {
+	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
+}
+
+message ToAmountRequest {
+	message SendBody{
+		uint64 amount = 1; // 1和userinfo接口的git余额之间的正整数，注意手续费的显示，需要乘以userinfo的兑换手续费字段，第二个数字就是减去手续费的值
+		string sign = 2; // 签名
+		string address = 3;
+	}
+
+	SendBody send_body = 1;
+}
+
+message ToAmountReply {
 	string status = 1; // 不是“ok”，弹窗内容，确定按钮关闭弹窗
 }
 

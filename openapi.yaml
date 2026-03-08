@@ -740,6 +740,31 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/Status'
+    /api/app_server/to_amount:
+        post:
+            tags:
+                - App
+            description: 转账
+            operationId: App_ToAmount
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/ToAmountRequest_SendBody'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ToAmountReply'
+                default:
+                    description: Default error response
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/Status'
     /api/app_server/user_back_list:
         get:
             tags:
@@ -1703,6 +1728,20 @@ components:
             type: object
             properties:
                 sign:
+                    type: string
+        ToAmountReply:
+            type: object
+            properties:
+                status:
+                    type: string
+        ToAmountRequest_SendBody:
+            type: object
+            properties:
+                amount:
+                    type: string
+                sign:
+                    type: string
+                address:
                     type: string
         UserBackListReply:
             type: object

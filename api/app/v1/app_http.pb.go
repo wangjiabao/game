@@ -49,6 +49,7 @@ const OperationAppStakeGet = "/api.app.v1.App/StakeGet"
 const OperationAppStakeGetPlay = "/api.app.v1.App/StakeGetPlay"
 const OperationAppStakeGit = "/api.app.v1.App/StakeGit"
 const OperationAppTestSign = "/api.app.v1.App/TestSign"
+const OperationAppToAmount = "/api.app.v1.App/ToAmount"
 const OperationAppUserBackList = "/api.app.v1.App/UserBackList"
 const OperationAppUserBoxList = "/api.app.v1.App/UserBoxList"
 const OperationAppUserBuy = "/api.app.v1.App/UserBuy"
@@ -121,6 +122,8 @@ type AppHTTPServer interface {
 	// StakeGit 粮仓的质押和赎回
 	StakeGit(context.Context, *StakeGitRequest) (*StakeGitReply, error)
 	TestSign(context.Context, *TestSignRequest) (*TestSignReply, error)
+	// ToAmount 转账
+	ToAmount(context.Context, *ToAmountRequest) (*ToAmountReply, error)
 	// UserBackList 仓库
 	UserBackList(context.Context, *UserBackListRequest) (*UserBackListReply, error)
 	// UserBoxList 盲盒列表
@@ -190,6 +193,7 @@ func RegisterAppHTTPServer(s *http.Server, srv AppHTTPServer) {
 	r.POST("/api/app_server/buy_two", _App_BuyTwo0_HTTP_Handler(srv))
 	r.POST("/api/app_server/withdraw", _App_Withdraw0_HTTP_Handler(srv))
 	r.POST("/api/app_server/exchange", _App_Exchange0_HTTP_Handler(srv))
+	r.POST("/api/app_server/to_amount", _App_ToAmount0_HTTP_Handler(srv))
 	r.POST("/api/app_server/get_land", _App_GetLand0_HTTP_Handler(srv))
 	r.POST("/api/app_server/stake_git", _App_StakeGit0_HTTP_Handler(srv))
 	r.POST("/api/app_server/buy_box", _App_BuyBox0_HTTP_Handler(srv))
@@ -703,6 +707,28 @@ func _App_Exchange0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error
 			return err
 		}
 		reply := out.(*ExchangeReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _App_ToAmount0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ToAmountRequest
+		if err := ctx.Bind(&in.SendBody); err != nil {
+			return err
+		}
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAppToAmount)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ToAmount(ctx, req.(*ToAmountRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ToAmountReply)
 		return ctx.Result(200, reply)
 	}
 }
@@ -1270,6 +1296,7 @@ type AppHTTPClient interface {
 	StakeGetPlay(ctx context.Context, req *StakeGetPlayRequest, opts ...http.CallOption) (rsp *StakeGetPlayReply, err error)
 	StakeGit(ctx context.Context, req *StakeGitRequest, opts ...http.CallOption) (rsp *StakeGitReply, err error)
 	TestSign(ctx context.Context, req *TestSignRequest, opts ...http.CallOption) (rsp *TestSignReply, err error)
+	ToAmount(ctx context.Context, req *ToAmountRequest, opts ...http.CallOption) (rsp *ToAmountReply, err error)
 	UserBackList(ctx context.Context, req *UserBackListRequest, opts ...http.CallOption) (rsp *UserBackListReply, err error)
 	UserBoxList(ctx context.Context, req *UserBoxListRequest, opts ...http.CallOption) (rsp *UserBoxListReply, err error)
 	UserBuy(ctx context.Context, req *UserBuyRequest, opts ...http.CallOption) (rsp *UserBuyReply, err error)
@@ -1684,6 +1711,19 @@ func (c *AppHTTPClientImpl) TestSign(ctx context.Context, in *TestSignRequest, o
 	opts = append(opts, http.Operation(OperationAppTestSign))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, err
+}
+
+func (c *AppHTTPClientImpl) ToAmount(ctx context.Context, in *ToAmountRequest, opts ...http.CallOption) (*ToAmountReply, error) {
+	var out ToAmountReply
+	pattern := "/api/app_server/to_amount"
+	path := binding.EncodeURL(pattern, in, false)
+	opts = append(opts, http.Operation(OperationAppToAmount))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "POST", path, in.SendBody, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

@@ -4180,6 +4180,23 @@ func (u *UserRepo) ExchangeTwo(ctx context.Context, userId uint64, git, giw floa
 	return nil
 }
 
+// Transfer .
+func (u *UserRepo) Transfer(ctx context.Context, userId, toUserId uint64, amountUsdt float64) error {
+	res := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("amount_usdt>=?", amountUsdt).
+		Updates(map[string]interface{}{"amount_usdt": gorm.Expr("amount_usdt - ?", amountUsdt), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if res.Error != nil || 1 != res.RowsAffected {
+		return errors.New(500, "Transfer", "用户信息修改失败")
+	}
+
+	resTwo := u.data.DB(ctx).Table("user").Where("id=?", toUserId).
+		Updates(map[string]interface{}{"amount_usdt": gorm.Expr("amount_usdt + ?", amountUsdt), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+	if resTwo.Error != nil || 1 != resTwo.RowsAffected {
+		return errors.New(500, "Transfer", "用户信息修改失败")
+	}
+
+	return nil
+}
+
 // ExchangeTwo .
 func (u *UserRepo) ExchangeNew(ctx context.Context, userId uint64, git, gitRel, amountUsdt float64) error {
 	res := u.data.DB(ctx).Table("user").Where("id=?", userId).Where("amount_usdt>=?", amountUsdt).

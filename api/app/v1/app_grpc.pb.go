@@ -44,6 +44,7 @@ const (
 	App_BuyTwo_FullMethodName                 = "/api.app.v1.App/BuyTwo"
 	App_Withdraw_FullMethodName               = "/api.app.v1.App/Withdraw"
 	App_Exchange_FullMethodName               = "/api.app.v1.App/Exchange"
+	App_ToAmount_FullMethodName               = "/api.app.v1.App/ToAmount"
 	App_GetLand_FullMethodName                = "/api.app.v1.App/GetLand"
 	App_StakeGit_FullMethodName               = "/api.app.v1.App/StakeGit"
 	App_BuyBox_FullMethodName                 = "/api.app.v1.App/BuyBox"
@@ -122,6 +123,8 @@ type AppClient interface {
 	Withdraw(ctx context.Context, in *WithdrawRequest, opts ...grpc.CallOption) (*WithdrawReply, error)
 	// 兑换
 	Exchange(ctx context.Context, in *ExchangeRequest, opts ...grpc.CallOption) (*ExchangeReply, error)
+	// 转账
+	ToAmount(ctx context.Context, in *ToAmountRequest, opts ...grpc.CallOption) (*ToAmountReply, error)
 	// 合成土地
 	GetLand(ctx context.Context, in *GetLandRequest, opts ...grpc.CallOption) (*GetLandReply, error)
 	// 粮仓的质押和赎回
@@ -394,6 +397,15 @@ func (c *appClient) Withdraw(ctx context.Context, in *WithdrawRequest, opts ...g
 func (c *appClient) Exchange(ctx context.Context, in *ExchangeRequest, opts ...grpc.CallOption) (*ExchangeReply, error) {
 	out := new(ExchangeReply)
 	err := c.cc.Invoke(ctx, App_Exchange_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *appClient) ToAmount(ctx context.Context, in *ToAmountRequest, opts ...grpc.CallOption) (*ToAmountReply, error) {
+	out := new(ToAmountReply)
+	err := c.cc.Invoke(ctx, App_ToAmount_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -676,6 +688,8 @@ type AppServer interface {
 	Withdraw(context.Context, *WithdrawRequest) (*WithdrawReply, error)
 	// 兑换
 	Exchange(context.Context, *ExchangeRequest) (*ExchangeReply, error)
+	// 转账
+	ToAmount(context.Context, *ToAmountRequest) (*ToAmountReply, error)
 	// 合成土地
 	GetLand(context.Context, *GetLandRequest) (*GetLandReply, error)
 	// 粮仓的质押和赎回
@@ -800,6 +814,9 @@ func (UnimplementedAppServer) Withdraw(context.Context, *WithdrawRequest) (*With
 }
 func (UnimplementedAppServer) Exchange(context.Context, *ExchangeRequest) (*ExchangeReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Exchange not implemented")
+}
+func (UnimplementedAppServer) ToAmount(context.Context, *ToAmountRequest) (*ToAmountReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ToAmount not implemented")
 }
 func (UnimplementedAppServer) GetLand(context.Context, *GetLandRequest) (*GetLandReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetLand not implemented")
@@ -1335,6 +1352,24 @@ func _App_Exchange_Handler(srv interface{}, ctx context.Context, dec func(interf
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AppServer).Exchange(ctx, req.(*ExchangeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _App_ToAmount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ToAmountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AppServer).ToAmount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: App_ToAmount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppServer).ToAmount(ctx, req.(*ToAmountRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1895,6 +1930,10 @@ var App_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Exchange",
 			Handler:    _App_Exchange_Handler,
+		},
+		{
+			MethodName: "ToAmount",
+			Handler:    _App_ToAmount_Handler,
 		},
 		{
 			MethodName: "GetLand",

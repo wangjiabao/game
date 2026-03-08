@@ -1961,6 +1961,54 @@ func (a *AppService) Exchange(ctx context.Context, req *pb.ExchangeRequest) (*pb
 	return a.ac.Exchange(ctx, address, req)
 }
 
+// ToAmount 兑换
+func (a *AppService) ToAmount(ctx context.Context, req *pb.ToAmountRequest) (*pb.ToAmountReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		address string
+	)
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["Address"] == nil {
+			return &pb.ToAmountReply{Status: "无效token"}, nil
+		}
+
+		address = c["Address"].(string)
+
+		// 验证
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.ExchangeReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.ExchangeReply{Status: "无效token"}, nil
+		//}
+	} else {
+		return &pb.ToAmountReply{Status: "无效token"}, nil
+	}
+
+	var (
+		res             bool
+		addressFromSign string
+	)
+	res, addressFromSign = verifySig(req.SendBody.Sign, []byte(address))
+	if !res || addressFromSign != address {
+		return &pb.ToAmountReply{
+			Status: "地址签名错误",
+		}, nil
+	}
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
+	return a.ac.ToAmount(ctx, address, req)
+}
+
 // BuyTwo 已删除的认购功能
 func (a *AppService) BuyTwo(ctx context.Context, req *pb.BuyTwoRequest) (*pb.BuyTwoReply, error) {
 	return &pb.BuyTwoReply{Status: "无效"}, nil
