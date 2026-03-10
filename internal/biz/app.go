@@ -5280,16 +5280,16 @@ func (ac *AppUsecase) LandPlaySeven(ctx context.Context, address string, req *pb
 		}, nil
 	}
 
-	var (
-		rewardCount int64
-	)
-
-	rewardCount, err = ac.userRepo.GetTodayRewardPlantPlatSevenUserWithdrawCount(ctx, user.ID)
-	if nil != err || 50 < rewardCount {
-		return &pb.LandPlaySevenReply{
-			Status: "24小时内只能偷取50次",
-		}, nil
-	}
+	//var (
+	//	rewardCount int64
+	//)
+	//
+	//rewardCount, err = ac.userRepo.GetTodayRewardPlantPlatSevenUserWithdrawCount(ctx, user.ID)
+	//if nil != err || 50 < rewardCount {
+	//	return &pb.LandPlaySevenReply{
+	//		Status: "24小时内只能偷取50次",
+	//	}, nil
+	//}
 
 	var (
 		landUserUse *LandUserUse
