@@ -1788,6 +1788,7 @@ func (ac *AppUsecase) UserStakeGitStakeList(ctx context.Context, address string,
 			Stake:     v.Amount,
 			CreatedAt: v.CreatedAt.Add(8 * time.Hour).Format("2006-01-02 15:04:05"),
 			Day:       v.Day,
+			Reward:    v.AmountTwo,
 		})
 	}
 
