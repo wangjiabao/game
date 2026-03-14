@@ -2033,7 +2033,7 @@ func (u *UserRepo) GetNoticesByUserID(ctx context.Context, userID uint64, b *biz
 	res := make([]*biz.Notice, 0)
 	instance := u.data.DB(ctx).Table("notice").
 		Where("user_id = ?", userID).
-		Order("id desc")
+		Order("created_at desc")
 
 	if nil != b {
 		instance = instance.Scopes(Paginate(b.PageNum, b.PageSize))
