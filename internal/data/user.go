@@ -56,6 +56,7 @@ type User struct {
 	WithdrawMax      uint64    `gorm:"type:int;"`
 	CanSellProp      uint64    `gorm:"type:int;"`
 	CanPlayAdd       uint64    `gorm:"type:int;"`
+	CanPlaySix       uint64    `gorm:"type:int;"`
 	GitNew           float64   `gorm:"type:decimal(65,20);default:0.00000000000000000000;"`
 	GitNewNew        float64   `gorm:"type:decimal(65,20);default:0.00000000000000000000;"`
 	One              float64   `gorm:"type:decimal(65,20);not null"`
@@ -686,6 +687,7 @@ func (u *UserRepo) GetUserByAddress(ctx context.Context, address string) (*biz.U
 		IspayAmount:      user.IspayAmount,
 		StakeIspayAmount: user.StakeIspayAmount,
 		OpenBoxAmount:    user.OpenBoxAmount,
+		CanPlaySix:       user.CanPlaySix,
 	}, nil
 }
 

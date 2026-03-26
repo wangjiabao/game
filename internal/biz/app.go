@@ -70,6 +70,7 @@ type User struct {
 	WithdrawMax      uint64
 	CanSellProp      uint64
 	CanPlayAdd       uint64
+	CanPlaySix       uint64
 	One              float64
 	Two              float64
 	Three            float64
@@ -4763,6 +4764,12 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 	if 1 == user.LockUse {
 		return &pb.LandPlaySixReply{
 			Status: "锁定用户",
+		}, nil
+	}
+
+	if 1 != user.CanPlaySix {
+		return &pb.LandPlaySixReply{
+			Status: "不能使用该道具",
 		}, nil
 	}
 
