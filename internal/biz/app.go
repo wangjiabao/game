@@ -1414,6 +1414,7 @@ func (ac *AppUsecase) UserInfo(ctx context.Context, address string) (*pb.UserInf
 		Two:                       two,
 		Three:                     three,
 		CanUsdtWithdraw:           canUsdtWithdraw,
+		CanPlaySix:                user.CanPlaySix,
 	}, nil
 }
 
@@ -2088,11 +2089,11 @@ func (ac *AppUsecase) UserMarketSeedList(ctx context.Context, address string, re
 		count int64
 	)
 
-	return &pb.UserMarketSeedListReply{
-		Status: "ok",
-		Count:  uint64(count),
-		List:   res,
-	}, nil
+	//return &pb.UserMarketSeedListReply{
+	//	Status: "ok",
+	//	Count:  uint64(count),
+	//	List:   res,
+	//}, nil
 
 	seedStatus := []uint64{4}
 	count, err = ac.userRepo.GetSeedByExUserIDCount(ctx, seedStatus, user.ID)

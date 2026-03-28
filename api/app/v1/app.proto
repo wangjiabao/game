@@ -513,6 +513,7 @@ message UserInfoReply {
 	double minStake = 54;
 	double minStakeTwo = 55;
 	uint64 canPlayAdd =  56;
+	uint64 canPlaySix = 157;
 
 	double gitNew = 58;
 	double gitNewNew = 59;

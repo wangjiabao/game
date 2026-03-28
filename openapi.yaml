@@ -2107,6 +2107,8 @@ components:
                     format: double
                 canPlayAdd:
                     type: string
+                canPlaySix:
+                    type: string
                 gitNew:
                     type: number
                     format: double
