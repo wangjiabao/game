@@ -474,6 +474,8 @@ type UserRepo interface {
 	GetSeedByExUserID(ctx context.Context, userID uint64, status []uint64, b *Pagination) ([]*Seed, error)
 	GetSeedByExUserIDCount(ctx context.Context, status []uint64, userID uint64) (int64, error)
 	GetLandUserUseByUserIDUseing(ctx context.Context, userID uint64, status uint64, b *Pagination) ([]*LandUserUse, error)
+	GetLandUserUseOrderByTime(ctx context.Context, b *Pagination) ([]*LandUserUse, error)
+	GetLandUserUseOrderByTimeCount(ctx context.Context) (int64, error)
 	GetExchangeRecordsByUserID(ctx context.Context, userID uint64, b *Pagination) ([]*ExchangeRecord, error)
 	GetLandUserUseByID(ctx context.Context, id uint64) (*LandUserUse, error)
 	GetMarketRecordsByUserID(ctx context.Context, userID uint64, status uint64, b *Pagination) ([]*Market, error)
@@ -3048,6 +3050,98 @@ func (ac *AppUsecase) UserIndexList(ctx context.Context, address string, req *pb
 		Status: "ok",
 		Count:  9,
 		List:   res,
+	}, nil
+}
+
+// UserOrderListTwo userOrderListTwo.
+func (ac *AppUsecase) UserOrderListTwo(ctx context.Context, address string, req *pb.UserOrderListRequest) (*pb.UserOrderListReply, error) {
+	if 15 < len(req.Address) && len(req.Address) > 100 {
+		return &pb.UserOrderListReply{
+			Status: "参数错误",
+		}, nil
+	}
+	var (
+		user *User
+		err  error
+	)
+	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
+	if nil != err || nil == user {
+		return &pb.UserOrderListReply{
+			Status: "不存在用户",
+		}, nil
+	}
+
+	var (
+		count       int64
+		users       []*User
+		landUserUse []*LandUserUse
+	)
+
+	res := make([]*pb.UserOrderListReply_List, 0)
+
+	if 15 < len(req.Address) {
+		users, err = ac.userRepo.GetUserOrder(ctx, nil, req.Address)
+		if nil != err {
+			return &pb.UserOrderListReply{
+				Status: "查询错误",
+			}, nil
+		}
+
+		count = int64(len(users))
+
+		for _, v := range users {
+			res = append(res, &pb.UserOrderListReply_List{
+				Address: v.Address,
+			})
+		}
+	} else {
+		count, err = ac.userRepo.GetLandUserUseOrderByTimeCount(ctx)
+		if nil != err {
+			return &pb.UserOrderListReply{
+				Status: "查询错误",
+			}, nil
+		}
+
+		landUserUse, err = ac.userRepo.GetLandUserUseOrderByTime(ctx, &Pagination{
+			PageNum:  int(req.Page),
+			PageSize: 20,
+		})
+		if nil != err {
+			return &pb.UserOrderListReply{
+				Status: "查询错误",
+			}, nil
+		}
+
+		userIds := make([]uint64, 0)
+		for _, v := range landUserUse {
+			userIds = append(userIds, v.UserId)
+		}
+
+		var (
+			userMap map[uint64]*User
+		)
+		userMap, err = ac.userRepo.GetUserByUserIds(ctx, userIds)
+		if nil != err {
+			return &pb.UserOrderListReply{
+				Status: "查询错误",
+			}, nil
+		}
+
+		for _, v := range landUserUse {
+			if _, ok := userMap[v.UserId]; !ok {
+				continue
+			}
+
+			res = append(res, &pb.UserOrderListReply_List{
+				Address: userMap[v.UserId].Address,
+			})
+		}
+	}
+
+	return &pb.UserOrderListReply{
+		Count:  uint64(count),
+		List:   res,
+		Status: "ok",
 	}, nil
 }
 

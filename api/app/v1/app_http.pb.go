@@ -64,6 +64,7 @@ const OperationAppUserMarketSeedList = "/api.app.v1.App/UserMarketSeedList"
 const OperationAppUserMyMarketList = "/api.app.v1.App/UserMyMarketList"
 const OperationAppUserNoticeList = "/api.app.v1.App/UserNoticeList"
 const OperationAppUserOrderList = "/api.app.v1.App/UserOrderList"
+const OperationAppUserOrderListTwo = "/api.app.v1.App/UserOrderListTwo"
 const OperationAppUserRecommend = "/api.app.v1.App/UserRecommend"
 const OperationAppUserRecommendL = "/api.app.v1.App/UserRecommendL"
 const OperationAppUserStakeGitRewardList = "/api.app.v1.App/UserStakeGitRewardList"
@@ -152,6 +153,7 @@ type AppHTTPServer interface {
 	UserNoticeList(context.Context, *UserNoticeListRequest) (*UserNoticeListReply, error)
 	// UserOrderList 排行榜
 	UserOrderList(context.Context, *UserOrderListRequest) (*UserOrderListReply, error)
+	UserOrderListTwo(context.Context, *UserOrderListRequest) (*UserOrderListReply, error)
 	// UserRecommend 直推列表
 	UserRecommend(context.Context, *UserRecommendRequest) (*UserRecommendReply, error)
 	// UserRecommendL L1L2L3内容
@@ -190,6 +192,7 @@ func RegisterAppHTTPServer(s *http.Server, srv AppHTTPServer) {
 	r.GET("/api/app_server/user_skate_reward_list", _App_UserStakeRewardList0_HTTP_Handler(srv))
 	r.GET("/api/app_server/user_index_list", _App_UserIndexList0_HTTP_Handler(srv))
 	r.GET("/api/app_server/user_order_list", _App_UserOrderList0_HTTP_Handler(srv))
+	r.GET("/api/app_server/user_order_list_two", _App_UserOrderListTwo0_HTTP_Handler(srv))
 	r.POST("/api/app_server/buy_two", _App_BuyTwo0_HTTP_Handler(srv))
 	r.POST("/api/app_server/withdraw", _App_Withdraw0_HTTP_Handler(srv))
 	r.POST("/api/app_server/exchange", _App_Exchange0_HTTP_Handler(srv))
@@ -635,6 +638,25 @@ func _App_UserOrderList0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) 
 		http.SetOperation(ctx, OperationAppUserOrderList)
 		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
 			return srv.UserOrderList(ctx, req.(*UserOrderListRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*UserOrderListReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _App_UserOrderListTwo0_HTTP_Handler(srv AppHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in UserOrderListRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAppUserOrderListTwo)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.UserOrderListTwo(ctx, req.(*UserOrderListRequest))
 		})
 		out, err := h(ctx, &in)
 		if err != nil {
@@ -1311,6 +1333,7 @@ type AppHTTPClient interface {
 	UserMyMarketList(ctx context.Context, req *UserMyMarketListRequest, opts ...http.CallOption) (rsp *UserMyMarketListReply, err error)
 	UserNoticeList(ctx context.Context, req *UserNoticeListRequest, opts ...http.CallOption) (rsp *UserNoticeListReply, err error)
 	UserOrderList(ctx context.Context, req *UserOrderListRequest, opts ...http.CallOption) (rsp *UserOrderListReply, err error)
+	UserOrderListTwo(ctx context.Context, req *UserOrderListRequest, opts ...http.CallOption) (rsp *UserOrderListReply, err error)
 	UserRecommend(ctx context.Context, req *UserRecommendRequest, opts ...http.CallOption) (rsp *UserRecommendReply, err error)
 	UserRecommendL(ctx context.Context, req *UserRecommendLRequest, opts ...http.CallOption) (rsp *UserRecommendLReply, err error)
 	UserStakeGitRewardList(ctx context.Context, req *UserStakeGitRewardListRequest, opts ...http.CallOption) (rsp *UserStakeGitRewardListReply, err error)
@@ -1904,6 +1927,19 @@ func (c *AppHTTPClientImpl) UserOrderList(ctx context.Context, in *UserOrderList
 	pattern := "/api/app_server/user_order_list"
 	path := binding.EncodeURL(pattern, in, true)
 	opts = append(opts, http.Operation(OperationAppUserOrderList))
+	opts = append(opts, http.PathTemplate(pattern))
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, err
+}
+
+func (c *AppHTTPClientImpl) UserOrderListTwo(ctx context.Context, in *UserOrderListRequest, opts ...http.CallOption) (*UserOrderListReply, error) {
+	var out UserOrderListReply
+	pattern := "/api/app_server/user_order_list_two"
+	path := binding.EncodeURL(pattern, in, true)
+	opts = append(opts, http.Operation(OperationAppUserOrderListTwo))
 	opts = append(opts, http.PathTemplate(pattern))
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {

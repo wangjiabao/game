@@ -1005,6 +1005,43 @@ func (a *AppService) UserOrderList(ctx context.Context, req *pb.UserOrderListReq
 	return a.ac.UserOrderList(ctx, address, req)
 }
 
+// UserOrderListTwo  userOrderListTwo.
+func (a *AppService) UserOrderListTwo(ctx context.Context, req *pb.UserOrderListRequest) (*pb.UserOrderListReply, error) {
+	// 在上下文 context 中取出 claims 对象
+	var (
+		address string
+	)
+	if claims, ok := jwt.FromContext(ctx); ok {
+		c := claims.(jwt2.MapClaims)
+		if c["Address"] == nil {
+			return &pb.UserOrderListReply{Status: "无效token"}, nil
+		}
+
+		address = c["Address"].(string)
+
+		// 验证
+		//var (
+		//	res bool
+		//	err error
+		//)
+		//res, err = addressCheck(address)
+		//if nil != err {
+		//	return &pb.UserOrderListReply{Status: "无效token"}, nil
+		//}
+		//
+		//if !res {
+		//	return &pb.UserOrderListReply{Status: "无效token"}, nil
+		//}
+	} else {
+		return &pb.UserOrderListReply{Status: "无效token"}, nil
+	}
+	if !allowAddress(address) {
+		// 返回 429 或 503 都行
+		return nil, nil
+	}
+	return a.ac.UserOrderListTwo(ctx, address, req)
+}
+
 func (a *AppService) AddMessage(ctx context.Context, req *pb.AddMessageRequest) (*pb.AddMessageReply, error) {
 	// 在上下文 context 中取出 claims 对象
 	var (

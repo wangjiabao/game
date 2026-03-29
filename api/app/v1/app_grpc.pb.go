@@ -41,6 +41,7 @@ const (
 	App_UserStakeRewardList_FullMethodName    = "/api.app.v1.App/UserStakeRewardList"
 	App_UserIndexList_FullMethodName          = "/api.app.v1.App/UserIndexList"
 	App_UserOrderList_FullMethodName          = "/api.app.v1.App/UserOrderList"
+	App_UserOrderListTwo_FullMethodName       = "/api.app.v1.App/UserOrderListTwo"
 	App_BuyTwo_FullMethodName                 = "/api.app.v1.App/BuyTwo"
 	App_Withdraw_FullMethodName               = "/api.app.v1.App/Withdraw"
 	App_Exchange_FullMethodName               = "/api.app.v1.App/Exchange"
@@ -117,6 +118,7 @@ type AppClient interface {
 	UserIndexList(ctx context.Context, in *UserIndexListRequest, opts ...grpc.CallOption) (*UserIndexListReply, error)
 	// 排行榜
 	UserOrderList(ctx context.Context, in *UserOrderListRequest, opts ...grpc.CallOption) (*UserOrderListReply, error)
+	UserOrderListTwo(ctx context.Context, in *UserOrderListRequest, opts ...grpc.CallOption) (*UserOrderListReply, error)
 	// 提现
 	BuyTwo(ctx context.Context, in *BuyTwoRequest, opts ...grpc.CallOption) (*BuyTwoReply, error)
 	// 提现
@@ -370,6 +372,15 @@ func (c *appClient) UserIndexList(ctx context.Context, in *UserIndexListRequest,
 func (c *appClient) UserOrderList(ctx context.Context, in *UserOrderListRequest, opts ...grpc.CallOption) (*UserOrderListReply, error) {
 	out := new(UserOrderListReply)
 	err := c.cc.Invoke(ctx, App_UserOrderList_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *appClient) UserOrderListTwo(ctx context.Context, in *UserOrderListRequest, opts ...grpc.CallOption) (*UserOrderListReply, error) {
+	out := new(UserOrderListReply)
+	err := c.cc.Invoke(ctx, App_UserOrderListTwo_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -682,6 +693,7 @@ type AppServer interface {
 	UserIndexList(context.Context, *UserIndexListRequest) (*UserIndexListReply, error)
 	// 排行榜
 	UserOrderList(context.Context, *UserOrderListRequest) (*UserOrderListReply, error)
+	UserOrderListTwo(context.Context, *UserOrderListRequest) (*UserOrderListReply, error)
 	// 提现
 	BuyTwo(context.Context, *BuyTwoRequest) (*BuyTwoReply, error)
 	// 提现
@@ -805,6 +817,9 @@ func (UnimplementedAppServer) UserIndexList(context.Context, *UserIndexListReque
 }
 func (UnimplementedAppServer) UserOrderList(context.Context, *UserOrderListRequest) (*UserOrderListReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UserOrderList not implemented")
+}
+func (UnimplementedAppServer) UserOrderListTwo(context.Context, *UserOrderListRequest) (*UserOrderListReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UserOrderListTwo not implemented")
 }
 func (UnimplementedAppServer) BuyTwo(context.Context, *BuyTwoRequest) (*BuyTwoReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method BuyTwo not implemented")
@@ -1298,6 +1313,24 @@ func _App_UserOrderList_Handler(srv interface{}, ctx context.Context, dec func(i
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AppServer).UserOrderList(ctx, req.(*UserOrderListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _App_UserOrderListTwo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserOrderListRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AppServer).UserOrderListTwo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: App_UserOrderListTwo_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AppServer).UserOrderListTwo(ctx, req.(*UserOrderListRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1918,6 +1951,10 @@ var App_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UserOrderList",
 			Handler:    _App_UserOrderList_Handler,
+		},
+		{
+			MethodName: "UserOrderListTwo",
+			Handler:    _App_UserOrderListTwo_Handler,
 		},
 		{
 			MethodName: "BuyTwo",

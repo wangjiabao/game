@@ -1910,6 +1910,80 @@ func (u *UserRepo) GetLandUserUseByUserIDUseing(ctx context.Context, userID uint
 	return res, nil
 }
 
+func (u *UserRepo) GetLandUserUseOrderByTimeCount(ctx context.Context) (int64, error) {
+	var count int64
+	err := u.data.DB(ctx).Table("land_user_use").
+		Where("status = ?", 1).
+		Where("one = ?", 0).
+		Where("two = ?", 0).
+		Where("sub_time = ?", 0).
+		Where("over_time < ?", uint64(time.Now().Unix())).
+		Count(&count).Error
+	if err != nil {
+		return 0, errors.New(500, "LAND USER USE COUNT ERROR", err.Error())
+	}
+	return count, nil
+}
+
+// GetLandUserUseOrderByTime getLandUserUseOrderByTime
+func (u *UserRepo) GetLandUserUseOrderByTime(ctx context.Context, b *biz.Pagination) ([]*biz.LandUserUse, error) {
+	var (
+		landUserUses []*LandUserUse
+	)
+
+	res := make([]*biz.LandUserUse, 0)
+	instance := u.data.DB(ctx).Table("land_user_use").
+		Where("status = ?", 1).
+		Where("one = ?", 0).
+		Where("two = ?", 0).
+		Where("sub_time = ?", 0).
+		Where("over_time < ?", uint64(time.Now().Unix())).
+		Order("over_time desc")
+
+	if nil != b {
+		instance = instance.Scopes(Paginate(b.PageNum, b.PageSize))
+	}
+
+	if err := instance.Find(&landUserUses).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return res, nil
+		}
+
+		return nil, errors.New(500, "LAND USER USE ERROR", err.Error())
+	}
+
+	for _, landUserUse := range landUserUses {
+		res = append(res, &biz.LandUserUse{
+			ID:           landUserUse.ID,
+			LandId:       landUserUse.LandId,
+			Level:        landUserUse.Level,
+			UserId:       landUserUse.UserId,
+			OwnerUserId:  landUserUse.OwnerUserId,
+			SeedId:       landUserUse.SeedId,
+			SeedTypeId:   landUserUse.SeedTypeId,
+			Status:       landUserUse.Status,
+			BeginTime:    landUserUse.BeginTime,
+			TotalTime:    landUserUse.TotalTime,
+			OverTime:     landUserUse.OverTime,
+			OutMaxNum:    landUserUse.OutMaxNum,
+			OutNum:       landUserUse.OutNum,
+			InsectStatus: landUserUse.InsectStatus,
+			OutSubNum:    landUserUse.OutSubNum,
+			StealNum:     landUserUse.StealNum,
+			StopStatus:   landUserUse.StopStatus,
+			StopTime:     landUserUse.StopTime,
+			SubTime:      landUserUse.SubTime,
+			UseChan:      landUserUse.UseChan,
+			CreatedAt:    landUserUse.CreatedAt,
+			UpdatedAt:    landUserUse.UpdatedAt,
+			One:          landUserUse.One,
+			Two:          landUserUse.Two,
+		})
+	}
+
+	return res, nil
+}
+
 func (u *UserRepo) GetExchangeRecordsByUserID(ctx context.Context, userID uint64, b *biz.Pagination) ([]*biz.ExchangeRecord, error) {
 	var (
 		exchangeRecords []*ExchangeRecord

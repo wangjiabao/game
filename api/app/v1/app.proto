@@ -162,6 +162,12 @@ service App {
 		};
 	};
 
+	rpc UserOrderListTwo (UserOrderListRequest) returns (UserOrderListReply) {
+		option (google.api.http) = {
+			get: "/api/app_server/user_order_list_two"
+		};
+	};
+
 	// 提现
 	rpc BuyTwo (BuyTwoRequest) returns (BuyTwoReply) {
 		option (google.api.http) = {
