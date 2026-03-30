@@ -5360,9 +5360,9 @@ func (ac *AppUsecase) LandPlaySeven(ctx context.Context, address string, req *pb
 	rewardIds := make([]uint64, 0)
 	rewardIds = append(rewardIds, req.SendBody.LandUseId)
 	rewards, err = ac.userRepo.GetRewardByTwo(ctx, rewardIds, user.ID)
-	if nil == err {
+	if nil != err {
 		return &pb.LandPlaySevenReply{
-			Status: "already",
+			Status: "already err",
 		}, nil
 	}
 
