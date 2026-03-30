@@ -5482,7 +5482,7 @@ func (ac *AppUsecase) LandPlaySeven(ctx context.Context, address string, req *pb
 		}, nil
 	}
 
-	if 0.00001 >= landUserUse.OutMaxNum {
+	if 1 >= landUserUse.OutMaxNum {
 		return &pb.LandPlaySevenReply{
 			Status:    "已经偷光了",
 			StatusTwo: "already over.",
