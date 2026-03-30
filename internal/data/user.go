@@ -3758,7 +3758,7 @@ func (u *UserRepo) PlantPlatSeven(ctx context.Context, outMax, amount float64, s
 		"updated_at":  time.Now().Format("2006-01-02 15:04:05"),
 	}
 
-	res := u.data.DB(ctx).Table("land_user_use").Where("id=?", id).Where("status=?", 1).Where("out_max_num>?", 0).
+	res := u.data.DB(ctx).Table("land_user_use").Where("id=?", id).Where("status=?", 1).Where("out_max_num>=?", amount).
 		Updates(updateColums)
 	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "PlantPlatSeven1", "用户信息修改失败1")
