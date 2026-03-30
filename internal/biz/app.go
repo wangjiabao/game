@@ -578,6 +578,7 @@ type UserRepo interface {
 	UpdateUserMyTotalAmount(ctx context.Context, userId uint64, amount float64) error
 	UpdateUserMyTotalAmountSub(ctx context.Context, userId int64, amount float64) error
 	UpdateUserRewardRecommend2(ctx context.Context, userId uint64, giw, giw2, usdt float64, amountOrigin float64, stop bool, address string) error
+	GetRewardByTwo(ctx context.Context, twoIds []uint64, userId uint64) (map[uint64]*Reward, error)
 }
 
 // AppUsecase is an app usecase.
@@ -2956,9 +2957,9 @@ func (ac *AppUsecase) UserIndexList(ctx context.Context, address string, req *pb
 			}
 
 			tmpOneOne := uint64(0)
-			if 0 < landUserUse[vLand.ID].SubTime {
-				tmpOneOne = 1
-			}
+			//if 0 < landUserUse[vLand.ID].SubTime {
+			//	tmpOneOne = 1
+			//}
 
 			resTmp[vLand.LocationNum] = &pb.UserIndexListReply_List{
 				LocationNum:      vLand.LocationNum,
@@ -3113,12 +3114,15 @@ func (ac *AppUsecase) UserOrderListTwo(ctx context.Context, address string, req 
 		}
 
 		userIds := make([]uint64, 0)
+		rewardIds := make([]uint64, 0)
 		for _, v := range landUserUse {
 			userIds = append(userIds, v.UserId)
+			rewardIds = append(rewardIds, v.ID)
 		}
 
 		var (
 			userMap map[uint64]*User
+			rewards map[uint64]*Reward
 		)
 		userMap, err = ac.userRepo.GetUserByUserIds(ctx, userIds)
 		if nil != err {
@@ -3127,13 +3131,25 @@ func (ac *AppUsecase) UserOrderListTwo(ctx context.Context, address string, req 
 			}, nil
 		}
 
+		rewards, err = ac.userRepo.GetRewardByTwo(ctx, rewardIds, user.ID)
+		if nil != err {
+			return &pb.UserOrderListReply{
+				Status: "查询错误",
+			}, nil
+		}
 		for _, v := range landUserUse {
 			if _, ok := userMap[v.UserId]; !ok {
 				continue
 			}
 
+			tmpRed := uint64(0)
+			if _, ok := rewards[v.ID]; ok {
+				tmpRed = 1
+			}
+
 			res = append(res, &pb.UserOrderListReply_List{
 				Address: userMap[v.UserId].Address,
+				Red:     tmpRed,
 			})
 		}
 	}
@@ -5290,6 +5306,8 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 	}, nil
 }
 
+var landPlaySeven sync.Mutex
+
 // LandPlaySeven 手套
 func (ac *AppUsecase) LandPlaySeven(ctx context.Context, address string, req *pb.LandPlaySevenRequest) (*pb.LandPlaySevenReply, error) {
 	var (
@@ -5331,6 +5349,27 @@ func (ac *AppUsecase) LandPlaySeven(ctx context.Context, address string, req *pb
 		if "self_sub" == vConfig.KeyName {
 			selfSub, _ = strconv.ParseUint(vConfig.Value, 10, 64)
 		}
+	}
+
+	landPlaySeven.Lock()
+	defer landPlaySeven.Unlock()
+
+	var (
+		rewards map[uint64]*Reward
+	)
+	rewardIds := make([]uint64, 0)
+	rewardIds = append(rewardIds, req.SendBody.LandUseId)
+	rewards, err = ac.userRepo.GetRewardByTwo(ctx, rewardIds, user.ID)
+	if nil == err {
+		return &pb.LandPlaySevenReply{
+			Status: "already",
+		}, nil
+	}
+
+	if _, ok := rewards[req.SendBody.LandUseId]; ok {
+		return &pb.LandPlaySevenReply{
+			Status: "already",
+		}, nil
 	}
 
 	// 开启了系统偷盗全局
@@ -5443,18 +5482,25 @@ func (ac *AppUsecase) LandPlaySeven(ctx context.Context, address string, req *pb
 		}, nil
 	}
 
-	lastTime := landUserUse.SubTime
-	if 0 < lastTime {
+	if 0 >= landUserUse.OutMaxNum {
 		return &pb.LandPlaySevenReply{
-			Status:    "偷盗过于频繁",
-			StatusTwo: "Stealing is too frequent.",
+			Status:    "已经偷光了",
+			StatusTwo: "already over.",
 		}, nil
-		//if uint64(current)-600 <= lastTime {
-		//	return &pb.LandPlaySevenReply{
-		//		Status: "偷盗过于频繁",
-		//	}, nil
-		//}
 	}
+
+	lastTime := landUserUse.SubTime
+	//if 0 < lastTime {
+	//	return &pb.LandPlaySevenReply{
+	//		Status:    "偷盗过于频繁",
+	//		StatusTwo: "Stealing is too frequent.",
+	//	}, nil
+	//	//if uint64(current)-600 <= lastTime {
+	//	//	return &pb.LandPlaySevenReply{
+	//	//		Status: "偷盗过于频繁",
+	//	//	}, nil
+	//	//}
+	//}
 
 	tmpAmount := landUserUse.OutMaxNum * sRate
 	tmpOutMax := float64(0)

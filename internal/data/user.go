@@ -481,6 +481,32 @@ func (u *UserRepo) GetAllUsers(ctx context.Context) ([]*biz.User, error) {
 	return res, nil
 }
 
+// GetRewardByTwo .
+func (u *UserRepo) GetRewardByTwo(ctx context.Context, twoIds []uint64, userId uint64) (map[uint64]*biz.Reward, error) {
+	var users []*Reward
+
+	res := make(map[uint64]*biz.Reward, 0)
+	if err := u.data.DB(ctx).Table("reward").Where("two IN (?)", twoIds).Where("user_id=?", userId).Where("reason=?", 13).Find(&users).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return res, nil
+		}
+
+		return nil, errors.New(500, "USER ERROR", err.Error())
+	}
+
+	for _, user := range users {
+		res[user.Two] = &biz.Reward{
+			ID:     user.ID,
+			UserId: user.UserId,
+			One:    user.One,
+			Two:    user.Two,
+			Three:  user.Three,
+			Amount: user.Amount,
+		}
+	}
+	return res, nil
+}
+
 // GetUserByUserIds .
 func (u *UserRepo) GetUserByUserIds(ctx context.Context, userIds []uint64) (map[uint64]*biz.User, error) {
 	var users []*User
@@ -1936,7 +1962,7 @@ func (u *UserRepo) GetLandUserUseOrderByTime(ctx context.Context, b *biz.Paginat
 		Where("status = ?", 1).
 		Where("one = ?", 0).
 		Where("two = ?", 0).
-		Where("sub_time = ?", 0).
+		Where("sub_time >= ?", 0).
 		Where("over_time < ?", uint64(time.Now().Unix())).
 		Order("over_time desc")
 
@@ -3727,12 +3753,12 @@ func (u *UserRepo) PlantPlatSix(ctx context.Context, id, propId, propStatus, pro
 // PlantPlatSeven .
 func (u *UserRepo) PlantPlatSeven(ctx context.Context, outMax, amount float64, subTime, lastTime, id, propId, propStatus, propNum, userId uint64) error {
 	updateColums := map[string]interface{}{
-		"sub_time":    subTime,
-		"out_max_num": outMax,
+		//"sub_time":    subTime,
+		"out_max_num": gorm.Expr("out_max_num - ?", amount),
 		"updated_at":  time.Now().Format("2006-01-02 15:04:05"),
 	}
 
-	res := u.data.DB(ctx).Table("land_user_use").Where("id=?", id).Where("status=?", 1).Where("sub_time=?", lastTime).
+	res := u.data.DB(ctx).Table("land_user_use").Where("id=?", id).Where("status=?", 1).Where("out_max_num>?", 0).
 		Updates(updateColums)
 	if res.Error != nil || 1 != res.RowsAffected {
 		return errors.New(500, "PlantPlatSeven1", "用户信息修改失败1")
