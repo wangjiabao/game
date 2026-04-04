@@ -5502,12 +5502,20 @@ func (ac *AppUsecase) LandPlaySeven(ctx context.Context, address string, req *pb
 	//	//}
 	//}
 
-	tmpAmount := landUserUse.OutMaxNum * sRate
+	tmpAmount := 100 * sRate
 	tmpOutMax := float64(0)
 	if tmpAmount >= landUserUse.OutMaxNum {
 		tmpOutMax = 0
+		tmpAmount = landUserUse.OutMaxNum
 	} else {
 		tmpOutMax = landUserUse.OutMaxNum - tmpAmount
+	}
+
+	if tmpAmount <= 0 {
+		return &pb.LandPlaySevenReply{
+			Status:    "已经偷光了",
+			StatusTwo: "already over.",
+		}, nil
 	}
 
 	one := uint64(0)
@@ -7794,7 +7802,7 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 		}
 
 		return &pb.StakeGetPlayReply{Status: "ok", PlayStatus: 1, Amount: tmpGit}, nil
-	} else { // 输：下注金额加入池子
+	} else {                                                         // 输：下注金额加入池子
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 			err = ac.userRepo.SetStakeGetPlaySub(ctx, user.ID, float64(req.SendBody.Amount))
 			if nil != err {
