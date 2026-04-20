@@ -502,7 +502,7 @@ type UserRepo interface {
 	GetLandUserUseByLandIDsMapUsing(ctx context.Context, userId uint64, landIDs []uint64) (map[uint64]*LandUserUse, error)
 	GetLandMyUseByLandIDsMapUsing(ctx context.Context, userId uint64) (map[uint64]*LandUserUse, error)
 	GetLandUserUseByLandIDsUsing(ctx context.Context, userId uint64) ([]*LandUserUse, error)
-	BuyBox(ctx context.Context, giw float64, originValue, value string, uc *BoxRecord) (uint64, error)
+	BuyBox(ctx context.Context, giw, bAmount float64, originValue, value string, uc *BoxRecord) (uint64, error)
 	BuyLandReward(ctx context.Context, userId, landId uint64, giw float64) error
 	GetUserBoxRecordById(ctx context.Context, id uint64) (*BoxRecord, error)
 	OpenBoxSeed(ctx context.Context, id, userId uint64, content string, amount float64, seedInfo *Seed) (uint64, error)
@@ -524,8 +524,8 @@ type UserRepo interface {
 	PlantPlatSix(ctx context.Context, id, propId, propStatus, propNum, landId uint64) error
 	GetTodayRewardPlantPlatSevenUserWithdrawCount(ctx context.Context, userId uint64) (int64, error)
 	PlantPlatSeven(ctx context.Context, outMax, amount float64, subTime, lastTime, id, propId, propStatus, propNum, userId uint64) error
-	PlantPlatTwoTwo(ctx context.Context, id, userId, rentUserId uint64, amount, rentAmount float64) error
-	PlantPlatTwoTwoL(ctx context.Context, id, userId, lowUserId, num uint64, amount float64) error
+	PlantPlatTwoTwo(ctx context.Context, id, userId, rentUserId uint64, amount, ispay, rentAmount, ispayRent float64) error
+	PlantPlatTwoTwoL(ctx context.Context, id, userId, lowUserId, num uint64, amount, ispay float64) error
 	PlantPlatTwoTwoLL(ctx context.Context, userId, lowUserId, num uint64, amount float64) error
 	GetSeedBuyByID(ctx context.Context, seedID, status uint64) (*Seed, error)
 	GetPropByID(ctx context.Context, propID, status uint64) (*Prop, error)
@@ -3279,6 +3279,8 @@ func (ac *AppUsecase) BuyBox(ctx context.Context, address string, req *pb.BuyBox
 		boxStart         string
 		boxEnd           string
 		//uPrice           float64
+		priceOpen    float64
+		priceOpenUse uint64
 	)
 	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
 	if nil != err || nil == user {
@@ -3312,6 +3314,8 @@ func (ac *AppUsecase) BuyBox(ctx context.Context, address string, req *pb.BuyBox
 		"box_end",
 		"box_amount",
 		"u_price",
+		"open_box_price",
+		"open_box_price_use",
 	)
 	if nil != err || nil == configs {
 		return &pb.BuyBoxReply{
@@ -3342,6 +3346,14 @@ func (ac *AppUsecase) BuyBox(ctx context.Context, address string, req *pb.BuyBox
 		//if "u_price" == vConfig.KeyName {
 		//	uPrice, _ = strconv.ParseFloat(vConfig.Value, 10)
 		//}
+
+		if "open_box_price" == vConfig.KeyName {
+			priceOpen, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+
+		if "open_box_price_use" == vConfig.KeyName {
+			priceOpenUse, _ = strconv.ParseUint(vConfig.Value, 10, 64)
+		}
 	}
 	// 解析时间字符串
 
@@ -3402,8 +3414,33 @@ func (ac *AppUsecase) BuyBox(ctx context.Context, address string, req *pb.BuyBox
 	tmpSellNumNew := strconv.FormatUint(boxSellNum+1, 10)
 	//fmt.Println(boxSellNum, tmpSellNumNew)
 	boxId := uint64(0)
+
+	var ispay float64
+	if 0 == priceOpenUse {
+		ispay = boxAmount / priceOpen / 2
+	} else {
+		var (
+			tmp0 float64
+			tmp1 float64
+		)
+		tmp0, tmp1, err = GetReservers()
+		if nil != err || 1 >= tmp0 || 1 >= tmp1 {
+			return &pb.BuyBoxReply{
+				Status: "获取交易池数据失败",
+			}, nil
+		}
+
+		ispay = boxAmount * tmp1 / tmp0 / 2
+	}
+
+	if 0.000000001 >= ispay {
+		return &pb.BuyBoxReply{
+			Status: "配置错误",
+		}, nil
+	}
+
 	if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-		boxId, err = ac.userRepo.BuyBox(ctx, boxAmount, boxSellNumOrigin, tmpSellNumNew, &BoxRecord{
+		boxId, err = ac.userRepo.BuyBox(ctx, boxAmount/2, ispay, boxSellNumOrigin, tmpSellNumNew, &BoxRecord{
 			UserId: user.ID,
 			Num:    boxNum,
 		})
@@ -3414,8 +3451,8 @@ func (ac *AppUsecase) BuyBox(ctx context.Context, address string, req *pb.BuyBox
 		err = ac.userRepo.CreateNotice(
 			ctx,
 			user.ID,
-			"您花费"+fmt.Sprintf("%.2f", boxAmount)+"USDT购买了盲盒",
-			"You've used "+fmt.Sprintf("%.2f", boxAmount)+" USDT buy box",
+			"您花费"+fmt.Sprintf("%.2f", boxAmount/2)+"USDT 和 "+fmt.Sprintf("%.2f", ispay)+"ISPAY 购买了盲盒",
+			"You've used "+fmt.Sprintf("%.2f", boxAmount/2)+"USDT AND "+fmt.Sprintf("%.2f", ispay)+"ISPAY buy box",
 		)
 		if nil != err {
 			return err
@@ -4041,7 +4078,9 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 		sRate     float64
 		selfSub   uint64
 		//lowRewardU float64
-		err error
+		err          error
+		priceOpen    float64
+		priceOpenUse uint64
 	)
 
 	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
@@ -4069,7 +4108,8 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 
 	// 配置
 	configs, err = ac.userRepo.GetConfigByKeys(ctx,
-		"one_rate", "two_rate", "three_rate", "u_price", "s_rate", "self_sub",
+		"one_rate", "two_rate", "three_rate", "u_price", "s_rate", "self_sub", "open_box_price",
+		"open_box_price_use",
 	)
 	if nil != err || nil == configs {
 		return &pb.LandPlayTwoReply{
@@ -4099,6 +4139,13 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 		}
 		if "self_sub" == vConfig.KeyName {
 			selfSub, _ = strconv.ParseUint(vConfig.Value, 10, 64)
+		}
+		if "open_box_price" == vConfig.KeyName {
+			priceOpen, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
+
+		if "open_box_price_use" == vConfig.KeyName {
+			priceOpenUse, _ = strconv.ParseUint(vConfig.Value, 10, 64)
 		}
 	}
 
@@ -4260,6 +4307,39 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 		}
 	}
 
+	var (
+		ispay     float64
+		ispayRent float64
+	)
+	var (
+		tmp0 float64
+		tmp1 float64
+	)
+	tmp0, tmp1, err = GetReservers()
+	if nil != err || 1 >= tmp0 || 1 >= tmp1 {
+		return &pb.LandPlayTwoReply{
+			Status: "获取交易池数据失败",
+		}, nil
+	}
+
+	rewardL := reward
+
+	reward = reward / 2
+	rentReward = rentReward / 2
+	if 0 == priceOpenUse {
+		ispay = reward / priceOpen
+		ispayRent = rentReward / priceOpen
+	} else {
+		ispay = reward * tmp1 / tmp0
+		ispayRent = rentReward * tmp1 / tmp0
+	}
+
+	if 0.0000000001 >= ispay {
+		return &pb.LandPlayTwoReply{
+			Status: "配置错误",
+		}, nil
+	}
+
 	// 分红，状态变更
 	if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 		// 资源释放
@@ -4269,7 +4349,7 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 		}
 
 		// 奖励
-		err = ac.userRepo.PlantPlatTwoTwo(ctx, landUserUse.ID, landUserUse.UserId, rentUserId, reward, rentReward)
+		err = ac.userRepo.PlantPlatTwoTwo(ctx, landUserUse.ID, landUserUse.UserId, rentUserId, reward, ispay, rentReward, ispayRent)
 		if nil != err {
 			return err
 		}
@@ -4277,8 +4357,8 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 		err = ac.userRepo.CreateNotice(
 			ctx,
 			user.ID,
-			"您收获了"+fmt.Sprintf("%.2f", reward)+"USDT",
-			"You've harvest "+fmt.Sprintf("%.2f", reward)+" USDT",
+			"您收获了"+fmt.Sprintf("%.2f", reward)+"USDT 和"+fmt.Sprintf("%.2f", ispay)+" ISPAY",
+			"You've harvest "+fmt.Sprintf("%.2f", reward)+" USDT and "+fmt.Sprintf("%.2f", ispay)+" ISPAY",
 		)
 		if nil != err {
 			return err
@@ -4288,8 +4368,8 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 			err = ac.userRepo.CreateNotice(
 				ctx,
 				rentUserId,
-				"您收获了"+fmt.Sprintf("%.2f", rentReward)+"USDT",
-				"You've harvest "+fmt.Sprintf("%.2f", rentReward)+" USDT",
+				"您收获了"+fmt.Sprintf("%.2f", rentReward)+"USDT 和"+fmt.Sprintf("%.2f", ispayRent)+" ISPAY",
+				"You've harvest "+fmt.Sprintf("%.2f", rentReward)+" USDT AND "+fmt.Sprintf("%.2f", ispayRent)+" ISPAY",
 			)
 			if nil != err {
 				return err
@@ -4297,7 +4377,7 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 		}
 
 		// l1-l3，奖励发放
-		if reward > 0 {
+		if rewardL > 0 {
 			tmpI := 0
 			for i := len(tmpRecommendUserIds) - 1; i >= 0; i-- {
 				if 3 <= tmpI {
@@ -4321,21 +4401,31 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 				tmpReward := float64(0)
 
 				tmpNum := uint64(4)
-				tmpReward = reward * oneRate
+				tmpReward = rewardL * oneRate
 				if 1 == tmpI {
 
 				} else if 2 == tmpI {
-					tmpReward = reward * twoRate
+					tmpReward = rewardL * twoRate
 					tmpNum = 7
 				} else if 3 == tmpI {
-					tmpReward = reward * threeRate
+					tmpReward = rewardL * threeRate
 					tmpNum = 10
 				} else {
 					break
 				}
 
+				var (
+					ispayL float64
+				)
+				tmpReward = tmpReward / 2
+				if 0 == priceOpenUse {
+					ispayL = tmpReward / priceOpen
+				} else {
+					ispayL = tmpReward * tmp1 / tmp0
+				}
+
 				// 奖励
-				err = ac.userRepo.PlantPlatTwoTwoL(ctx, landUserUse.ID, tmpUserId, landUserUse.UserId, tmpNum, tmpReward)
+				err = ac.userRepo.PlantPlatTwoTwoL(ctx, landUserUse.ID, tmpUserId, landUserUse.UserId, tmpNum, tmpReward, ispayL)
 				if nil != err {
 					return err
 				}
@@ -4343,8 +4433,8 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 				err = ac.userRepo.CreateNotice(
 					ctx,
 					tmpUserId,
-					"您收获了"+fmt.Sprintf("%.2f", tmpReward)+"USDT",
-					"You've harvest "+fmt.Sprintf("%.2f", tmpReward)+" USDT",
+					"您收获了"+fmt.Sprintf("%.2f", tmpReward)+"USDT 和"+fmt.Sprintf("%.2f", ispayL)+" ISPAY",
+					"You've harvest "+fmt.Sprintf("%.2f", tmpReward)+" USDT AND "+fmt.Sprintf("%.2f", ispayL)+" ISPAY",
 				)
 				if nil != err {
 					return err
@@ -4863,6 +4953,9 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 	var (
 		user *User
 		err  error
+
+		priceOpen    float64
+		priceOpenUse uint64
 	)
 
 	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
@@ -4897,7 +4990,8 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 		//lowRewardU float64
 	)
 	configs, err = ac.userRepo.GetConfigByKeys(ctx,
-		"one_rate", "two_rate", "three_rate", "u_price", "low_reward_u", "prop_two_two", "s_rate", "self_sub",
+		"one_rate", "two_rate", "three_rate", "u_price", "low_reward_u", "prop_two_two", "s_rate", "self_sub", "open_box_price",
+		"open_box_price_use",
 	)
 	if nil != err || nil == configs {
 		return &pb.LandPlaySixReply{
@@ -4932,7 +5026,13 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 		if "self_sub" == vConfig.KeyName {
 			selfSub, _ = strconv.ParseUint(vConfig.Value, 10, 64)
 		}
+		if "open_box_price" == vConfig.KeyName {
+			priceOpen, _ = strconv.ParseFloat(vConfig.Value, 10)
+		}
 
+		if "open_box_price_use" == vConfig.KeyName {
+			priceOpenUse, _ = strconv.ParseUint(vConfig.Value, 10, 64)
+		}
 		//if "low_reward_u" == vConfig.KeyName {
 		//	lowRewardU, _ = strconv.ParseFloat(vConfig.Value, 10)
 		//}
@@ -5152,6 +5252,39 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 		}
 	}
 
+	var (
+		ispay     float64
+		ispayRent float64
+	)
+	var (
+		tmp0 float64
+		tmp1 float64
+	)
+	tmp0, tmp1, err = GetReservers()
+	if nil != err || 1 >= tmp0 || 1 >= tmp1 {
+		return &pb.LandPlaySixReply{
+			Status: "获取交易池数据失败",
+		}, nil
+	}
+
+	tmpOverMaxL := tmpOverMax
+
+	tmpOverMax = tmpOverMax / 2
+	tmpOverMaxTwo = tmpOverMaxTwo / 2
+	if 0 == priceOpenUse {
+		ispay = tmpOverMax / priceOpen
+		ispayRent = tmpOverMaxTwo / priceOpen
+	} else {
+		ispay = tmpOverMax * tmp1 / tmp0
+		ispayRent = tmpOverMaxTwo * tmp1 / tmp0
+	}
+
+	if 0.0000000001 >= ispay {
+		return &pb.LandPlaySixReply{
+			Status: "配置错误",
+		}, nil
+	}
+
 	if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 		err = ac.userRepo.PlantPlatSix(ctx, landUserUse.ID, prop.ID, two, one, landUserUse.LandId)
 		if nil != err {
@@ -5159,7 +5292,7 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 		}
 
 		// 奖励
-		err = ac.userRepo.PlantPlatTwoTwo(ctx, landUserUse.ID, landUserUse.UserId, landUserUse.OwnerUserId, tmpOverMax, tmpOverMaxTwo)
+		err = ac.userRepo.PlantPlatTwoTwo(ctx, landUserUse.ID, landUserUse.UserId, landUserUse.OwnerUserId, tmpOverMax, ispay, tmpOverMaxTwo, ispayRent)
 		if nil != err {
 			return err
 		}
@@ -5182,7 +5315,7 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 		)
 
 		// l1-l3，奖励发放
-		if tmpOverMax > 0 {
+		if tmpOverMaxL > 0 {
 			tmpI := 0
 			for i := len(tmpRecommendUserIds) - 1; i >= 0; i-- {
 				if 3 <= tmpI {
@@ -5206,21 +5339,29 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 				tmpReward := float64(0)
 
 				tmpNum := uint64(4)
-				tmpReward = tmpOverMax * oneRate
+				tmpReward = tmpOverMaxL * oneRate
 				if 1 == tmpI {
 
 				} else if 2 == tmpI {
-					tmpReward = tmpOverMax * twoRate
+					tmpReward = tmpOverMaxL * twoRate
 					tmpNum = 7
 				} else if 3 == tmpI {
-					tmpReward = tmpOverMax * threeRate
+					tmpReward = tmpOverMaxL * threeRate
 					tmpNum = 10
 				} else {
 					break
 				}
-
+				var (
+					ispayL float64
+				)
+				tmpReward = tmpReward / 2
+				if 0 == priceOpenUse {
+					ispayL = tmpReward / priceOpen
+				} else {
+					ispayL = tmpReward * tmp1 / tmp0
+				}
 				// 奖励
-				err = ac.userRepo.PlantPlatTwoTwoL(ctx, landUserUse.ID, tmpUserId, landUserUse.UserId, tmpNum, tmpReward)
+				err = ac.userRepo.PlantPlatTwoTwoL(ctx, landUserUse.ID, tmpUserId, landUserUse.UserId, tmpNum, tmpReward, ispayL)
 				if nil != err {
 					return err
 				}
@@ -5228,8 +5369,8 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 				err = ac.userRepo.CreateNotice(
 					ctx,
 					tmpUserId,
-					"您收获了"+fmt.Sprintf("%.2f", tmpReward)+"USDT",
-					"You've harvest "+fmt.Sprintf("%.2f", tmpReward)+" USDT",
+					"您收获了"+fmt.Sprintf("%.2f", tmpReward)+"USDT 和"+fmt.Sprintf("%.2f", ispayL)+" ISPAY",
+					"You've harvest "+fmt.Sprintf("%.2f", tmpReward)+" USDT AND "+fmt.Sprintf("%.2f", ispayL)+" ISPAY",
 				)
 				if nil != err {
 					return err
@@ -5621,6 +5762,17 @@ func (ac *AppUsecase) Buy(ctx context.Context, address string, req *pb.BuyReques
 		if "buy_land_three" == vConfig.KeyName {
 			buyLandThree, _ = strconv.ParseFloat(vConfig.Value, 10)
 		}
+	}
+
+	var (
+		tmp0 float64
+		tmp1 float64
+	)
+	tmp0, tmp1, err = GetReservers()
+	if nil != err || 1 >= tmp0 || 1 >= tmp1 {
+		return &pb.BuyReply{
+			Status: "获取交易池数据失败",
+		}, nil
 	}
 
 	if 1 == req.SendBody.BuyType {
@@ -7802,7 +7954,7 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 		}
 
 		return &pb.StakeGetPlayReply{Status: "ok", PlayStatus: 1, Amount: tmpGit}, nil
-	} else {                                                         // 输：下注金额加入池子
+	} else { // 输：下注金额加入池子
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 			err = ac.userRepo.SetStakeGetPlaySub(ctx, user.ID, float64(req.SendBody.Amount))
 			if nil != err {

@@ -2932,9 +2932,12 @@ func (u *UserRepo) GetLandUserUseByLandIDsMapUsing(ctx context.Context, userId u
 }
 
 // BuyBox .
-func (u *UserRepo) BuyBox(ctx context.Context, giw float64, originValue, value string, uc *biz.BoxRecord) (uint64, error) {
-	res := u.data.DB(ctx).Table("user").Where("id=?", uc.UserId).Where("amount_usdt>=?", giw).
-		Updates(map[string]interface{}{"amount_usdt": gorm.Expr("amount_usdt - ?", giw), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+func (u *UserRepo) BuyBox(ctx context.Context, giw, bAmount float64, originValue, value string, uc *biz.BoxRecord) (uint64, error) {
+	res := u.data.DB(ctx).Table("user").Where("id=?", uc.UserId).Where("amount_usdt>=?", giw).Where("git_new>=?", bAmount).
+		Updates(map[string]interface{}{
+			"amount_usdt": gorm.Expr("amount_usdt - ?", giw),
+			"git_new":     gorm.Expr("git_new - ?", bAmount),
+			"updated_at":  time.Now().Format("2006-01-02 15:04:05")})
 	if res.Error != nil || 1 != res.RowsAffected {
 		return 0, errors.New(500, "BuyBox", "用户信息修改失败")
 	}
@@ -3791,10 +3794,13 @@ func (u *UserRepo) PlantPlatSeven(ctx context.Context, outMax, amount float64, s
 }
 
 // PlantPlatTwoTwo .
-func (u *UserRepo) PlantPlatTwoTwo(ctx context.Context, id, userId, rentUserId uint64, amount, rentAmount float64) error {
+func (u *UserRepo) PlantPlatTwoTwo(ctx context.Context, id, userId, rentUserId uint64, amount, ispay, rentAmount, ispayRent float64) error {
 	if amount > 0 {
 		res := u.data.DB(ctx).Table("user").Where("id=?", userId).
-			Updates(map[string]interface{}{"amount_usdt": gorm.Expr("amount_usdt + ?", amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+			Updates(map[string]interface{}{
+				"amount_usdt": gorm.Expr("amount_usdt + ?", amount),
+				"git_new":     gorm.Expr("git_new + ?", ispay),
+				"updated_at":  time.Now().Format("2006-01-02 15:04:05")})
 		if res.Error != nil || 1 != res.RowsAffected {
 			return errors.New(500, "BuyBox", "用户信息修改失败")
 		}
@@ -3804,6 +3810,7 @@ func (u *UserRepo) PlantPlatTwoTwo(ctx context.Context, id, userId, rentUserId u
 		reward.Reason = 1
 		reward.UserId = userId
 		reward.Amount = amount
+		reward.Three = ispay
 		reward.Two = id
 		res = u.data.DB(ctx).Table("reward").Create(&reward)
 		if res.Error != nil {
@@ -3814,7 +3821,7 @@ func (u *UserRepo) PlantPlatTwoTwo(ctx context.Context, id, userId, rentUserId u
 
 	if rentUserId > 0 && rentAmount > 0 {
 		res := u.data.DB(ctx).Table("user").Where("id=?", rentUserId).
-			Updates(map[string]interface{}{"amount_usdt": gorm.Expr("amount_usdt + ?", rentAmount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+			Updates(map[string]interface{}{"amount_usdt": gorm.Expr("amount_usdt + ?", rentAmount), "git_new": gorm.Expr("git_new + ?", ispayRent), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 		if res.Error != nil || 1 != res.RowsAffected {
 			return errors.New(500, "PlantPlatTwoTwo", "用户信息修改失败")
 		}
@@ -3824,6 +3831,7 @@ func (u *UserRepo) PlantPlatTwoTwo(ctx context.Context, id, userId, rentUserId u
 		reward.Reason = 2
 		reward.UserId = rentUserId
 		reward.Amount = rentAmount
+		reward.Three = ispayRent
 		reward.Two = id
 		res = u.data.DB(ctx).Table("reward").Create(&reward)
 		if res.Error != nil {
@@ -3835,11 +3843,11 @@ func (u *UserRepo) PlantPlatTwoTwo(ctx context.Context, id, userId, rentUserId u
 }
 
 // PlantPlatTwoTwoL .
-func (u *UserRepo) PlantPlatTwoTwoL(ctx context.Context, id, userId, lowUserId, num uint64, amount float64) error {
+func (u *UserRepo) PlantPlatTwoTwoL(ctx context.Context, id, userId, lowUserId, num uint64, amount, ispay float64) error {
 	if amount > 0 {
 		if 4 == num {
 			res := u.data.DB(ctx).Table("user").Where("id=?", userId).
-				Updates(map[string]interface{}{"amount_usdt": gorm.Expr("amount_usdt + ?", amount), "reward_one": gorm.Expr("reward_one + ?", amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+				Updates(map[string]interface{}{"amount_usdt": gorm.Expr("amount_usdt + ?", amount), "git_new": gorm.Expr("git_new + ?", ispay), "reward_one": gorm.Expr("reward_one + ?", amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 			if res.Error != nil || 1 != res.RowsAffected {
 				return errors.New(500, "PlantPlatTwoTwoL", "用户信息修改失败")
 			}
@@ -3851,7 +3859,7 @@ func (u *UserRepo) PlantPlatTwoTwoL(ctx context.Context, id, userId, lowUserId, 
 			}
 		} else if 7 == num {
 			res := u.data.DB(ctx).Table("user").Where("id=?", userId).
-				Updates(map[string]interface{}{"amount_usdt": gorm.Expr("amount_usdt + ?", amount), "reward_two_one": gorm.Expr("reward_two_one + ?", amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+				Updates(map[string]interface{}{"amount_usdt": gorm.Expr("amount_usdt + ?", amount), "git_new": gorm.Expr("git_new + ?", ispay), "reward_two_one": gorm.Expr("reward_two_one + ?", amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 			if res.Error != nil || 1 != res.RowsAffected {
 				return errors.New(500, "PlantPlatTwoTwoL", "用户信息修改失败")
 			}
@@ -3863,7 +3871,7 @@ func (u *UserRepo) PlantPlatTwoTwoL(ctx context.Context, id, userId, lowUserId, 
 			}
 		} else if 10 == num {
 			res := u.data.DB(ctx).Table("user").Where("id=?", userId).
-				Updates(map[string]interface{}{"amount_usdt": gorm.Expr("amount_usdt + ?", amount), "reward_three_one": gorm.Expr("reward_three_one + ?", amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
+				Updates(map[string]interface{}{"amount_usdt": gorm.Expr("amount_usdt + ?", amount), "git_new": gorm.Expr("git_new + ?", ispay), "reward_three_one": gorm.Expr("reward_three_one + ?", amount), "updated_at": time.Now().Format("2006-01-02 15:04:05")})
 			if res.Error != nil || 1 != res.RowsAffected {
 				return errors.New(500, "PlantPlatTwoTwoL", "用户信息修改失败")
 			}
@@ -3880,6 +3888,7 @@ func (u *UserRepo) PlantPlatTwoTwoL(ctx context.Context, id, userId, lowUserId, 
 		reward.Reason = num
 		reward.UserId = userId
 		reward.Amount = amount
+		reward.Three = ispay
 		reward.One = lowUserId
 		reward.Two = id
 		res := u.data.DB(ctx).Table("reward").Create(&reward)
