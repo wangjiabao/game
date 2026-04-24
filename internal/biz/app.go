@@ -524,7 +524,7 @@ type UserRepo interface {
 	PlantPlatSix(ctx context.Context, id, propId, propStatus, propNum, landId uint64) error
 	GetTodayRewardPlantPlatSevenUserWithdrawCount(ctx context.Context, userId uint64) (int64, error)
 	PlantPlatSeven(ctx context.Context, outMax, amount float64, subTime, lastTime, id, propId, propStatus, propNum, userId uint64) error
-	PlantPlatTwoTwo(ctx context.Context, id, userId, rentUserId uint64, amount, rentAmount float64) error
+	PlantPlatTwoTwo(ctx context.Context, id, userId, rentUserId uint64, amount, ispay, rentAmount, ispayRent float64) error
 	PlantPlatTwoTwoL(ctx context.Context, id, userId, lowUserId, num uint64, amount, ispay float64) error
 	PlantPlatTwoTwoLL(ctx context.Context, userId, lowUserId, num uint64, amount float64) error
 	GetSeedBuyByID(ctx context.Context, seedID, status uint64) (*Seed, error)
@@ -4308,6 +4308,10 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 	}
 
 	var (
+		ispay     float64
+		ispayRent float64
+	)
+	var (
 		tmp0 float64
 		tmp1 float64
 	)
@@ -4315,6 +4319,24 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 	if nil != err || 1 >= tmp0 || 1 >= tmp1 {
 		return &pb.LandPlayTwoReply{
 			Status: "获取交易池数据失败",
+		}, nil
+	}
+
+	rewardL := reward
+
+	reward = reward / 2
+	rentReward = rentReward / 2
+	if 0 == priceOpenUse {
+		ispay = reward / priceOpen
+		ispayRent = rentReward / priceOpen
+	} else {
+		ispay = reward * tmp1 / tmp0
+		ispayRent = rentReward * tmp1 / tmp0
+	}
+
+	if 0.0000000001 >= ispay {
+		return &pb.LandPlayTwoReply{
+			Status: "配置错误",
 		}, nil
 	}
 
@@ -4327,7 +4349,7 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 		}
 
 		// 奖励
-		err = ac.userRepo.PlantPlatTwoTwo(ctx, landUserUse.ID, landUserUse.UserId, rentUserId, reward, rentReward)
+		err = ac.userRepo.PlantPlatTwoTwo(ctx, landUserUse.ID, landUserUse.UserId, rentUserId, reward, ispay, rentReward, ispayRent)
 		if nil != err {
 			return err
 		}
@@ -4335,8 +4357,8 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 		err = ac.userRepo.CreateNotice(
 			ctx,
 			user.ID,
-			"您收获了"+fmt.Sprintf("%.2f", reward)+"USDT",
-			"You've harvest "+fmt.Sprintf("%.2f", reward)+" USDT",
+			"您收获了"+fmt.Sprintf("%.2f", reward)+"USDT 和"+fmt.Sprintf("%.2f", ispay)+" ISPAY",
+			"You've harvest "+fmt.Sprintf("%.2f", reward)+" USDT and "+fmt.Sprintf("%.2f", ispay)+" ISPAY",
 		)
 		if nil != err {
 			return err
@@ -4346,8 +4368,8 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 			err = ac.userRepo.CreateNotice(
 				ctx,
 				rentUserId,
-				"您收获了"+fmt.Sprintf("%.2f", rentReward)+"USDT",
-				"You've harvest "+fmt.Sprintf("%.2f", rentReward)+" USDT",
+				"您收获了"+fmt.Sprintf("%.2f", rentReward)+"USDT 和"+fmt.Sprintf("%.2f", ispayRent)+" ISPAY",
+				"You've harvest "+fmt.Sprintf("%.2f", rentReward)+" USDT AND "+fmt.Sprintf("%.2f", ispayRent)+" ISPAY",
 			)
 			if nil != err {
 				return err
@@ -4355,7 +4377,7 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 		}
 
 		// l1-l3，奖励发放
-		if reward > 0 {
+		if rewardL > 0 {
 			tmpI := 0
 			for i := len(tmpRecommendUserIds) - 1; i >= 0; i-- {
 				if 3 <= tmpI {
@@ -4379,14 +4401,14 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 				tmpReward := float64(0)
 
 				tmpNum := uint64(4)
-				tmpReward = reward * oneRate
+				tmpReward = rewardL * oneRate
 				if 1 == tmpI {
 
 				} else if 2 == tmpI {
-					tmpReward = reward * twoRate
+					tmpReward = rewardL * twoRate
 					tmpNum = 7
 				} else if 3 == tmpI {
-					tmpReward = reward * threeRate
+					tmpReward = rewardL * threeRate
 					tmpNum = 10
 				} else {
 					break
@@ -5231,6 +5253,11 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 	}
 
 	var (
+		ispay     float64
+		ispayRent float64
+	)
+
+	var (
 		tmp0 float64
 		tmp1 float64
 	)
@@ -5241,6 +5268,24 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 		}, nil
 	}
 
+	tmpOverMaxL := tmpOverMax
+
+	tmpOverMax = tmpOverMax / 2
+	tmpOverMaxTwo = tmpOverMaxTwo / 2
+	if 0 == priceOpenUse {
+		ispay = tmpOverMax / priceOpen
+		ispayRent = tmpOverMaxTwo / priceOpen
+	} else {
+		ispay = tmpOverMax * tmp1 / tmp0
+		ispayRent = tmpOverMaxTwo * tmp1 / tmp0
+	}
+
+	if 0.0000000001 >= ispay {
+		return &pb.LandPlaySixReply{
+			Status: "配置错误",
+		}, nil
+	}
+
 	if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 		err = ac.userRepo.PlantPlatSix(ctx, landUserUse.ID, prop.ID, two, one, landUserUse.LandId)
 		if nil != err {
@@ -5248,7 +5293,7 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 		}
 
 		// 奖励
-		err = ac.userRepo.PlantPlatTwoTwo(ctx, landUserUse.ID, landUserUse.UserId, landUserUse.OwnerUserId, tmpOverMax, tmpOverMaxTwo)
+		err = ac.userRepo.PlantPlatTwoTwo(ctx, landUserUse.ID, landUserUse.UserId, landUserUse.OwnerUserId, tmpOverMax, ispay, tmpOverMaxTwo, ispayRent)
 		if nil != err {
 			return err
 		}
@@ -5256,8 +5301,8 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 		err = ac.userRepo.CreateNotice(
 			ctx,
 			landUserUse.UserId,
-			"您收获了"+fmt.Sprintf("%.2f", tmpOverMax)+"USDT",
-			"You've harvest "+fmt.Sprintf("%.2f", tmpOverMax)+" USDT",
+			"您收获了"+fmt.Sprintf("%.2f", tmpOverMax)+"USDT 和"+fmt.Sprintf("%.2f", ispay)+" ISPAY",
+			"You've harvest "+fmt.Sprintf("%.2f", tmpOverMax)+" USDT and "+fmt.Sprintf("%.2f", ispay)+" ISPAY",
 		)
 		if nil != err {
 			return err
@@ -5266,12 +5311,12 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 		err = ac.userRepo.CreateNotice(
 			ctx,
 			landUserUse.OwnerUserId,
-			"您收获了"+fmt.Sprintf("%.2f", tmpOverMaxTwo)+"USDT",
-			"You've harvest "+fmt.Sprintf("%.2f", tmpOverMaxTwo)+" USDT",
+			"您收获了"+fmt.Sprintf("%.2f", tmpOverMaxTwo)+"USDT 和"+fmt.Sprintf("%.2f", ispayRent)+" ISPAY",
+			"You've harvest "+fmt.Sprintf("%.2f", tmpOverMaxTwo)+" USDT and "+fmt.Sprintf("%.2f", ispayRent)+" ISPAY",
 		)
 
 		// l1-l3，奖励发放
-		if tmpOverMax > 0 {
+		if tmpOverMaxL > 0 {
 			tmpI := 0
 			for i := len(tmpRecommendUserIds) - 1; i >= 0; i-- {
 				if 3 <= tmpI {
@@ -5295,14 +5340,14 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 				tmpReward := float64(0)
 
 				tmpNum := uint64(4)
-				tmpReward = tmpOverMax * oneRate
+				tmpReward = tmpOverMaxL * oneRate
 				if 1 == tmpI {
 
 				} else if 2 == tmpI {
-					tmpReward = tmpOverMax * twoRate
+					tmpReward = tmpOverMaxL * twoRate
 					tmpNum = 7
 				} else if 3 == tmpI {
-					tmpReward = tmpOverMax * threeRate
+					tmpReward = tmpOverMaxL * threeRate
 					tmpNum = 10
 				} else {
 					break
