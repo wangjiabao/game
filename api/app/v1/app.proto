@@ -662,15 +662,21 @@ message UserStakeGitRewardListReply {
 
 message UserStakeGitStakeListRequest {
 	uint64 page = 1; // 页数
+	uint64 isQueue = 2;
+	string address = 3;
 }
 
 message UserStakeGitStakeListReply {
 	string status = 1; // 状态为字符串"ok"时接口正常，其他情况忽略，弹出显示该字段文案即可
 
 	uint64 count = 2; // 总个数，每页20个
+	uint64 myCount = 4; // 我的总单数
+	double todayAmount = 5; // 今日剩余额度
+
 	repeated List list = 3;
 	message List {
 		uint64 id = 1;
+		string address = 6; // 地址
 		double stake = 2; // 质押金额
 		double reward = 3; // 累加收益
 		string createdAt = 4; // 日期

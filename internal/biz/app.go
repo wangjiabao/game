@@ -502,7 +502,7 @@ type UserRepo interface {
 	GetLandUserUseByLandIDsMapUsing(ctx context.Context, userId uint64, landIDs []uint64) (map[uint64]*LandUserUse, error)
 	GetLandMyUseByLandIDsMapUsing(ctx context.Context, userId uint64) (map[uint64]*LandUserUse, error)
 	GetLandUserUseByLandIDsUsing(ctx context.Context, userId uint64) ([]*LandUserUse, error)
-	BuyBox(ctx context.Context, giw, bAmount float64, originValue, value string, uc *BoxRecord) (uint64, error)
+	BuyBox(ctx context.Context, giw float64, originValue, value string, uc *BoxRecord) (uint64, error)
 	BuyLandReward(ctx context.Context, userId, landId uint64, giw float64) error
 	GetUserBoxRecordById(ctx context.Context, id uint64) (*BoxRecord, error)
 	OpenBoxSeed(ctx context.Context, id, userId uint64, content string, amount float64, seedInfo *Seed) (uint64, error)
@@ -558,7 +558,10 @@ type UserRepo interface {
 	SetStakeGetSub(ctx context.Context, userId uint64, git, amount float64) error
 	SetStakeGetPlaySub(ctx context.Context, userId uint64, amount float64) error
 	SetStakeGetPlay(ctx context.Context, userId uint64, git, amount float64) error
-	SetStakeGit(ctx context.Context, userId uint64, amount, amountTwo float64, day uint64) error
+	SetStakeGit(ctx context.Context, userId uint64, amount, amountTwo, usdtAmountOrigin float64, day uint64) error
+	GetStakeGitRecordsByUserIDQueue(ctx context.Context, userID uint64, b *Pagination) ([]*StakeGitRecord, error)
+	GetStakeGitRecordsByUserIDQueueCount(ctx context.Context, userId uint64) (int64, error)
+	GetStakeGitRecordsByUserIDQueueToday(ctx context.Context) (float64, error)
 	SetUnStakeGit(ctx context.Context, id, userId uint64, amount float64) error
 	Exchange(ctx context.Context, userId uint64, git, giw float64) error
 	Transfer(ctx context.Context, userId, toUserId uint64, amountUsdt float64) error
@@ -1767,9 +1770,17 @@ func (ac *AppUsecase) UserLand(ctx context.Context, address string, req *pb.User
 func (ac *AppUsecase) UserStakeGitStakeList(ctx context.Context, address string, req *pb.UserStakeGitStakeListRequest) (*pb.UserStakeGitStakeListReply, error) {
 	res := make([]*pb.UserStakeGitStakeListReply_List, 0)
 	var (
-		user *User
-		err  error
+		user        *User
+		count       int64
+		myCount     int64
+		configs     []*Config
+		queueAmount float64
+		todayAmount float64
+		err         error
 	)
+	if 10 < len(req.Address) {
+		address = req.Address
+	}
 	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
 	if nil != err || nil == user {
 		return &pb.UserStakeGitStakeListReply{
@@ -1777,30 +1788,122 @@ func (ac *AppUsecase) UserStakeGitStakeList(ctx context.Context, address string,
 		}, nil
 	}
 
-	var (
-		stakeGitRecord []*StakeGitRecord
-	)
-	stakeGitRecord, err = ac.userRepo.GetStakeGitRecordsByUserID(ctx, user.ID, nil)
-	if nil != err {
-		return &pb.UserStakeGitStakeListReply{
-			Status: "粮仓错误查询",
-		}, nil
-	}
+	if 1 == req.IsQueue {
+		// 配置
+		configs, err = ac.userRepo.GetConfigByKeys(ctx,
+			"queue_amount",
+		)
+		if nil != err || nil == configs {
+			return &pb.UserStakeGitStakeListReply{
+				Status: "配置错误",
+			}, nil
+		}
+		for _, vConfig := range configs {
+			if "queue_amount" == vConfig.KeyName {
+				queueAmount, _ = strconv.ParseFloat(vConfig.Value, 10)
+			}
+		}
 
-	for _, v := range stakeGitRecord {
-		res = append(res, &pb.UserStakeGitStakeListReply_List{
-			Id:        v.ID,
-			Stake:     v.Amount,
-			CreatedAt: v.CreatedAt.Add(8 * time.Hour).Format("2006-01-02 15:04:05"),
-			Day:       v.Day,
-			Reward:    v.AmountTwo,
+		var (
+			stakeGitRecord []*StakeGitRecord
+			userId         uint64
+		)
+		if 10 < len(req.Address) {
+			userId = user.ID
+		}
+
+		todayAmount, err = ac.userRepo.GetStakeGitRecordsByUserIDQueueToday(ctx)
+		if nil != err {
+			return &pb.UserStakeGitStakeListReply{
+				Status: "粮仓错误查询",
+			}, nil
+		}
+
+		if todayAmount < queueAmount {
+			queueAmount = queueAmount - todayAmount
+		}
+
+		myCount, err = ac.userRepo.GetStakeGitRecordsByUserIDQueueCount(ctx, user.ID)
+		if nil != err {
+			return &pb.UserStakeGitStakeListReply{
+				Status: "粮仓错误查询",
+			}, nil
+		}
+
+		count, err = ac.userRepo.GetStakeGitRecordsByUserIDQueueCount(ctx, userId)
+		if nil != err {
+			return &pb.UserStakeGitStakeListReply{
+				Status: "粮仓错误查询",
+			}, nil
+		}
+
+		stakeGitRecord, err = ac.userRepo.GetStakeGitRecordsByUserIDQueue(ctx, userId, &Pagination{
+			PageNum:  int(req.Page),
+			PageSize: 20,
 		})
+		if nil != err {
+			return &pb.UserStakeGitStakeListReply{
+				Status: "粮仓错误查询",
+			}, nil
+		}
+
+		userIds := make([]uint64, 0)
+		for _, v := range stakeGitRecord {
+			userIds = append(userIds, v.UserId)
+		}
+		usersMap := make(map[uint64]*User)
+		if 0 < len(userIds) {
+			usersMap, err = ac.userRepo.GetUserByUserIds(ctx, userIds)
+			if nil != err {
+				return &pb.UserStakeGitStakeListReply{
+					Status: "粮仓错误查询",
+				}, nil
+			}
+		}
+
+		for _, v := range stakeGitRecord {
+			tmpAddress := ""
+			if _, ok := usersMap[v.UserId]; ok {
+				tmpAddress = usersMap[v.UserId].Address
+			}
+
+			res = append(res, &pb.UserStakeGitStakeListReply_List{
+				Id:        v.ID,
+				Stake:     v.Amount,
+				CreatedAt: v.CreatedAt.Add(8 * time.Hour).Format("2006-01-02 15:04:05"),
+				Day:       v.Day,
+				Reward:    v.AmountTwo,
+				Address:   tmpAddress,
+			})
+		}
+	} else {
+		var (
+			stakeGitRecord []*StakeGitRecord
+		)
+		stakeGitRecord, err = ac.userRepo.GetStakeGitRecordsByUserID(ctx, user.ID, nil)
+		if nil != err {
+			return &pb.UserStakeGitStakeListReply{
+				Status: "粮仓错误查询",
+			}, nil
+		}
+
+		for _, v := range stakeGitRecord {
+			res = append(res, &pb.UserStakeGitStakeListReply_List{
+				Id:        v.ID,
+				Stake:     v.Amount,
+				CreatedAt: v.CreatedAt.Add(8 * time.Hour).Format("2006-01-02 15:04:05"),
+				Day:       v.Day,
+				Reward:    v.AmountTwo,
+			})
+		}
 	}
 
 	return &pb.UserStakeGitStakeListReply{
-		Status: "ok",
-		Count:  0,
-		List:   res,
+		Status:      "ok",
+		Count:       uint64(count),
+		MyCount:     uint64(myCount),
+		TodayAmount: queueAmount,
+		List:        res,
 	}, err
 }
 
@@ -3279,8 +3382,6 @@ func (ac *AppUsecase) BuyBox(ctx context.Context, address string, req *pb.BuyBox
 		boxStart         string
 		boxEnd           string
 		//uPrice           float64
-		priceOpen    float64
-		priceOpenUse uint64
 	)
 	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
 	if nil != err || nil == user {
@@ -3314,8 +3415,6 @@ func (ac *AppUsecase) BuyBox(ctx context.Context, address string, req *pb.BuyBox
 		"box_end",
 		"box_amount",
 		"u_price",
-		"open_box_price",
-		"open_box_price_use",
 	)
 	if nil != err || nil == configs {
 		return &pb.BuyBoxReply{
@@ -3346,14 +3445,6 @@ func (ac *AppUsecase) BuyBox(ctx context.Context, address string, req *pb.BuyBox
 		//if "u_price" == vConfig.KeyName {
 		//	uPrice, _ = strconv.ParseFloat(vConfig.Value, 10)
 		//}
-
-		if "open_box_price" == vConfig.KeyName {
-			priceOpen, _ = strconv.ParseFloat(vConfig.Value, 10)
-		}
-
-		if "open_box_price_use" == vConfig.KeyName {
-			priceOpenUse, _ = strconv.ParseUint(vConfig.Value, 10, 64)
-		}
 	}
 	// 解析时间字符串
 
@@ -3414,33 +3505,8 @@ func (ac *AppUsecase) BuyBox(ctx context.Context, address string, req *pb.BuyBox
 	tmpSellNumNew := strconv.FormatUint(boxSellNum+1, 10)
 	//fmt.Println(boxSellNum, tmpSellNumNew)
 	boxId := uint64(0)
-
-	var ispay float64
-	if 0 == priceOpenUse {
-		ispay = boxAmount / priceOpen / 2
-	} else {
-		var (
-			tmp0 float64
-			tmp1 float64
-		)
-		tmp0, tmp1, err = GetReservers()
-		if nil != err || 1 >= tmp0 || 1 >= tmp1 {
-			return &pb.BuyBoxReply{
-				Status: "获取交易池数据失败",
-			}, nil
-		}
-
-		ispay = boxAmount * tmp1 / tmp0 / 2
-	}
-
-	if 0.000000001 >= ispay {
-		return &pb.BuyBoxReply{
-			Status: "配置错误",
-		}, nil
-	}
-
 	if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-		boxId, err = ac.userRepo.BuyBox(ctx, boxAmount/2, ispay, boxSellNumOrigin, tmpSellNumNew, &BoxRecord{
+		boxId, err = ac.userRepo.BuyBox(ctx, boxAmount, boxSellNumOrigin, tmpSellNumNew, &BoxRecord{
 			UserId: user.ID,
 			Num:    boxNum,
 		})
@@ -3451,8 +3517,8 @@ func (ac *AppUsecase) BuyBox(ctx context.Context, address string, req *pb.BuyBox
 		err = ac.userRepo.CreateNotice(
 			ctx,
 			user.ID,
-			"您花费"+fmt.Sprintf("%.2f", boxAmount/2)+"USDT 和 "+fmt.Sprintf("%.2f", ispay)+"ISPAY 购买了盲盒",
-			"You've used "+fmt.Sprintf("%.2f", boxAmount/2)+"USDT AND "+fmt.Sprintf("%.2f", ispay)+"ISPAY buy box",
+			"您花费"+fmt.Sprintf("%.2f", boxAmount)+"USDT购买了盲盒",
+			"You've used "+fmt.Sprintf("%.2f", boxAmount)+" USDT buy box",
 		)
 		if nil != err {
 			return err
@@ -4414,6 +4480,10 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 					break
 				}
 
+				if 0.0000001 >= tmpReward {
+					continue
+				}
+
 				var (
 					ispayL float64
 				)
@@ -5352,6 +5422,11 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 				} else {
 					break
 				}
+
+				if 0.0000001 >= tmpReward {
+					continue
+				}
+
 				var (
 					ispayL float64
 				)
@@ -6584,6 +6659,7 @@ func (ac *AppUsecase) StakeGit(ctx context.Context, address string, req *pb.Stak
 		}
 
 		usdtAmount := req.SendBody.Amount * tmp0 / tmp1
+		usdtAmountOrigin := usdtAmount
 		usdtAmount = usdtAmount * 1.5 / 30
 		if 0.00000001 >= usdtAmount {
 			return &pb.StakeGitReply{
@@ -6609,7 +6685,7 @@ func (ac *AppUsecase) StakeGit(ctx context.Context, address string, req *pb.Stak
 		//}
 
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
-			err = ac.userRepo.SetStakeGit(ctx, user.ID, req.SendBody.Amount, usdtAmount, dayLimit)
+			err = ac.userRepo.SetStakeGit(ctx, user.ID, req.SendBody.Amount, usdtAmount, usdtAmountOrigin, dayLimit)
 			if nil != err {
 				return err
 			}
