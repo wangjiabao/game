@@ -1821,6 +1821,8 @@ func (ac *AppUsecase) UserStakeGitStakeList(ctx context.Context, address string,
 
 		if todayAmount < queueAmount {
 			queueAmount = queueAmount - todayAmount
+		} else {
+			queueAmount = 0
 		}
 
 		myCount, err = ac.userRepo.GetStakeGitRecordsByUserIDQueueCount(ctx, user.ID)
