@@ -4137,18 +4137,18 @@ func (ac *AppUsecase) LandPlayOne(ctx context.Context, address string, req *pb.L
 // LandPlayTwo 收果实
 func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.LandPlayTwoRequest) (*pb.LandPlayTwoReply, error) {
 	var (
-		configs   []*Config
-		user      *User
-		oneRate   float64
-		twoRate   float64
-		threeRate float64
-		uPrice    float64
-		sRate     float64
-		selfSub   uint64
+		configs []*Config
+		user    *User
+		//oneRate   float64
+		//twoRate   float64
+		//threeRate float64
+		uPrice  float64
+		sRate   float64
+		selfSub uint64
 		//lowRewardU float64
-		err          error
-		priceOpen    float64
-		priceOpenUse uint64
+		err error
+		//priceOpen    float64
+		//priceOpenUse uint64
 	)
 
 	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
@@ -4186,17 +4186,17 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 	}
 
 	for _, vConfig := range configs {
-		if "one_rate" == vConfig.KeyName {
-			oneRate, _ = strconv.ParseFloat(vConfig.Value, 10)
-		}
-
-		if "two_rate" == vConfig.KeyName {
-			twoRate, _ = strconv.ParseFloat(vConfig.Value, 10)
-		}
-
-		if "three_rate" == vConfig.KeyName {
-			threeRate, _ = strconv.ParseFloat(vConfig.Value, 10)
-		}
+		//if "one_rate" == vConfig.KeyName {
+		//	oneRate, _ = strconv.ParseFloat(vConfig.Value, 10)
+		//}
+		//
+		//if "two_rate" == vConfig.KeyName {
+		//	twoRate, _ = strconv.ParseFloat(vConfig.Value, 10)
+		//}
+		//
+		//if "three_rate" == vConfig.KeyName {
+		//	threeRate, _ = strconv.ParseFloat(vConfig.Value, 10)
+		//}
 
 		if "u_price" == vConfig.KeyName {
 			uPrice, _ = strconv.ParseFloat(vConfig.Value, 10)
@@ -4208,13 +4208,13 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 		if "self_sub" == vConfig.KeyName {
 			selfSub, _ = strconv.ParseUint(vConfig.Value, 10, 64)
 		}
-		if "open_box_price" == vConfig.KeyName {
-			priceOpen, _ = strconv.ParseFloat(vConfig.Value, 10)
-		}
-
-		if "open_box_price_use" == vConfig.KeyName {
-			priceOpenUse, _ = strconv.ParseUint(vConfig.Value, 10, 64)
-		}
+		//if "open_box_price" == vConfig.KeyName {
+		//	priceOpen, _ = strconv.ParseFloat(vConfig.Value, 10)
+		//}
+		//
+		//if "open_box_price_use" == vConfig.KeyName {
+		//	priceOpenUse, _ = strconv.ParseUint(vConfig.Value, 10, 64)
+		//}
 	}
 
 	if 0 >= uPrice {
@@ -4365,48 +4365,48 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 		userIds = append(userIds, tmpUserId)
 	}
 
-	usersMap := make(map[uint64]*User, 0)
-	if 0 < len(userIds) {
-		usersMap, err = ac.userRepo.GetUserByUserIds(ctx, userIds)
-		if nil != err {
-			return &pb.LandPlayTwoReply{
-				Status: "查询推荐错误",
-			}, nil
-		}
-	}
+	//usersMap := make(map[uint64]*User, 0)
+	//if 0 < len(userIds) {
+	//	usersMap, err = ac.userRepo.GetUserByUserIds(ctx, userIds)
+	//	if nil != err {
+	//		return &pb.LandPlayTwoReply{
+	//			Status: "查询推荐错误",
+	//		}, nil
+	//	}
+	//}
 
-	var (
-		ispay     float64
-		ispayRent float64
-	)
-	var (
-		tmp0 float64
-		tmp1 float64
-	)
-	tmp0, tmp1, err = GetReservers()
-	if nil != err || 1 >= tmp0 || 1 >= tmp1 {
-		return &pb.LandPlayTwoReply{
-			Status: "获取交易池数据失败",
-		}, nil
-	}
+	//var (
+	//	ispay     float64
+	//	ispayRent float64
+	//)
+	//var (
+	//	tmp0 float64
+	//	tmp1 float64
+	//)
+	//tmp0, tmp1, err = GetReservers()
+	//if nil != err || 1 >= tmp0 || 1 >= tmp1 {
+	//	return &pb.LandPlayTwoReply{
+	//		Status: "获取交易池数据失败",
+	//	}, nil
+	//}
 
-	rewardL := reward
-
-	reward = reward / 2
-	rentReward = rentReward / 2
-	if 0 == priceOpenUse {
-		ispay = reward / priceOpen
-		ispayRent = rentReward / priceOpen
-	} else {
-		ispay = reward * tmp1 / tmp0
-		ispayRent = rentReward * tmp1 / tmp0
-	}
-
-	if 0.0000000001 >= ispay {
-		return &pb.LandPlayTwoReply{
-			Status: "配置错误",
-		}, nil
-	}
+	//rewardL := reward
+	//
+	//reward = reward / 2
+	//rentReward = rentReward / 2
+	//if 0 == priceOpenUse {
+	//	ispay = reward / priceOpen
+	//	ispayRent = rentReward / priceOpen
+	//} else {
+	//	ispay = reward * tmp1 / tmp0
+	//	ispayRent = rentReward * tmp1 / tmp0
+	//}
+	//
+	//if 0.0000000001 >= ispay {
+	//	return &pb.LandPlayTwoReply{
+	//		Status: "配置错误",
+	//	}, nil
+	//}
 
 	// 分红，状态变更
 	if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
@@ -4417,7 +4417,7 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 		}
 
 		// 奖励
-		err = ac.userRepo.PlantPlatTwoTwo(ctx, landUserUse.ID, landUserUse.UserId, rentUserId, reward, ispay, rentReward, ispayRent)
+		err = ac.userRepo.PlantPlatTwoTwo(ctx, landUserUse.ID, landUserUse.UserId, rentUserId, reward, 0, rentReward, 0)
 		if nil != err {
 			return err
 		}
@@ -4425,8 +4425,8 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 		err = ac.userRepo.CreateNotice(
 			ctx,
 			user.ID,
-			"您收获了"+fmt.Sprintf("%.2f", reward)+"USDT 和"+fmt.Sprintf("%.2f", ispay)+" ISPAY",
-			"You've harvest "+fmt.Sprintf("%.2f", reward)+" USDT and "+fmt.Sprintf("%.2f", ispay)+" ISPAY",
+			"您收获了"+fmt.Sprintf("%.2f", reward)+" USDT",
+			"You've harvest "+fmt.Sprintf("%.2f", reward)+" USDT",
 		)
 		if nil != err {
 			return err
@@ -4436,8 +4436,8 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 			err = ac.userRepo.CreateNotice(
 				ctx,
 				rentUserId,
-				"您收获了"+fmt.Sprintf("%.2f", rentReward)+"USDT 和"+fmt.Sprintf("%.2f", ispayRent)+" ISPAY",
-				"You've harvest "+fmt.Sprintf("%.2f", rentReward)+" USDT AND "+fmt.Sprintf("%.2f", ispayRent)+" ISPAY",
+				"您收获了"+fmt.Sprintf("%.2f", rentReward)+" USDT",
+				"You've harvest "+fmt.Sprintf("%.2f", rentReward)+" USDT",
 			)
 			if nil != err {
 				return err
@@ -4445,74 +4445,74 @@ func (ac *AppUsecase) LandPlayTwo(ctx context.Context, address string, req *pb.L
 		}
 
 		// l1-l3，奖励发放
-		if rewardL > 0 {
-			tmpI := 0
-			for i := len(tmpRecommendUserIds) - 1; i >= 0; i-- {
-				if 3 <= tmpI {
-					break
-				}
-				tmpI++
-
-				tmpUserId, _ := strconv.ParseUint(tmpRecommendUserIds[i], 10, 64) // 最后一位是直推人
-				if 0 >= tmpUserId {
-					continue
-				}
-
-				if _, ok := usersMap[tmpUserId]; !ok {
-					continue
-				}
-
-				//if lowRewardU > usersMap[tmpUserId].Giw/uPrice {
-				//	continue
-				//}
-
-				tmpReward := float64(0)
-
-				tmpNum := uint64(4)
-				tmpReward = rewardL * oneRate
-				if 1 == tmpI {
-
-				} else if 2 == tmpI {
-					tmpReward = rewardL * twoRate
-					tmpNum = 7
-				} else if 3 == tmpI {
-					tmpReward = rewardL * threeRate
-					tmpNum = 10
-				} else {
-					break
-				}
-
-				if 0.0000001 >= tmpReward {
-					continue
-				}
-
-				var (
-					ispayL float64
-				)
-				tmpReward = tmpReward / 2
-				if 0 == priceOpenUse {
-					ispayL = tmpReward / priceOpen
-				} else {
-					ispayL = tmpReward * tmp1 / tmp0
-				}
-
-				// 奖励
-				err = ac.userRepo.PlantPlatTwoTwoL(ctx, landUserUse.ID, tmpUserId, landUserUse.UserId, tmpNum, tmpReward, ispayL)
-				if nil != err {
-					return err
-				}
-
-				err = ac.userRepo.CreateNotice(
-					ctx,
-					tmpUserId,
-					"您收获了"+fmt.Sprintf("%.2f", tmpReward)+"USDT 和"+fmt.Sprintf("%.2f", ispayL)+" ISPAY",
-					"You've harvest "+fmt.Sprintf("%.2f", tmpReward)+" USDT AND "+fmt.Sprintf("%.2f", ispayL)+" ISPAY",
-				)
-				if nil != err {
-					return err
-				}
-			}
-		}
+		//if rewardL > 0 {
+		//	tmpI := 0
+		//	for i := len(tmpRecommendUserIds) - 1; i >= 0; i-- {
+		//		if 3 <= tmpI {
+		//			break
+		//		}
+		//		tmpI++
+		//
+		//		tmpUserId, _ := strconv.ParseUint(tmpRecommendUserIds[i], 10, 64) // 最后一位是直推人
+		//		if 0 >= tmpUserId {
+		//			continue
+		//		}
+		//
+		//		if _, ok := usersMap[tmpUserId]; !ok {
+		//			continue
+		//		}
+		//
+		//		//if lowRewardU > usersMap[tmpUserId].Giw/uPrice {
+		//		//	continue
+		//		//}
+		//
+		//		tmpReward := float64(0)
+		//
+		//		tmpNum := uint64(4)
+		//		tmpReward = rewardL * oneRate
+		//		if 1 == tmpI {
+		//
+		//		} else if 2 == tmpI {
+		//			tmpReward = rewardL * twoRate
+		//			tmpNum = 7
+		//		} else if 3 == tmpI {
+		//			tmpReward = rewardL * threeRate
+		//			tmpNum = 10
+		//		} else {
+		//			break
+		//		}
+		//
+		//		if 0.0000001 >= tmpReward {
+		//			continue
+		//		}
+		//
+		//		var (
+		//			ispayL float64
+		//		)
+		//		tmpReward = tmpReward / 2
+		//		if 0 == priceOpenUse {
+		//			ispayL = tmpReward / priceOpen
+		//		} else {
+		//			ispayL = tmpReward * tmp1 / tmp0
+		//		}
+		//
+		//		// 奖励
+		//		err = ac.userRepo.PlantPlatTwoTwoL(ctx, landUserUse.ID, tmpUserId, landUserUse.UserId, tmpNum, tmpReward, ispayL)
+		//		if nil != err {
+		//			return err
+		//		}
+		//
+		//		err = ac.userRepo.CreateNotice(
+		//			ctx,
+		//			tmpUserId,
+		//			"您收获了"+fmt.Sprintf("%.2f", tmpReward)+"USDT 和"+fmt.Sprintf("%.2f", ispayL)+" ISPAY",
+		//			"You've harvest "+fmt.Sprintf("%.2f", tmpReward)+" USDT AND "+fmt.Sprintf("%.2f", ispayL)+" ISPAY",
+		//		)
+		//		if nil != err {
+		//			return err
+		//		}
+		//	}
+		//}
 
 		//// l1-l3，奖励发放
 		//if rentReward > 0 {
@@ -5026,8 +5026,8 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 		user *User
 		err  error
 
-		priceOpen    float64
-		priceOpenUse uint64
+		//priceOpen    float64
+		//priceOpenUse uint64
 	)
 
 	user, err = ac.userRepo.GetUserByAddress(ctx, address) // 查询用户
@@ -5051,10 +5051,10 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 
 	// 配置
 	var (
-		configs    []*Config
-		oneRate    float64
-		twoRate    float64
-		threeRate  float64
+		configs []*Config
+		//oneRate    float64
+		//twoRate    float64
+		//threeRate  float64
 		uPrice     float64
 		propTwoTwo float64
 		sRate      float64
@@ -5072,17 +5072,17 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 	}
 
 	for _, vConfig := range configs {
-		if "one_rate" == vConfig.KeyName {
-			oneRate, _ = strconv.ParseFloat(vConfig.Value, 10)
-		}
-
-		if "two_rate" == vConfig.KeyName {
-			twoRate, _ = strconv.ParseFloat(vConfig.Value, 10)
-		}
-
-		if "three_rate" == vConfig.KeyName {
-			threeRate, _ = strconv.ParseFloat(vConfig.Value, 10)
-		}
+		//if "one_rate" == vConfig.KeyName {
+		//	oneRate, _ = strconv.ParseFloat(vConfig.Value, 10)
+		//}
+		//
+		//if "two_rate" == vConfig.KeyName {
+		//	twoRate, _ = strconv.ParseFloat(vConfig.Value, 10)
+		//}
+		//
+		//if "three_rate" == vConfig.KeyName {
+		//	threeRate, _ = strconv.ParseFloat(vConfig.Value, 10)
+		//}
 
 		if "u_price" == vConfig.KeyName {
 			uPrice, _ = strconv.ParseFloat(vConfig.Value, 10)
@@ -5098,13 +5098,13 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 		if "self_sub" == vConfig.KeyName {
 			selfSub, _ = strconv.ParseUint(vConfig.Value, 10, 64)
 		}
-		if "open_box_price" == vConfig.KeyName {
-			priceOpen, _ = strconv.ParseFloat(vConfig.Value, 10)
-		}
-
-		if "open_box_price_use" == vConfig.KeyName {
-			priceOpenUse, _ = strconv.ParseUint(vConfig.Value, 10, 64)
-		}
+		//if "open_box_price" == vConfig.KeyName {
+		//	priceOpen, _ = strconv.ParseFloat(vConfig.Value, 10)
+		//}
+		//
+		//if "open_box_price_use" == vConfig.KeyName {
+		//	priceOpenUse, _ = strconv.ParseUint(vConfig.Value, 10, 64)
+		//}
 		//if "low_reward_u" == vConfig.KeyName {
 		//	lowRewardU, _ = strconv.ParseFloat(vConfig.Value, 10)
 		//}
@@ -5252,111 +5252,111 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 	//}
 
 	// 推荐
-	var (
-		userRecommend *UserRecommend
-	)
-	tmpRecommendUserIds := make([]string, 0)
-	userRecommend, err = ac.userRepo.GetUserRecommendByUserId(ctx, landUserUse.UserId)
-	if nil == userRecommend || nil != err {
-		return &pb.LandPlaySixReply{
-			Status: "查询推荐错误",
-		}, nil
-	}
-	if "" != userRecommend.RecommendCode {
-		tmpRecommendUserIds = strings.Split(userRecommend.RecommendCode, "D")
-	}
+	//var (
+	//	userRecommend *UserRecommend
+	//)
+	//tmpRecommendUserIds := make([]string, 0)
+	//userRecommend, err = ac.userRepo.GetUserRecommendByUserId(ctx, landUserUse.UserId)
+	//if nil == userRecommend || nil != err {
+	//	return &pb.LandPlaySixReply{
+	//		Status: "查询推荐错误",
+	//	}, nil
+	//}
+	//if "" != userRecommend.RecommendCode {
+	//	tmpRecommendUserIds = strings.Split(userRecommend.RecommendCode, "D")
+	//}
+	//
+	//// 收租推荐
+	//tmpRecommendUserIdsRent := make([]string, 0)
+	//if landUserUse.UserId != landUserUse.OwnerUserId {
+	//	var (
+	//		userRecommendRent *UserRecommend
+	//	)
+	//	userRecommendRent, err = ac.userRepo.GetUserRecommendByUserId(ctx, landUserUse.OwnerUserId)
+	//	if nil == userRecommendRent || nil != err {
+	//		return &pb.LandPlaySixReply{
+	//			Status: "查询推荐错误",
+	//		}, nil
+	//	}
+	//	if "" != userRecommendRent.RecommendCode {
+	//		tmpRecommendUserIdsRent = strings.Split(userRecommendRent.RecommendCode, "D")
+	//	}
+	//}
 
-	// 收租推荐
-	tmpRecommendUserIdsRent := make([]string, 0)
-	if landUserUse.UserId != landUserUse.OwnerUserId {
-		var (
-			userRecommendRent *UserRecommend
-		)
-		userRecommendRent, err = ac.userRepo.GetUserRecommendByUserId(ctx, landUserUse.OwnerUserId)
-		if nil == userRecommendRent || nil != err {
-			return &pb.LandPlaySixReply{
-				Status: "查询推荐错误",
-			}, nil
-		}
-		if "" != userRecommendRent.RecommendCode {
-			tmpRecommendUserIdsRent = strings.Split(userRecommendRent.RecommendCode, "D")
-		}
-	}
+	//userIds := make([]uint64, 0)
+	//tmpIi := 0
+	//for i := len(tmpRecommendUserIds) - 1; i >= 0; i-- {
+	//	if 3 <= tmpIi {
+	//		break
+	//	}
+	//	tmpIi++
+	//
+	//	tmpUserId, _ := strconv.ParseUint(tmpRecommendUserIds[i], 10, 64) // 最后一位是直推人
+	//	if 0 >= tmpUserId {
+	//		continue
+	//	}
+	//
+	//	userIds = append(userIds, tmpUserId)
+	//}
+	//
+	//tmpIj := 0
+	//for i := len(tmpRecommendUserIdsRent) - 1; i >= 0; i-- {
+	//	if 3 <= tmpIj {
+	//		break
+	//	}
+	//	tmpIj++
+	//
+	//	tmpUserId, _ := strconv.ParseUint(tmpRecommendUserIdsRent[i], 10, 64) // 最后一位是直推人
+	//	if 0 >= tmpUserId {
+	//		continue
+	//	}
+	//
+	//	userIds = append(userIds, tmpUserId)
+	//}
 
-	userIds := make([]uint64, 0)
-	tmpIi := 0
-	for i := len(tmpRecommendUserIds) - 1; i >= 0; i-- {
-		if 3 <= tmpIi {
-			break
-		}
-		tmpIi++
+	//usersMap := make(map[uint64]*User, 0)
+	//if 0 < len(userIds) {
+	//	usersMap, err = ac.userRepo.GetUserByUserIds(ctx, userIds)
+	//	if nil != err {
+	//		return &pb.LandPlaySixReply{
+	//			Status: "查询推荐错误",
+	//		}, nil
+	//	}
+	//}
 
-		tmpUserId, _ := strconv.ParseUint(tmpRecommendUserIds[i], 10, 64) // 最后一位是直推人
-		if 0 >= tmpUserId {
-			continue
-		}
+	//var (
+	//	ispay     float64
+	//	ispayRent float64
+	//)
+	//
+	//var (
+	//	tmp0 float64
+	//	tmp1 float64
+	//)
+	//tmp0, tmp1, err = GetReservers()
+	//if nil != err || 1 >= tmp0 || 1 >= tmp1 {
+	//	return &pb.LandPlaySixReply{
+	//		Status: "获取交易池数据失败",
+	//	}, nil
+	//}
 
-		userIds = append(userIds, tmpUserId)
-	}
+	//tmpOverMaxL := tmpOverMax
 
-	tmpIj := 0
-	for i := len(tmpRecommendUserIdsRent) - 1; i >= 0; i-- {
-		if 3 <= tmpIj {
-			break
-		}
-		tmpIj++
-
-		tmpUserId, _ := strconv.ParseUint(tmpRecommendUserIdsRent[i], 10, 64) // 最后一位是直推人
-		if 0 >= tmpUserId {
-			continue
-		}
-
-		userIds = append(userIds, tmpUserId)
-	}
-
-	usersMap := make(map[uint64]*User, 0)
-	if 0 < len(userIds) {
-		usersMap, err = ac.userRepo.GetUserByUserIds(ctx, userIds)
-		if nil != err {
-			return &pb.LandPlaySixReply{
-				Status: "查询推荐错误",
-			}, nil
-		}
-	}
-
-	var (
-		ispay     float64
-		ispayRent float64
-	)
-
-	var (
-		tmp0 float64
-		tmp1 float64
-	)
-	tmp0, tmp1, err = GetReservers()
-	if nil != err || 1 >= tmp0 || 1 >= tmp1 {
-		return &pb.LandPlaySixReply{
-			Status: "获取交易池数据失败",
-		}, nil
-	}
-
-	tmpOverMaxL := tmpOverMax
-
-	tmpOverMax = tmpOverMax / 2
-	tmpOverMaxTwo = tmpOverMaxTwo / 2
-	if 0 == priceOpenUse {
-		ispay = tmpOverMax / priceOpen
-		ispayRent = tmpOverMaxTwo / priceOpen
-	} else {
-		ispay = tmpOverMax * tmp1 / tmp0
-		ispayRent = tmpOverMaxTwo * tmp1 / tmp0
-	}
-
-	if 0.0000000001 >= ispay {
-		return &pb.LandPlaySixReply{
-			Status: "配置错误",
-		}, nil
-	}
+	//tmpOverMax = tmpOverMax / 2
+	//tmpOverMaxTwo = tmpOverMaxTwo / 2
+	//if 0 == priceOpenUse {
+	//	ispay = tmpOverMax / priceOpen
+	//	ispayRent = tmpOverMaxTwo / priceOpen
+	//} else {
+	//	ispay = tmpOverMax * tmp1 / tmp0
+	//	ispayRent = tmpOverMaxTwo * tmp1 / tmp0
+	//}
+	//
+	//if 0.0000000001 >= ispay {
+	//	return &pb.LandPlaySixReply{
+	//		Status: "配置错误",
+	//	}, nil
+	//}
 
 	if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 		err = ac.userRepo.PlantPlatSix(ctx, landUserUse.ID, prop.ID, two, one, landUserUse.LandId)
@@ -5365,7 +5365,7 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 		}
 
 		// 奖励
-		err = ac.userRepo.PlantPlatTwoTwo(ctx, landUserUse.ID, landUserUse.UserId, landUserUse.OwnerUserId, tmpOverMax, ispay, tmpOverMaxTwo, ispayRent)
+		err = ac.userRepo.PlantPlatTwoTwo(ctx, landUserUse.ID, landUserUse.UserId, landUserUse.OwnerUserId, tmpOverMax, 0, tmpOverMaxTwo, 0)
 		if nil != err {
 			return err
 		}
@@ -5373,8 +5373,8 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 		err = ac.userRepo.CreateNotice(
 			ctx,
 			landUserUse.UserId,
-			"您收获了"+fmt.Sprintf("%.2f", tmpOverMax)+"USDT 和"+fmt.Sprintf("%.2f", ispay)+" ISPAY",
-			"You've harvest "+fmt.Sprintf("%.2f", tmpOverMax)+" USDT and "+fmt.Sprintf("%.2f", ispay)+" ISPAY",
+			"您收获了 "+fmt.Sprintf("%.2f", tmpOverMax)+" USDT",
+			"You've harvest "+fmt.Sprintf("%.2f", tmpOverMax)+" USDT",
 		)
 		if nil != err {
 			return err
@@ -5383,78 +5383,78 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 		err = ac.userRepo.CreateNotice(
 			ctx,
 			landUserUse.OwnerUserId,
-			"您收获了"+fmt.Sprintf("%.2f", tmpOverMaxTwo)+"USDT 和"+fmt.Sprintf("%.2f", ispayRent)+" ISPAY",
-			"You've harvest "+fmt.Sprintf("%.2f", tmpOverMaxTwo)+" USDT and "+fmt.Sprintf("%.2f", ispayRent)+" ISPAY",
+			"您收获了 "+fmt.Sprintf("%.2f", tmpOverMaxTwo)+" USDT",
+			"You've harvest "+fmt.Sprintf("%.2f", tmpOverMaxTwo)+" USDT",
 		)
 
 		// l1-l3，奖励发放
-		if tmpOverMaxL > 0 {
-			tmpI := 0
-			for i := len(tmpRecommendUserIds) - 1; i >= 0; i-- {
-				if 3 <= tmpI {
-					break
-				}
-				tmpI++
-
-				tmpUserId, _ := strconv.ParseUint(tmpRecommendUserIds[i], 10, 64) // 最后一位是直推人
-				if 0 >= tmpUserId {
-					continue
-				}
-
-				if _, ok := usersMap[tmpUserId]; !ok {
-					continue
-				}
-
-				//if lowRewardU > usersMap[tmpUserId].Giw/uPrice {
-				//	continue
-				//}
-
-				tmpReward := float64(0)
-
-				tmpNum := uint64(4)
-				tmpReward = tmpOverMaxL * oneRate
-				if 1 == tmpI {
-
-				} else if 2 == tmpI {
-					tmpReward = tmpOverMaxL * twoRate
-					tmpNum = 7
-				} else if 3 == tmpI {
-					tmpReward = tmpOverMaxL * threeRate
-					tmpNum = 10
-				} else {
-					break
-				}
-
-				if 0.0000001 >= tmpReward {
-					continue
-				}
-
-				var (
-					ispayL float64
-				)
-				tmpReward = tmpReward / 2
-				if 0 == priceOpenUse {
-					ispayL = tmpReward / priceOpen
-				} else {
-					ispayL = tmpReward * tmp1 / tmp0
-				}
-				// 奖励
-				err = ac.userRepo.PlantPlatTwoTwoL(ctx, landUserUse.ID, tmpUserId, landUserUse.UserId, tmpNum, tmpReward, ispayL)
-				if nil != err {
-					return err
-				}
-
-				err = ac.userRepo.CreateNotice(
-					ctx,
-					tmpUserId,
-					"您收获了"+fmt.Sprintf("%.2f", tmpReward)+"USDT 和"+fmt.Sprintf("%.2f", ispayL)+" ISPAY",
-					"You've harvest "+fmt.Sprintf("%.2f", tmpReward)+" USDT AND "+fmt.Sprintf("%.2f", ispayL)+" ISPAY",
-				)
-				if nil != err {
-					return err
-				}
-			}
-		}
+		//if tmpOverMaxL > 0 {
+		//	tmpI := 0
+		//	for i := len(tmpRecommendUserIds) - 1; i >= 0; i-- {
+		//		if 3 <= tmpI {
+		//			break
+		//		}
+		//		tmpI++
+		//
+		//		tmpUserId, _ := strconv.ParseUint(tmpRecommendUserIds[i], 10, 64) // 最后一位是直推人
+		//		if 0 >= tmpUserId {
+		//			continue
+		//		}
+		//
+		//		if _, ok := usersMap[tmpUserId]; !ok {
+		//			continue
+		//		}
+		//
+		//		//if lowRewardU > usersMap[tmpUserId].Giw/uPrice {
+		//		//	continue
+		//		//}
+		//
+		//		tmpReward := float64(0)
+		//
+		//		tmpNum := uint64(4)
+		//		tmpReward = tmpOverMaxL * oneRate
+		//		if 1 == tmpI {
+		//
+		//		} else if 2 == tmpI {
+		//			tmpReward = tmpOverMaxL * twoRate
+		//			tmpNum = 7
+		//		} else if 3 == tmpI {
+		//			tmpReward = tmpOverMaxL * threeRate
+		//			tmpNum = 10
+		//		} else {
+		//			break
+		//		}
+		//
+		//		if 0.0000001 >= tmpReward {
+		//			continue
+		//		}
+		//
+		//		var (
+		//			ispayL float64
+		//		)
+		//		tmpReward = tmpReward / 2
+		//		if 0 == priceOpenUse {
+		//			ispayL = tmpReward / priceOpen
+		//		} else {
+		//			ispayL = tmpReward * tmp1 / tmp0
+		//		}
+		//		// 奖励
+		//		err = ac.userRepo.PlantPlatTwoTwoL(ctx, landUserUse.ID, tmpUserId, landUserUse.UserId, tmpNum, tmpReward, ispayL)
+		//		if nil != err {
+		//			return err
+		//		}
+		//
+		//		err = ac.userRepo.CreateNotice(
+		//			ctx,
+		//			tmpUserId,
+		//			"您收获了"+fmt.Sprintf("%.2f", tmpReward)+"USDT 和"+fmt.Sprintf("%.2f", ispayL)+" ISPAY",
+		//			"You've harvest "+fmt.Sprintf("%.2f", tmpReward)+" USDT AND "+fmt.Sprintf("%.2f", ispayL)+" ISPAY",
+		//		)
+		//		if nil != err {
+		//			return err
+		//		}
+		//	}
+		//}
 
 		//// l1-l3，奖励发放，出租的
 		//if tmpOverMaxTwo > 0 {
@@ -8033,7 +8033,7 @@ func (ac *AppUsecase) StakeGetPlay(ctx context.Context, address string, req *pb.
 		}
 
 		return &pb.StakeGetPlayReply{Status: "ok", PlayStatus: 1, Amount: tmpGit}, nil
-	} else { // 输：下注金额加入池子
+	} else {                                                         // 输：下注金额加入池子
 		if err = ac.tx.ExecTx(ctx, func(ctx context.Context) error { // 事务
 			err = ac.userRepo.SetStakeGetPlaySub(ctx, user.ID, float64(req.SendBody.Amount))
 			if nil != err {
