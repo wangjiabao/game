@@ -5163,11 +5163,11 @@ func (ac *AppUsecase) LandPlaySix(ctx context.Context, address string, req *pb.L
 		}, nil
 	}
 
-	if landUserUse.OwnerUserId != user.ID {
-		return &pb.LandPlaySixReply{
-			Status: "非土地用户",
-		}, nil
-	}
+	//if landUserUse.OwnerUserId != user.ID {
+	//	return &pb.LandPlaySixReply{
+	//		Status: "非土地用户",
+	//	}, nil
+	//}
 
 	if landUserUse.UserId == user.ID {
 		return &pb.LandPlaySixReply{
