@@ -6643,6 +6643,26 @@ func (ac *AppUsecase) StakeGit(ctx context.Context, address string, req *pb.Stak
 			}, nil
 		}
 
+		var (
+			configs      []*Config
+			stakeRateNew float64
+		)
+
+		// 配置
+		configs, err = ac.userRepo.GetConfigByKeys(ctx,
+			"stake_rate_new",
+		)
+		if nil != err || nil == configs {
+			return &pb.StakeGitReply{
+				Status: "配置错误",
+			}, nil
+		}
+		for _, vConfig := range configs {
+			if "stake_rate_new" == vConfig.KeyName {
+				stakeRateNew, _ = strconv.ParseFloat(vConfig.Value, 10)
+			}
+		}
+
 		//if 0.001 >= user.StakeIspayAmount {
 		//	return &pb.StakeGitReply{
 		//		Status: "max stake|达到质押上限",
@@ -6662,7 +6682,7 @@ func (ac *AppUsecase) StakeGit(ctx context.Context, address string, req *pb.Stak
 
 		usdtAmount := req.SendBody.Amount * tmp0 / tmp1
 		usdtAmountOrigin := usdtAmount
-		usdtAmount = usdtAmount * 1.5 / 30
+		usdtAmount = usdtAmount * stakeRateNew / 30
 		if 0.00000001 >= usdtAmount {
 			return &pb.StakeGitReply{
 				Status: "获取交易池数据失败，价格错误",
